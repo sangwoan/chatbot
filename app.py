@@ -1,6 +1,6 @@
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
-load_dotenv()
+# load_dotenv()
 
 from langchain_openai.chat_models import ChatOpenAI
 from langchain.schema import(
