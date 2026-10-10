@@ -13,22 +13,29 @@
 <meta name="apple-mobile-web-app-title" content="그해여름">
 <!-- @page -->
 <title>그해여름</title>
+<link rel="stylesheet" href="fonts/fonts.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=Nanum+Pen+Script&family=Silkscreen:wght@400;700&display=swap">
 <style>
-/* Layout: the back of a 2000s compact digicam — a brushed metal body whose colour follows the chosen camera, a dark LCD viewfinder, controls laid out like real buttons below */
+/* Layout: the back of a 2000s compact digicam — a brushed metal body whose colour follows the chosen camera,
+   a full-width LCD viewfinder, a strip of illustrated camera bodies, and the shutter in thumb reach */
+@property --body{syntax:'<color>';inherits:true;initial-value:#a3d2de}
+@property --body-hi{syntax:'<color>';inherits:true;initial-value:#e2f2f6}
+@property --body-lo{syntax:'<color>';inherits:true;initial-value:#6aa6b8}
+@property --ink{syntax:'<color>';inherits:true;initial-value:#163e4a}
+@property --ink-soft{syntax:'<color>';inherits:true;initial-value:#3f6b78}
+@property --ink-accent{syntax:'<color>';inherits:true;initial-value:#0b5870}
 :root{
   --desk:#1d1c1a;
   --body:#a3d2de;
   --body-hi:#e2f2f6;
   --body-lo:#6aa6b8;
-  --engrave:#46433c;
-  --engrave-soft:#767166;
-  --engrave-blue:#2f4e7a;
   --ink:#163e4a;
   --ink-soft:#3f6b78;
   --ink-accent:#0b5870;
+  --key-ink:#46433c;
+  --key-on:#b4500c;
   --lcd:#07090c;
   --lcd-rim:#2a2c30;
   --osd:#eef2e8;
@@ -38,7 +45,9 @@
   --menu-top:#17284a;
   --menu-bot:#0c182d;
   --menu-fg:#e9edf5;
-  --menu-sub:#8fa6cc;
+  --menu-sub:#9db2d6;
+  --sa-top:env(safe-area-inset-top,0px);
+  --sa-bottom:env(safe-area-inset-bottom,0px);
   --font-osd:"Silkscreen","VT323",ui-monospace,Menlo,monospace;
   --font-ui:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,-apple-system,sans-serif;
   --font-pen:"Nanum Pen Script","Gaegu",cursive;
@@ -54,158 +63,227 @@ button{font:inherit;color:inherit;cursor:pointer}
 button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 
 .cam{position:relative;width:100%;max-width:480px;height:100%;display:flex;flex-direction:column;overflow:hidden;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+  transition:--body .32s,--body-hi .32s,--body-lo .32s,--ink .32s,--ink-soft .32s,--ink-accent .32s;
   background:
     repeating-linear-gradient(90deg,rgba(255,255,255,.07) 0 1px,rgba(0,0,0,.035) 1px 2px,transparent 2px 3px),
     linear-gradient(180deg,var(--body-hi),var(--body) 38%,var(--body-lo));}
-@media (min-width:600px) and (min-height:720px){
+@media (min-width:600px) and (min-height:760px){
   body{padding-block:24px}
   .cam{border-radius:30px;max-height:980px;box-shadow:0 30px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.7)}
 }
 
-/* top strip */
-.top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px 8px}
-.brand{appearance:none;border:0;background:none;padding:6px 0;display:flex;align-items:center;gap:7px;min-width:0;color:var(--ink);border-radius:8px}
-.brand b{font:600 16px/1 var(--font-ui);letter-spacing:-.02em;white-space:nowrap}
-.brand .model{display:inline-flex;align-items:center;gap:3px;padding:3px 4px 3px 5px;border:1px solid var(--ink-soft);border-radius:4px;font:400 8.5px/1 var(--font-osd);letter-spacing:.08em;color:var(--ink-accent);white-space:nowrap}
-.brand .model::after{content:"";border:3px solid transparent;border-top:4px solid currentColor;border-bottom:0;margin-left:1px}
-.led{flex:none;width:7px;height:7px;border-radius:50%;background:var(--led);box-shadow:0 0 6px var(--led)}
-.led.busy{background:#ffa733;box-shadow:0 0 6px #ffa733;animation:blink .45s steps(2,end) infinite}
-.led.timer{background:#ff4a3a;box-shadow:0 0 6px #ff4a3a;animation:blink .9s steps(2,end) infinite}
+/* status row: camera chip + quick toggles */
+.status{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:8px 10px 6px 12px}
+.chip{flex:none;display:inline-flex;align-items:center;gap:7px;height:44px;padding:0 12px 0 11px;border:0;border-radius:22px;color:var(--ink);
+  background:rgba(0,0,0,.07);box-shadow:inset 0 1px 2px rgba(0,0,0,.2),0 1px 0 rgba(255,255,255,.4)}
+.chip b{font:700 12px/1 var(--font-osd);letter-spacing:.06em;white-space:nowrap}
+.chip::after{content:"";border:4px solid transparent;border-top:5px solid currentColor;border-bottom:0;margin-top:2px}
+.led{flex:none;width:8px;height:8px;border-radius:50%;background:var(--led);box-shadow:0 0 6px var(--led)}
+.led.busy{background:#ff4a3a;box-shadow:0 0 6px #ff4a3a;animation:blink .35s steps(2,end) infinite}
+.led.timer{background:#ffa733;box-shadow:0 0 6px #ffa733;animation:blink .9s steps(2,end) infinite}
 @keyframes blink{50%{opacity:.15}}
-.top-keys{display:flex;gap:5px;flex:none}
-.key{appearance:none;border:0;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:44px;height:44px;padding:4px 6px;border-radius:12px;
-  background:linear-gradient(#f6f3ec,#c8c2b5);color:var(--engrave);
+.keys{display:flex;gap:4px;min-width:0}
+.key{appearance:none;border:0;flex:none;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:46px;height:48px;padding:3px 0;border-radius:12px;
+  background:linear-gradient(#f7f4ed,#c9c3b6);color:var(--key-ink);
   box-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 rgba(0,0,0,.16),0 1px 2px rgba(0,0,0,.28)}
-.key svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.key span{font:400 8px/1 var(--font-osd);letter-spacing:.06em;color:var(--engrave-blue)}
-.key[aria-pressed="true"] span,.key.on span{color:#b8520c}
+.key svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.key span{font:600 10.5px/1 var(--font-ui);letter-spacing:-.02em;white-space:nowrap}
+.key.on{color:var(--key-on);box-shadow:inset 0 1px 0 #fff,inset 0 0 0 1.5px rgba(196,86,15,.55),0 1px 2px rgba(0,0,0,.28)}
 .key:active{transform:translateY(1px);box-shadow:inset 0 1px 3px rgba(0,0,0,.3)}
+@media (max-width:374px){.key{width:42px}.chip{padding:0 9px}.status{padding-inline:8px}}
 
-/* LCD */
-.lcd-wrap{flex:1;min-height:0;display:flex;padding:4px 16px 10px}
-.lcd{position:relative;flex:1;min-height:230px;border-radius:14px;background:var(--lcd);overflow:hidden;display:grid;place-items:center;touch-action:pan-y;
-  box-shadow:0 0 0 3px var(--lcd-rim),0 0 0 4px rgba(255,255,255,.55),inset 0 0 18px rgba(0,0,0,.9)}
-.lcd::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(122deg,rgba(255,255,255,.07) 0 26%,transparent 26.3%)}
-.frame{position:relative}
+/* viewfinder */
+.vf{flex:1;min-height:0;display:flex;padding:2px 8px 0}
+.lcd{position:relative;flex:1;min-height:200px;border-radius:12px;background:var(--lcd);overflow:hidden;display:grid;place-items:center;touch-action:none;
+  box-shadow:0 0 0 3px var(--lcd-rim),0 0 0 4px rgba(255,255,255,.5),inset 0 0 18px rgba(0,0,0,.9)}
+.lcd::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(122deg,rgba(255,255,255,.06) 0 26%,transparent 26.3%)}
+.frame{position:relative;transition:filter .3s}
+.frame.dim{filter:brightness(.38) saturate(.6) blur(1.5px)}
 #gl{position:absolute;display:block;background:#000}
 #deco{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-.osd{position:absolute;pointer-events:none;font:400 10px/1 var(--font-osd);letter-spacing:.06em;color:var(--osd);text-shadow:0 1px 2px rgba(0,0,0,.85)}
+.osd{position:absolute;pointer-events:none;font:400 11px/1 var(--font-osd);letter-spacing:.06em;color:var(--osd);text-shadow:0 1px 2px rgba(0,0,0,.85)}
 .osd .tl{position:absolute;left:8px;top:8px;display:grid;gap:5px}
 .osd .tr{position:absolute;right:8px;top:8px;display:flex;align-items:center;gap:7px}
-.osd .chip{display:inline-block;padding:2px 4px;border:1px solid rgba(238,242,232,.7);border-radius:2px}
 .bat{display:inline-flex;gap:1px;padding:1px 3px 1px 1px;border:1px solid var(--osd);border-radius:2px;position:relative}
 .bat::after{content:"";position:absolute;right:-3px;top:2px;width:2px;height:4px;background:var(--osd)}
 .bat i{width:3px;height:6px;background:var(--osd)}
 .bat i.off{background:transparent}
-.af{position:absolute;left:34%;right:34%;top:38%;bottom:38%}
+.af{position:absolute;width:30%;height:22%;left:35%;top:39%;transition:left .18s,top .18s}
 .af i{position:absolute;width:14px;height:10px;border:2px solid rgba(238,242,232,.75)}
 .af i:nth-child(1){left:0;top:0;border-right:0;border-bottom:0}
 .af i:nth-child(2){right:0;top:0;border-left:0;border-bottom:0}
 .af i:nth-child(3){left:0;bottom:0;border-right:0;border-top:0}
 .af i:nth-child(4){right:0;bottom:0;border-left:0;border-top:0}
 .af.lock i{border-color:var(--led)}
-.sample{position:absolute;left:50%;top:44px;transform:translateX(-50%);padding:3px 6px;background:rgba(0,0,0,.45);border:1px solid rgba(238,242,232,.5)}
+.camtag{position:absolute;left:50%;top:30px;transform:translateX(-50%);padding:4px 8px;border:1px solid rgba(238,242,232,.55);background:rgba(0,0,0,.4);white-space:nowrap;opacity:0;transition:opacity .25s}
+.camtag.show{opacity:1}
+.zoombar{position:absolute;left:50%;bottom:14%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;padding:4px 8px;background:rgba(0,0,0,.4)}
+.zoombar .track,.evbar .track{position:relative;display:block;background:rgba(238,242,232,.35)}
+.zoombar .track{width:92px;height:4px}
+.zoombar .track i,.evbar .track i{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--osd);box-shadow:0 0 0 1px rgba(0,0,0,.4)}
+.zoombar .track i{top:-2px;margin-left:-4px}
+.zoombar.digital em{color:#ffb35c}
+.zoombar em{font-style:normal;min-width:34px}
+.evbar{position:absolute;right:10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px 5px;background:rgba(0,0,0,.4)}
+.evbar .track{width:4px;height:92px}
+.evbar .track i{left:-2px;margin-top:-4px}
 .countdown{position:absolute;inset:0;display:grid;place-items:center;font:700 96px/1 var(--font-osd);color:var(--osd);text-shadow:0 2px 12px rgba(0,0,0,.8);pointer-events:none}
+.boot{position:absolute;inset:0;display:grid;place-items:center;background:#000;color:var(--osd);font:700 20px/1 var(--font-osd);letter-spacing:.14em;opacity:0;pointer-events:none}
+.boot.on{animation:boot .46s ease-out}
+@keyframes boot{0%{opacity:1}55%{opacity:1}100%{opacity:0}}
 .blink{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none}
 .blink.on{animation:shut .22s ease-out}
 @keyframes shut{0%{opacity:1}100%{opacity:0}}
-.toast{position:absolute;left:12px;right:12px;bottom:12px;margin:auto;width:max-content;max-width:calc(100% - 24px);padding:8px 12px;white-space:pre-line;border-radius:8px;background:rgba(8,10,14,.82);color:var(--osd);font:500 12.5px/1.4 var(--font-ui);text-align:center;opacity:0;transform:translateY(6px);transition:opacity .2s,transform .2s;pointer-events:none}
+.toast{position:absolute;left:12px;right:12px;bottom:12px;margin:auto;width:max-content;max-width:calc(100% - 24px);padding:9px 13px;white-space:pre-line;border-radius:9px;background:rgba(8,10,14,.86);color:var(--osd);font:500 13px/1.45 var(--font-ui);text-align:center;opacity:0;transform:translateY(6px);transition:opacity .2s,transform .2s;pointer-events:none}
 .toast.show{opacity:1;transform:none}
-.retry{position:absolute;top:72px;left:50%;transform:translateX(-50%);pointer-events:auto;white-space:nowrap;border:1px solid rgba(238,242,232,.6);background:rgba(0,0,0,.5);color:var(--osd);border-radius:8px;padding:7px 12px;font:500 12px var(--font-ui);letter-spacing:0;text-shadow:none}
+.perm{position:absolute;left:16px;right:16px;top:50%;transform:translateY(-50%);display:grid;gap:10px;padding:20px 18px;border-radius:14px;background:rgba(8,10,14,.88);border:1px solid rgba(238,242,232,.22);color:var(--osd);text-align:center}
+.perm h3{margin:0;font:700 12px/1 var(--font-osd);letter-spacing:.14em;color:#ffb35c}
+.perm p{margin:0;font:400 14px/1.6 var(--font-ui);color:#d8ddd2}
+.perm .btns{display:grid;gap:8px;margin-top:4px}
+.pbtn{min-height:44px;border:1px solid rgba(255,255,255,.28);background:transparent;color:inherit;border-radius:10px;padding:8px 14px;font:600 14px/1.2 var(--font-ui)}
+.pbtn.amber{background:var(--amber);color:var(--amber-ink);border-color:transparent}
 
-/* controls */
-.controls{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;padding:2px 16px 16px}
-.dial-wrap{position:relative;min-width:0;border-radius:12px;padding-top:4px;
-  background:repeating-linear-gradient(90deg,rgba(0,0,0,.08) 0 1px,rgba(255,255,255,.22) 1px 2px,transparent 2px 5px),linear-gradient(var(--body-lo),var(--body));
-  box-shadow:inset 0 2px 4px rgba(0,0,0,.25),0 1px 0 rgba(255,255,255,.7)}
-.dial-wrap::before{content:"";position:absolute;left:50%;top:0;transform:translateX(-50%);border:6px solid transparent;border-top-color:#c4560f;z-index:1}
-.dial{position:relative;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding-inline:calc(50% - 46px);
-  -webkit-mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent);mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent)}
-.dial::-webkit-scrollbar{display:none}
-.dial button{flex:0 0 92px;scroll-snap-align:center;border:0;background:none;padding:8px 0 7px;display:grid;gap:3px;justify-items:center;color:var(--ink-soft)}
-.dial b{font:700 11px/1 var(--font-osd);letter-spacing:.05em;white-space:nowrap}
-.dial small{font:500 10.5px/1 var(--font-ui);white-space:nowrap}
-.dial button[aria-checked="true"]{color:var(--ink)}
-.dial button[aria-checked="true"] b{color:var(--ink-accent)}
-.stamps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
-.stamps button{appearance:none;border:0;height:46px;border-radius:11px;display:grid;place-content:center;gap:3px;
-  background:linear-gradient(#f6f3ec,#c8c2b5);box-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 rgba(0,0,0,.16),0 1px 2px rgba(0,0,0,.28)}
-.stamps b{font:700 10px/1 var(--font-osd);letter-spacing:.05em;color:var(--engrave)}
-.stamps small{font:500 10.5px/1 var(--font-ui);color:var(--engrave-soft)}
-.stamps button[aria-checked="true"]{background:linear-gradient(#2c2e34,#16171b);box-shadow:inset 0 1px 3px rgba(0,0,0,.7),0 1px 0 rgba(255,255,255,.6)}
-.stamps button[aria-checked="true"] b{color:#ffb35c}
-.stamps button[aria-checked="true"] small{color:#c9c3b6}
-.shoot{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding-top:2px}
-.thumb{justify-self:start;width:56px;height:56px;border-radius:12px;border:2px solid rgba(255,255,255,.75);background:#24262b center/cover no-repeat;box-shadow:0 2px 6px rgba(0,0,0,.35);display:grid;place-items:center;color:#9a958a}
+/* engraved plate, camera strip, caption */
+.plate{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:7px 18px 0;color:var(--ink-soft)}
+.plate b{font:600 11px/1 var(--font-ui);letter-spacing:.32em}
+.plate span{font:400 10px/1 var(--font-osd);letter-spacing:.12em}
+.carousel{position:relative;height:64px;margin-top:2px}
+.carousel::before{content:"";position:absolute;left:50%;top:0;transform:translateX(-50%);border:6px solid transparent;border-top-color:#c4560f;z-index:1}
+.car{display:flex;align-items:center;height:100%;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding-inline:calc(50% - 38px);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 16%,#000 84%,transparent);mask-image:linear-gradient(90deg,transparent,#000 16%,#000 84%,transparent)}
+.car::-webkit-scrollbar{display:none}
+.car button{flex:0 0 76px;height:56px;scroll-snap-align:center;border:0;background:none;padding:0;display:grid;place-items:center;opacity:.5;transform:scale(.84);transition:transform .18s,opacity .18s}
+.car button svg{display:block;width:64px;height:43px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.22))}
+.car button.center{opacity:1;transform:scale(1.12)}
+.caption{text-align:center;padding:0 16px;min-height:38px}
+.caption b{display:block;font:600 15px/1.3 var(--font-ui);color:var(--ink);letter-spacing:-.01em}
+.caption small{display:block;font:400 10.5px/1.5 var(--font-osd);letter-spacing:.08em;color:var(--ink-soft)}
+@media (max-height:700px){.plate{display:none}.caption small{display:none}.caption{min-height:22px}}
+
+/* shutter row */
+.shoot{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:6px 22px 14px}
+.thumb{position:relative;justify-self:start;width:56px;height:56px;border-radius:12px;border:2px solid rgba(255,255,255,.8);background:#24262b center/cover no-repeat;box-shadow:0 2px 6px rgba(0,0,0,.35);display:grid;place-items:center;color:#9a958a}
 .thumb svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6}
 .thumb.has svg{display:none}
-.shutter{width:80px;height:80px;border-radius:50%;border:0;
+.thumb.bump{animation:bump .2s ease-out}
+@keyframes bump{50%{transform:scale(1.1)}}
+.thumb.working::after{content:"";position:absolute;inset:-6px;border-radius:15px;border:2px solid transparent;border-top-color:var(--amber);border-right-color:var(--amber);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.shutter{position:relative;width:80px;height:80px;border-radius:50%;border:0;
   background:radial-gradient(circle at 50% 32%,#fffefa,#d2cdc1 52%,#8f897c 100%);
   box-shadow:0 0 0 4px #b9b3a6,0 0 0 5px #c4560f,0 0 0 8px #a7a194,0 5px 12px rgba(0,0,0,.4),inset 0 -4px 7px rgba(0,0,0,.22),inset 0 2px 3px #fff;transition:transform .08s}
-.shutter:active{transform:scale(.94)}
-.flip{justify-self:end;width:56px;height:56px;border-radius:50%}
+.shutter.half,.shutter:active{transform:scale(.93)}
+.shutter.cancel::before,.shutter.cancel::after{content:"";position:absolute;left:50%;top:50%;width:26px;height:3px;border-radius:2px;background:#5b5549;transform:translate(-50%,-50%) rotate(45deg)}
+.shutter.cancel::after{transform:translate(-50%,-50%) rotate(-45deg)}
+.flip{justify-self:end;width:52px;height:52px;border-radius:50%}
 .flip svg{width:22px;height:22px}
 
-/* sheets: on-screen MENU look */
-.sheet{position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center;background:rgba(8,10,16,.55)}
-.panel{width:100%;max-width:480px;max-height:88%;display:flex;flex-direction:column;color:var(--menu-fg);
-  background:linear-gradient(var(--menu-top),var(--menu-bot));border-radius:18px 18px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.4);padding-bottom:env(safe-area-inset-bottom,0px)}
-.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.12)}
-.panel-head h2{margin:0;font:700 12px/1 var(--font-osd);letter-spacing:.16em;color:#ffb35c}
-.panel-head .acts{display:flex;gap:8px}
-.pbtn{border:1px solid rgba(255,255,255,.28);background:transparent;color:var(--menu-fg);border-radius:9px;padding:7px 12px;font:500 13px var(--font-ui)}
-.pbtn.amber{background:var(--amber);color:var(--amber-ink);border-color:transparent;font-weight:600}
-.panel-body{overflow:auto;padding:2px 16px 22px;overscroll-behavior:contain}
-.group h3{margin:18px 0 4px;font:700 10px/1 var(--font-osd);letter-spacing:.16em;color:var(--menu-sub)}
-.row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 12px;min-height:48px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.07)}
-.row label,.row .lbl{font:500 14px var(--font-ui)}
-.seg{display:inline-flex;border:1px solid rgba(255,255,255,.26);border-radius:9px;overflow:hidden}
-.seg button{border:0;background:transparent;padding:7px 10px;font:500 12.5px/1.2 var(--font-ui);color:#cfd7e6}
+/* date popover */
+.pop-wrap{position:fixed;inset:0;z-index:18}
+.pop{position:absolute;right:10px;width:min(360px,calc(100% - 20px));display:grid;gap:10px;padding:14px;border-radius:16px;color:var(--menu-fg);
+  background:linear-gradient(var(--menu-top),var(--menu-bot));box-shadow:0 14px 34px rgba(0,0,0,.45)}
+.pop h4{margin:0;font:700 11px/1 var(--font-osd);letter-spacing:.14em;color:var(--menu-sub)}
+.styles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.styles button{display:grid;justify-items:center;gap:6px;padding:8px 0 7px;min-height:74px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:var(--menu-fg)}
+.styles button[aria-checked="true"]{border-color:var(--amber);background:rgba(240,138,36,.16)}
+.styles span{font:600 12px/1 var(--font-ui)}
+.sp{position:relative;width:44px;height:33px;border-radius:3px;overflow:hidden;background:linear-gradient(#5d7fb0,#d9a68f 60%,#7a6a8c)}
+.sp.film::after{content:"'26 10 10";position:absolute;right:3px;bottom:3px;font:italic 700 7px/1 Menlo,monospace;color:#ff9a3d;text-shadow:0 0 3px #ff5a0a}
+.sp.digi::after{content:"26/10/10";position:absolute;right:3px;bottom:3px;font:400 5.5px/1 var(--font-osd);color:#ffb04a}
+.sp.info{box-shadow:inset 0 -9px 0 #f7f5f0}
+.sp.info::after{content:"";position:absolute;left:4px;right:4px;bottom:3px;height:2px;background:linear-gradient(90deg,#1c1b19 0 40%,transparent 40% 70%,#1c1b19 70%)}
+.sp.pola{box-shadow:inset 0 0 0 3px #f4f1ea,inset 0 -10px 0 #f4f1ea}
+.sp.pola::after{content:"";position:absolute;left:5px;bottom:4px;width:18px;height:2px;border-radius:1px;background:#2d3047}
+.sp.off::after{content:"";position:absolute;left:50%;top:50%;width:46px;height:2px;background:rgba(255,255,255,.6);transform:translate(-50%,-50%) rotate(-36deg)}
+.seg{display:inline-flex;border:1px solid rgba(255,255,255,.26);border-radius:10px;overflow:hidden}
+.seg.wide{display:grid;grid-auto-flow:column;grid-auto-columns:1fr}
+.seg button{min-height:42px;border:0;background:transparent;padding:6px 11px;font:500 13px/1.2 var(--font-ui);color:#d4dbe8}
 .seg button+button{border-left:1px solid rgba(255,255,255,.14)}
 .seg button[aria-pressed="true"]{background:var(--amber);color:var(--amber-ink);font-weight:600}
-.swatches{display:flex;gap:10px}
-.swatches button{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,.2);background:var(--sw)}
-.swatches button[aria-pressed="true"]{border-color:#fff;box-shadow:0 0 0 2px var(--amber)}
-.switch{appearance:none;-webkit-appearance:none;margin:0;flex:none;width:46px;height:28px;border-radius:14px;background:#33435f;position:relative;transition:background .15s}
-.switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .15s}
-.switch:checked{background:var(--amber)}
-.switch:checked::after{transform:translateX(18px)}
-.field{background:#0a1426;color:var(--menu-fg);border:1px solid rgba(255,255,255,.26);border-radius:8px;padding:8px 10px;font:500 16px var(--font-ui);color-scheme:dark;min-width:0;max-width:100%}
-.field[type="text"]{flex:1 1 180px}
-.range{accent-color:var(--amber);width:min(180px,50vw)}
-.hint{margin:8px 0 0;font:400 12.5px/1.55 var(--font-ui);color:var(--menu-sub)}
-.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:12px 16px 22px;overflow:auto}
-.grid button{aspect-ratio:1;border:0;padding:0;border-radius:6px;background:#0a1426 center/cover no-repeat;position:relative}
-.grid button span{position:absolute;left:5px;top:5px;padding:2px 3px;background:rgba(0,0,0,.45);border-radius:2px;font:400 8px/1 var(--font-osd);color:#fff;text-shadow:0 1px 2px #000}
-.empty{padding:36px 16px 44px;text-align:center;color:var(--menu-sub);font:400 14px/1.6 var(--font-ui)}
+.linkbtn{justify-self:start;border:0;background:none;padding:6px 0;color:#ffb35c;font:500 13px/1.2 var(--font-ui);text-decoration:underline;text-underline-offset:3px}
 
-/* camera picker */
-.lede{margin:0;padding:12px 16px 4px;font:400 13px/1.55 var(--font-ui);color:var(--menu-sub)}
-.cams{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:10px 16px 22px;overflow:auto;overscroll-behavior:contain}
-.cam-card{display:grid;gap:6px;align-content:start;text-align:left;padding:8px 8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:var(--menu-fg);min-width:0}
+/* sheets */
+.sheet{position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center;background:rgba(8,10,16,.55)}
+.panel{width:100%;max-width:480px;max-height:90%;display:flex;flex-direction:column;color:var(--menu-fg);transition:transform .2s;
+  background:linear-gradient(var(--menu-top),var(--menu-bot));border-radius:18px 18px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.4);padding-bottom:var(--sa-bottom)}
+.panel-head{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px 16px 12px;border-bottom:1px solid rgba(255,255,255,.12);touch-action:none}
+.panel-head::before{content:"";position:absolute;left:50%;top:8px;width:40px;height:4px;border-radius:2px;background:rgba(255,255,255,.3);transform:translateX(-50%)}
+.panel-head h2{margin:0;font:700 12px/1 var(--font-osd);letter-spacing:.16em;color:#ffb35c}
+.panel-head .acts{display:flex;gap:8px}
+.panel-body{min-height:0;overflow:auto;padding:2px 16px 24px;overscroll-behavior:contain}
+.group h3{margin:20px 0 4px;font:700 11px/1 var(--font-osd);letter-spacing:.16em;color:var(--menu-sub)}
+.row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 12px;min-height:54px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+.row label,.row .lbl{font:500 15px var(--font-ui)}
+.swatches{display:flex;gap:8px}
+.swatches button{width:36px;height:36px;border-radius:50%;border:2px solid rgba(255,255,255,.2);background:var(--sw)}
+.swatches button[aria-pressed="true"]{border-color:#fff;box-shadow:0 0 0 2px var(--amber)}
+.switch{appearance:none;-webkit-appearance:none;margin:0;flex:none;width:52px;height:32px;border-radius:16px;background:#33435f;position:relative;transition:background .15s}
+.switch::after{content:"";position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .15s}
+.switch:checked{background:var(--amber)}
+.switch:checked::after{transform:translateX(20px)}
+.field{background:#0a1426;color:var(--menu-fg);border:1px solid rgba(255,255,255,.26);border-radius:9px;padding:9px 11px;min-height:44px;font:500 16px var(--font-ui);color-scheme:dark;min-width:0;max-width:100%}
+.field[type="text"]{flex:1 1 180px}
+.range{accent-color:var(--amber);width:min(190px,52vw);height:32px}
+.hint{margin:10px 0 0;font:400 13px/1.6 var(--font-ui);color:var(--menu-sub)}
+.grid{min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:12px 16px 24px;overflow:auto;align-content:start}
+.grid button{aspect-ratio:3/4;border:0;padding:0;border-radius:6px;background:#0a1426 center/contain no-repeat;position:relative}
+.grid button span{position:absolute;left:5px;top:5px;padding:3px 4px;background:rgba(0,0,0,.55);border-radius:3px;font:400 9px/1 var(--font-osd);color:#fff}
+.empty{display:grid;gap:14px;justify-items:center;padding:34px 16px 40px;text-align:center;color:var(--menu-sub);font:400 15px/1.6 var(--font-ui)}
+
+/* camera sheet (above the viewer when picking a camera to re-develop with) */
+.sheet.over{z-index:35}
+.lede{margin:0;padding:12px 16px 2px;font:400 14px/1.6 var(--font-ui);color:var(--menu-sub)}
+.cams{min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:10px 16px 24px;overflow:auto;overscroll-behavior:contain}
+.cam-card{display:grid;gap:6px;align-content:start;text-align:left;padding:8px 8px 11px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:var(--menu-fg);min-width:0}
 .cam-card[aria-pressed="true"]{border-color:var(--amber);box-shadow:inset 0 0 0 1px var(--amber);background:rgba(240,138,36,.1)}
 .cam-shot{position:relative;aspect-ratio:4/3;border-radius:6px;overflow:hidden;background:#0a1426}
 .cam-shot img{display:block;width:100%;height:100%;object-fit:cover}
-.cam-shot span{position:absolute;left:6px;bottom:5px;font:400 9px/1 var(--font-osd);letter-spacing:.06em;color:#fff;text-shadow:0 1px 2px #000}
-.cam-name{display:flex;align-items:center;gap:7px;min-width:0}
-.cam-name b{font:700 10px/1.1 var(--font-osd);letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mini{flex:none;position:relative;width:24px;height:16px;border-radius:3px;background:linear-gradient(var(--bh),var(--bb) 55%,var(--bl));box-shadow:inset 0 0 0 1px rgba(0,0,0,.2)}
-.mini::after{content:"";position:absolute;right:3px;top:3px;width:10px;height:10px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#7d8a9c,#10141a 70%);box-shadow:0 0 0 1px rgba(0,0,0,.4)}
-.cam-card strong{font:600 14px/1.25 var(--font-ui)}
-.cam-card .spec{font:400 8.5px/1 var(--font-osd);letter-spacing:.06em;color:var(--menu-sub)}
-.cam-card small{font:400 12px/1.5 var(--font-ui);color:#b8c5dc}
+.cam-name{display:flex;align-items:center;gap:6px;min-width:0}
+.cam-name svg{flex:none;width:32px;height:22px}
+.cam-name b{font:700 10.5px/1.1 var(--font-osd);letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cam-card strong{font:600 15px/1.3 var(--font-ui)}
+.cam-card .spec{font:400 9.5px/1.2 var(--font-osd);letter-spacing:.05em;color:var(--menu-sub)}
+.cam-card small{font:400 12.5px/1.5 var(--font-ui);color:#c3cee2;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 
 /* playback viewer */
 .viewer{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;background:#050608;color:var(--osd)}
-.viewer-top{display:flex;justify-content:space-between;gap:12px;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 8px;font:400 10px/1 var(--font-osd);letter-spacing:.08em}
+.viewer-top{display:flex;justify-content:space-between;gap:12px;padding:calc(14px + var(--sa-top)) 16px 8px;font:400 11px/1 var(--font-osd);letter-spacing:.08em}
 .viewer-top .play::before{content:"";display:inline-block;margin-right:6px;border:5px solid transparent;border-left:7px solid var(--led);border-right:0;vertical-align:-1px}
-.viewer-img{flex:1;min-height:0;display:grid;place-items:center;padding:8px 16px}
+.viewer-img{flex:1;min-height:0;display:grid;place-items:center;padding:8px 16px;touch-action:none;overflow:hidden}
 .viewer-img img{max-width:100%;max-height:100%;object-fit:contain;box-shadow:0 10px 30px rgba(0,0,0,.6)}
-.viewer-acts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px 16px calc(16px + env(safe-area-inset-bottom,0px))}
-.vbtn{height:50px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:#15181d;color:var(--osd);font:600 14px var(--font-ui)}
+.viewer-note{display:flex;align-items:center;justify-content:center;gap:10px;min-height:28px;padding:0 16px;font:500 13px/1.3 var(--font-ui);color:#aeb4aa}
+.viewer-note button{border:0;background:none;color:#ffb35c;font:600 13px var(--font-ui);text-decoration:underline;text-underline-offset:3px;padding:6px 2px}
+.viewer-acts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px 16px calc(16px + var(--sa-bottom))}
+.vbtn{min-height:52px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:#15181d;color:var(--osd);font:600 15px var(--font-ui)}
 .vbtn.amber{background:var(--amber);color:var(--amber-ink);border-color:transparent}
 .vbtn.armed{background:#c8321f;border-color:transparent;color:#fff}
+.vbtn:disabled{opacity:.4}
 
+/* first run */
+.onb{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;color:var(--ink);padding:calc(18px + var(--sa-top)) 0 calc(18px + var(--sa-bottom));
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,.07) 0 1px,rgba(0,0,0,.035) 1px 2px,transparent 2px 3px),linear-gradient(180deg,var(--body-hi),var(--body) 45%,var(--body-lo))}
+.onb-skip{align-self:flex-end;margin-right:12px;border:0;background:none;color:var(--ink-soft);font:500 14px var(--font-ui);padding:10px 12px;min-height:44px}
+.onb-track{flex:1;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
+.onb-track::-webkit-scrollbar{display:none}
+.onb-card{flex:0 0 100%;scroll-snap-align:center;display:flex;flex-direction:column;justify-content:center;gap:18px;padding:0 28px}
+.onb-card h1{margin:0;font:600 30px/1.25 var(--font-ui);letter-spacing:-.02em;text-wrap:balance}
+.onb-card p{margin:0;font:400 16px/1.65 var(--font-ui);color:var(--ink-soft);max-width:34ch}
+.onb-card .eyebrow{font:700 11px/1 var(--font-osd);letter-spacing:.18em;color:var(--ink-accent)}
+.marquee{overflow:hidden;margin:6px -28px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent)}
+.marquee div{display:flex;gap:10px;width:max-content;animation:slide 26s linear infinite}
+.marquee svg{width:96px;height:64px;flex:none}
+@keyframes slide{to{transform:translateX(-50%)}}
+.stamp-demo{position:relative;align-self:flex-start;width:220px;max-width:100%;aspect-ratio:4/3;border-radius:6px;overflow:hidden;background:linear-gradient(#4c6ca1,#c4a2b8 45%,#f2b98f 80%,#6a4d44);box-shadow:0 10px 24px rgba(0,0,0,.25)}
+.stamp-demo span{position:absolute;right:12px;bottom:10px;font:italic 700 18px/1 Menlo,monospace;color:#ff9a3d;text-shadow:0 0 8px #ff5a0a}
+.onb-foot{display:grid;gap:12px;padding:0 28px}
+.dots{display:flex;gap:6px;justify-content:center}
+.dots i{width:7px;height:7px;border-radius:50%;background:var(--ink-soft);opacity:.35}
+.dots i.on{opacity:1;background:var(--ink-accent)}
+.obtn{min-height:52px;border:0;border-radius:14px;background:var(--ink);color:var(--body-hi);font:600 16px var(--font-ui)}
+.obtn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ink-soft)}
+
+.fly{position:fixed;z-index:25;pointer-events:none;border:3px solid #fff;box-shadow:0 8px 20px rgba(0,0,0,.4);transform-origin:0 0}
 .flash-screen{position:fixed;inset:0;z-index:40;background:#fff;opacity:0;pointer-events:none;transition:opacity .12s}
 .flash-screen.on{opacity:1}
 #video{position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none}
@@ -214,49 +292,50 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
 </head>
 <body>
 <div class="cam" id="cam">
-  <header class="top">
-    <button class="brand" id="btnCam" aria-haspopup="dialog" aria-label="카메라 고르기"><span class="led" id="led"></span><b>그해여름</b><span class="model" id="brandModel">AQUA</span></button>
-    <div class="top-keys">
-      <button class="key" id="btnFlash" aria-pressed="false" aria-label="플래시"><svg viewBox="0 0 24 24"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z"/></svg><span id="lblFlash">OFF</span></button>
-      <button class="key" id="btnTimer" aria-label="셀프 타이머"><svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 2M9.5 2.5h5"/></svg><span id="lblTimer">OFF</span></button>
-      <button class="key" id="btnImport" aria-label="앨범에서 사진 가져오기"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="14" height="14" rx="2"/><path d="m3 16 4-4 4 4 2-2 4 4M19.5 2.5v6M16.5 5.5h6"/></svg><span>IMPORT</span></button>
-      <button class="key" id="btnMenu" aria-label="설정 메뉴" aria-haspopup="dialog"><svg viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span>MENU</span></button>
+  <header class="status">
+    <button class="chip" id="btnCam" aria-haspopup="dialog" aria-label="카메라 고르기"><span class="led" id="led"></span><b id="chipCode">AQUA</b></button>
+    <div class="keys">
+      <button class="key" id="btnFlash" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z"/></svg><span id="lblFlash">플래시</span></button>
+      <button class="key" id="btnTimer" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 2M9.5 2.5h5"/></svg><span id="lblTimer">타이머</span></button>
+      <button class="key" id="btnDate" aria-haspopup="dialog" aria-expanded="false"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M13 14.5h4"/></svg><span id="lblDate">필름</span></button>
+      <button class="key" id="btnLight" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4M5.3 5.3l2.6 2.6M16.1 16.1l2.6 2.6M18.7 5.3l-2.6 2.6M7.9 16.1l-2.6 2.6"/><circle cx="12" cy="12" r="2.6"/></svg><span id="lblLight">빛</span></button>
+      <button class="key" id="btnMenu" aria-haspopup="dialog"><svg viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span>메뉴</span></button>
     </div>
   </header>
 
-  <main class="lcd-wrap">
+  <main class="vf">
     <div class="lcd" id="lcd">
       <div class="frame" id="frame">
         <canvas id="gl" aria-label="뷰파인더"></canvas>
         <canvas id="deco" aria-hidden="true"></canvas>
         <div class="osd" id="osd" aria-hidden="true">
           <div class="tl"><span id="osdMode">AUTO</span><span id="osdFlags"></span></div>
-          <div class="tr"><span id="osdSize">5M</span><span id="osdCount">[9999]</span><span class="bat" id="osdBat"><i></i><i></i><i></i></span></div>
+          <div class="tr"><span id="osdSize">7.1M</span><span id="osdCount">[9999]</span><span class="bat" id="osdBat"><i></i><i></i><i></i></span></div>
           <div class="af" id="af"><i></i><i></i><i></i><i></i></div>
-          <span class="sample chip" id="osdSample" hidden>SAMPLE</span>
-          <button class="retry" id="btnRetry" hidden>카메라 다시 연결</button>
+          <div class="camtag" id="camTag"></div>
+          <div class="zoombar" id="zoomBar" hidden><b>W</b><span class="track"><i id="zoomKnob"></i></span><b>T</b><em id="zoomVal">×1.0</em></div>
+          <div class="evbar" id="evBar" hidden><span id="evVal">±0.0</span><span class="track"><i id="evKnob"></i></span><span>EV</span></div>
         </div>
       </div>
+      <div class="perm" id="perm" hidden>
+        <h3 id="permTitle">NO CAMERA</h3>
+        <p id="permText"></p>
+        <div class="btns"><button class="pbtn amber" id="permPrimary"></button><button class="pbtn" id="permSecondary"></button></div>
+      </div>
       <div class="countdown" id="countdown" hidden></div>
+      <div class="boot" id="boot"><span id="bootText"></span></div>
       <div class="blink" id="blink"></div>
       <div class="toast" id="toast" role="status" aria-live="polite"></div>
     </div>
   </main>
 
-  <section class="controls">
-    <div class="dial-wrap"><div class="dial" id="dial" role="radiogroup" aria-label="카메라"></div></div>
-    <div class="stamps" id="stamps" role="radiogroup" aria-label="날짜 스탬프" data-key="stamp">
-      <button role="radio" data-v="film"><b>FILM</b><small>필름</small></button>
-      <button role="radio" data-v="digi"><b>DIGI</b><small>디카</small></button>
-      <button role="radio" data-v="info"><b>INFO</b><small>정보바</small></button>
-      <button role="radio" data-v="polaroid"><b>POLA</b><small>폴라</small></button>
-      <button role="radio" data-v="off"><b>OFF</b><small>없음</small></button>
-    </div>
-    <div class="shoot">
-      <button class="thumb" id="btnGallery" aria-label="앨범 보기"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="14" height="13" rx="1.5"/><path d="M7 3.5h13v13"/></svg></button>
-      <button class="shutter" id="shutter" aria-label="촬영"></button>
-      <button class="key flip" id="btnFlip" aria-label="전면·후면 카메라 전환"><svg viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 0 1 13-5.1M19.5 12a7.5 7.5 0 0 1-13 5.1"/><path d="M18 3v4.2h-4.2M6 21v-4.2h4.2"/></svg></button>
-    </div>
+  <div class="plate" aria-hidden="true"><b>그해여름</b><span id="plateModel">AQUA-720</span></div>
+  <section class="carousel"><div class="car" id="car" role="radiogroup" aria-label="카메라"></div></section>
+  <div class="caption" aria-live="polite"><b id="capTitle"></b><small id="capSub"></small></div>
+  <section class="shoot">
+    <button class="thumb" id="btnGallery" aria-label="앨범 보기"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="14" height="13" rx="1.5"/><path d="M7 3.5h13v13"/></svg></button>
+    <button class="shutter" id="shutter" aria-label="촬영"></button>
+    <button class="key flip" id="btnFlip" aria-label="전면·후면 카메라 전환"><svg viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 0 1 13-5.1M19.5 12a7.5 7.5 0 0 1-13 5.1"/><path d="M18 3v4.2h-4.2M6 21v-4.2h4.2"/></svg></button>
   </section>
 </div>
 
@@ -264,24 +343,34 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
 <input type="file" id="fileImport" accept="image/*" multiple hidden>
 <input type="file" id="fileCapture" accept="image/*" capture="environment" hidden>
 
+<div class="pop-wrap" id="datePop" hidden>
+  <div class="pop" id="datePanel" role="dialog" aria-label="날짜 스탬프">
+    <h4>DATE · 날짜 스탬프</h4>
+    <div class="styles" role="radiogroup" aria-label="스탬프 모양" data-key="stamp">
+      <button role="radio" data-v="film"><i class="sp film"></i><span>필름</span></button>
+      <button role="radio" data-v="digi"><i class="sp digi"></i><span>디카</span></button>
+      <button role="radio" data-v="info"><i class="sp info"></i><span>정보바</span></button>
+      <button role="radio" data-v="polaroid"><i class="sp pola"></i><span>폴라</span></button>
+      <button role="radio" data-v="off"><i class="sp off"></i><span>없음</span></button>
+    </div>
+    <h4>찍히는 날짜</h4>
+    <div class="seg wide" data-key="dateMode"><button data-v="now">오늘</button><button data-v="year" id="segYear">그해</button><button data-v="custom">직접</button></div>
+    <input type="datetime-local" class="field" id="optCustom" data-key="customDate" aria-label="직접 지정할 날짜와 시간">
+    <button class="linkbtn" id="btnMoreDate">문구 · D-day · 색은 메뉴에서</button>
+  </div>
+</div>
+
 <div class="sheet" id="menuSheet" hidden role="dialog" aria-modal="true" aria-labelledby="menuTitle">
   <div class="panel">
     <div class="panel-head"><h2 id="menuTitle">MENU</h2><div class="acts"><button class="pbtn amber" data-close>완료</button></div></div>
-    <div class="panel-body">
+    <div class="panel-body" id="menuBody">
       <section class="group">
-        <h3>DATE · 날짜</h3>
+        <h3>STAMP · 날짜 스탬프</h3>
         <div class="row"><span class="lbl">날짜 순서</span>
           <div class="seg" data-key="dateOrder"><button data-v="ymd">년 월 일</button><button data-v="mdy">월 일 년</button><button data-v="dmy">일 월 년</button></div></div>
         <div class="row"><label for="optTime">시간도 함께 찍기</label><input type="checkbox" class="switch" id="optTime" data-key="showTime"></div>
-        <div class="row"><span class="lbl">찍히는 날짜</span>
-          <div class="seg" data-key="dateMode"><button data-v="now">자동</button><button data-v="custom">직접 지정</button></div></div>
-        <div class="row" id="rowCustom"><label for="optCustom">지정할 날짜·시간</label><input type="datetime-local" class="field" id="optCustom" data-key="customDate"></div>
-        <p class="hint">자동은 지금 시각을 찍어요. 앨범에서 가져온 사진은 원래 찍은 날짜를 그대로 써요.</p>
-      </section>
-      <section class="group">
-        <h3>STAMP · 스탬프</h3>
         <div class="row"><span class="lbl">스탬프 색</span>
-          <div class="swatches seg-like" data-key="color">
+          <div class="swatches" data-key="color">
             <button data-v="orange" style="--sw:#ff8f2e" aria-label="오렌지"></button>
             <button data-v="yellow" style="--sw:#ffd23f" aria-label="옐로"></button>
             <button data-v="red" style="--sw:#ff4b33" aria-label="레드"></button>
@@ -292,7 +381,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
         <div class="row"><span class="lbl">정보바 색</span>
           <div class="seg" data-key="infoTheme"><button data-v="light">화이트</button><button data-v="dark">블랙</button></div></div>
       </section>
-      <section class="group">
+      <section class="group" id="ourDay">
         <h3>OUR DAY · 우리의 날</h3>
         <div class="row"><label for="optDday">D-day 함께 찍기</label><input type="checkbox" class="switch" id="optDday" data-key="ddayOn"></div>
         <div class="row"><label for="optAnniv">기념일 (그날 = D+1)</label><input type="date" class="field" id="optAnniv" data-key="anniv"></div>
@@ -305,10 +394,21 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
           <div class="seg" data-key="aspect"><button data-v="4:3">4:3</button><button data-v="1:1">1:1</button></div></div>
         <div class="row"><span class="lbl">저장 크기</span>
           <div class="seg" data-key="quality"><button data-v="2M">2M</button><button data-v="5M">5M</button><button data-v="8M">8M</button></div></div>
-        <div class="row"><label for="optAmount">필터 강도 <span id="amountVal">100%</span></label><input type="range" class="range" id="optAmount" data-key="amount" min="0" max="100" step="5"></div>
+        <div class="row"><label for="optAmount">카메라 색감 강도 <span id="amountVal">100%</span></label><input type="range" class="range" id="optAmount" data-key="amount" min="0" max="100" step="5"></div>
+        <div class="row"><label for="optMirror">셀카를 보이는 그대로 저장</label><input type="checkbox" class="switch" id="optMirror" data-key="mirrorSelfie"></div>
         <div class="row"><label for="optGeo">위치(좌표) 표시</label><input type="checkbox" class="switch" id="optGeo" data-key="geo"></div>
+      </section>
+      <section class="group">
+        <h3>AFTER · 찍은 다음</h3>
+        <div class="row" data-native><label for="optAutoSave">휴대폰 갤러리에 바로 저장</label><input type="checkbox" class="switch" id="optAutoSave" data-key="autoSave"></div>
+        <div class="row"><label for="optReview">찍고 바로 크게 보기</label><input type="checkbox" class="switch" id="optReview" data-key="reviewAfter"></div>
+        <div class="row" data-native><label for="optVolume">음량 버튼으로 찍기</label><input type="checkbox" class="switch" id="optVolume" data-key="volumeKey"></div>
+      </section>
+      <section class="group">
+        <h3>FEEL · 소리와 진동</h3>
         <div class="row"><label for="optSound">셔터음</label><input type="checkbox" class="switch" id="optSound" data-key="sound"></div>
-        <p class="hint">VGA 폴더폰·첫 디카처럼 화소가 낮은 카메라는 저장 크기와 상관없이 그 시절 화질로 찍혀요. 정보바의 셔터 속도·ISO는 화면 밝기로 계산한 감성 표기예요. 찍은 사진은 이 기기의 브라우저 안에만 보관되니, 마음에 드는 사진은 꼭 저장해 두세요.</p>
+        <div class="row"><label for="optHaptics">진동</label><input type="checkbox" class="switch" id="optHaptics" data-key="haptics"></div>
+        <p class="hint" id="menuHint">화소가 낮은 카메라(VGA 폴더폰, 첫 디카)는 저장 크기와 상관없이 그 시절 화질로 찍혀요. 정보바의 셔터 속도·ISO는 화면 밝기로 계산한 표기예요.</p>
       </section>
     </div>
   </div>
@@ -317,26 +417,54 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
 <div class="sheet" id="camSheet" hidden role="dialog" aria-modal="true" aria-labelledby="camTitle">
   <div class="panel">
     <div class="panel-head"><h2 id="camTitle">CAMERA · 10</h2><div class="acts"><button class="pbtn amber" data-close>닫기</button></div></div>
-    <p class="lede">2001년부터 2006년까지, 그 시절 디카 10대예요. 지금 장면이 카메라마다 어떻게 찍히는지 미리 보여 드려요.</p>
+    <p class="lede" id="camLede">2001년부터 2006년까지, 그 시절 디카 10대예요. 지금 장면이 카메라마다 어떻게 찍히는지 미리 보여 드려요.</p>
     <div class="cams" id="camGrid"></div>
   </div>
 </div>
 
 <div class="sheet" id="gallerySheet" hidden role="dialog" aria-modal="true" aria-labelledby="galleryTitle">
   <div class="panel">
-    <div class="panel-head"><h2 id="galleryTitle">ALBUM</h2><div class="acts"><button class="pbtn" id="btnGalleryImport">가져오기</button><button class="pbtn amber" data-close>닫기</button></div></div>
+    <div class="panel-head"><h2 id="galleryTitle">ALBUM</h2><div class="acts"><button class="pbtn" id="btnGalleryImport">사진 현상하기</button><button class="pbtn amber" data-close>닫기</button></div></div>
     <div class="grid" id="grid"></div>
-    <p class="empty" id="galleryEmpty" hidden>아직 찍은 사진이 없어요.<br>셔터를 눌러 오늘의 첫 장을 남겨 보세요.</p>
+    <div class="empty" id="galleryEmpty" hidden><span>아직 찍은 사진이 없어요.<br>셔터를 누르거나, 갖고 있는 사진을 그 시절 카메라로 현상해 보세요.</span><button class="pbtn amber" id="btnEmptyImport">앨범 사진 현상하기</button></div>
   </div>
 </div>
 
 <div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="사진 보기">
   <div class="viewer-top"><span class="play" id="viewerNo">100-0001</span><span id="viewerDate"></span></div>
-  <div class="viewer-img"><img id="viewerImg" alt="찍은 사진"></div>
+  <div class="viewer-img" id="viewerStage"><img id="viewerImg" alt="찍은 사진"></div>
+  <div class="viewer-note"><span id="viewerNote"></span><button id="btnSaveNow" hidden>갤러리에 저장</button></div>
   <div class="viewer-acts">
     <button class="vbtn" id="btnDelete">삭제</button>
+    <button class="vbtn" id="btnRedevelop">다시 현상</button>
     <button class="vbtn amber" id="btnSave">기기에 저장</button>
-    <button class="vbtn" id="btnViewerClose">닫기</button>
+  </div>
+</div>
+
+<div class="onb" id="onb" hidden role="dialog" aria-modal="true" aria-label="그해여름 시작하기">
+  <button class="onb-skip" id="onbSkip">건너뛰기</button>
+  <div class="onb-track" id="onbTrack">
+    <section class="onb-card">
+      <span class="eyebrow">2001 — 2006</span>
+      <h1>그 시절 디카 10대,<br>모두 무료로.</h1>
+      <div class="marquee"><div id="onbMarquee"></div></div>
+      <p>교실 뒤 첫 디카부터 그해 여름 바다에 데려간 방수 디카까지. 카메라마다 색감, 화질, 노이즈가 달라요.</p>
+    </section>
+    <section class="onb-card">
+      <span class="eyebrow">DATE STAMP</span>
+      <h1>사진마다<br>그날의 날짜를.</h1>
+      <div class="stamp-demo"><span>'06 8 15</span></div>
+      <p>필름·디카·정보바·폴라 중에 고르세요. 기념일을 넣으면 D-day도 함께, '그해'를 고르면 카메라가 나온 해로 찍혀요.</p>
+    </section>
+    <section class="onb-card">
+      <span class="eyebrow">CAMERA</span>
+      <h1>이제 카메라를<br>켜 볼게요.</h1>
+      <p>찍은 사진은 이 기기에만 저장돼요. 카메라 권한을 허용하지 않아도 갖고 있는 사진을 그 시절 카메라로 현상할 수 있어요.</p>
+    </section>
+  </div>
+  <div class="onb-foot">
+    <div class="dots" id="onbDots"><i class="on"></i><i></i><i></i></div>
+    <button class="obtn" id="onbNext">다음</button>
   </div>
 </div>
 <div class="flash-screen" id="flashScreen"></div>
@@ -349,77 +477,162 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+const nextFrame = () => new Promise(r => requestAnimationFrame(() => r()));
 const pad2 = n => String(n).padStart(2, '0');
 const pad4 = n => String(n).padStart(4, '0');
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const UI_FONT = '"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif';
 const PEN_FONT = '"Nanum Pen Script","Gaegu",cursive';
 
+/* ───────── Android shell bridge (absent in browsers) ───────── */
+const NB = window.GeuhaeNative;
+const NATIVE = (() => { try { return !!(NB && NB.isNative && NB.isNative()); } catch { return false; } })();
+const native = (fn, ...args) => { if (!NATIVE || typeof NB[fn] !== 'function') return undefined; try { return NB[fn](...args); } catch (e) { console.warn('bridge', fn, e); return undefined; } };
+const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
 /* ───────── settings (per-viewer, browser storage) ───────── */
 const KEY = 'geuhae.settings.v1';
 const DEFAULTS = {
   cam: 'aqua', stamp: 'film', dateOrder: 'ymd', showTime: false, dateMode: 'now', customDate: '',
   color: 'orange', align: 'right', infoTheme: 'light', ddayOn: false, anniv: '', caption: '',
-  aspect: '4:3', quality: '5M', amount: 100, geo: false, sound: true, flash: false, timer: 0,
-  facing: 'environment', seq: 0
+  aspect: '4:3', quality: '5M', amount: 100, geo: false, sound: true, haptics: true, flash: false, timer: 0,
+  light: 'off', mirrorSelfie: true, autoSave: true, reviewAfter: false, volumeKey: true,
+  facing: 'environment', seq: 0, onboarded: false
 };
 const S = (() => { try { return Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch { return { ...DEFAULTS }; } })();
+if (S.dateMode !== 'now' && S.dateMode !== 'year' && S.dateMode !== 'custom') S.dateMode = 'now';
 const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} };
+/* settings the stamp/date drawing reads; swapped for a snapshot while a queued shot develops */
+let R = S;
 
-/* ───────── the ten cameras: body colour, story and shader parameters ─────────
+/* ───────── the ten cameras ─────────
    lowres = simulated sensor width in px (0 = full), pixelate = blocky vs. soft upscale,
    chromaRes = colour sampled on a coarse grid (old JPEG / video chroma bleed), smear = horizontal-only bleed,
-   poster = colour levels, scan = video scanlines, fringe = purple fringing, clip = blown highlights */
+   poster = colour levels, scan = video scanlines, fringe = purple fringing, clip = blown highlights,
+   ccd = vertical smear from bright lights (CCD sensors only; CMOS has none) */
 const BASE = { exposure: 0, contrast: 1, sat: 1, gain: [1, 1, 1], black: [0, 0, 0], shadowTint: [0, 0, 0], highTint: [0, 0, 0],
   grain: 0, chroma: 0, vignette: 0, bloom: 0, bloomR: .008, bloomTint: [1, 1, 1], ca: 0, sharpen: 0, mono: 0,
-  lowres: 0, pixelate: 0, chromaRes: 0, smear: false, poster: 0, scan: 0, fringe: 0, clip: 0, iso: 100, css: 'none' };
+  lowres: 0, pixelate: 0, chromaRes: 0, smear: false, poster: 0, scan: 0, fringe: 0, clip: 0, ccd: .35, iso: 100, css: 'none' };
 const CAMERAS = [
-  { id: 'digi130', code: 'DIGI130', model: 'DIGI 130', ko: '첫 디카', year: 2001, mp: '1.3', sensor: 'CMOS', lens: ['5.4mm', 'f/2.8'],
+  { id: 'digi130', code: 'DIGI130', model: 'DIGI 130', ko: '첫 디카', mood: '교실 뒤 첫 디카', year: 2001, mp: '1.3', sensor: 'CMOS', lens: ['5.4mm', 'f/2.8'],
     story: '반 친구가 처음 들고 온 신기한 카메라. 노이즈가 자글자글해도 다 같이 몰려들어 찍었다.',
-    body: { hi: '#e6e6e2', base: '#bdbdb8', lo: '#8f8f8a', ink: '#3b3b38', soft: '#62625e', accent: '#2b4f8a' },
-    p: { lowres: 800, pixelate: .5, chromaRes: 240, poster: 32, exposure: .1, contrast: 1.22, sat: 1.35, gain: [1.08, .94, 1.06], clip: .4, chroma: .16, grain: .06, sharpen: .45, vignette: .22, iso: 100, css: 'contrast(1.15) saturate(1.25) brightness(1.1)' } },
-  { id: 'q2100', code: 'Q-2100', model: 'Q-2100', ko: '아빠 디카', year: 2002, mp: '2.0', sensor: 'CCD', lens: ['5.8mm', 'f/2.8'],
+    body: { hi: '#e6e6e2', base: '#bdbdb8', lo: '#8f8f8a', ink: '#3b3b38', soft: '#5a5a56', accent: '#2b4f8a' },
+    p: { lowres: 800, pixelate: .5, chromaRes: 240, poster: 32, exposure: .1, contrast: 1.22, sat: 1.35, gain: [1.08, .94, 1.06], clip: .4, chroma: .16, grain: .06, sharpen: .45, vignette: .22, ccd: 0, iso: 100, css: 'contrast(1.15) saturate(1.25) brightness(1.1)' } },
+  { id: 'q2100', code: 'Q-2100', model: 'Q-2100', ko: '아빠 디카', mood: '거실 서랍 속 아빠 디카', year: 2002, mp: '2.0', sensor: 'CCD', lens: ['5.8mm', 'f/2.8'],
     story: '아빠가 거실 서랍에 넣어 두던 첫 디카. 2백만 화소, 나뭇가지 끝엔 보라색 번짐.',
-    body: { hi: '#9a9ea5', base: '#6b6f76', lo: '#46494e', ink: '#f2f2f0', soft: '#cfd2d6', accent: '#ffd27a' },
-    p: { lowres: 1300, chromaRes: 420, exposure: 0, contrast: 1.1, sat: .82, gain: [.98, 1.04, .9], black: [.04, .05, .02], fringe: .9, ca: .012, vignette: .35, grain: .05, chroma: .06, clip: .25, iso: 100, css: 'saturate(.9) contrast(1.06) sepia(.08)' } },
-  { id: 'dv03', code: 'DV-03', model: 'DV-03 HANDYCAM', ko: '캠코더 한 장', year: 2003, mp: '0.7', sensor: 'CCD', lens: ['4.2mm', 'f/1.8'],
+    body: { hi: '#9a9ea5', base: '#6b6f76', lo: '#46494e', ink: '#f2f2f0', soft: '#d7dade', accent: '#ffd27a' },
+    p: { lowres: 1300, chromaRes: 420, exposure: 0, contrast: 1.1, sat: .82, gain: [.98, 1.04, .9], black: [.04, .05, .02], fringe: .9, ca: .012, vignette: .35, grain: .05, chroma: .06, clip: .25, ccd: .45, iso: 100, css: 'saturate(.9) contrast(1.06) sepia(.08)' } },
+  { id: 'dv03', code: 'DV-03', model: 'DV-03 HANDYCAM', ko: '캠코더 한 장', mood: '운동회 날 캠코더', year: 2003, mp: '0.7', sensor: 'CCD', lens: ['4.2mm', 'f/1.8'],
     story: '운동회 날 아빠가 들고 온 캠코더. 테이프에서 뽑아낸 한 장에 번지는 빛과 가로줄.',
-    body: { hi: '#4f5a76', base: '#2f3850', lo: '#1a2033', ink: '#e9edf6', soft: '#b3bdd3', accent: '#8fd0ff' },
-    p: { lowres: 900, chromaRes: 180, smear: true, scan: .26, exposure: .12, contrast: .95, sat: 1.25, gain: [1.06, .97, .98], bloom: .45, bloomR: .012, bloomTint: [1, .8, .75], black: [.05, .04, .05], grain: .04, chroma: .05, vignette: .15, iso: 400, css: 'saturate(1.2) contrast(1.05) blur(.6px)' } },
-  { id: 'c7', code: 'C-7', model: 'C-7 EASY', ko: '골드 이지', year: 2004, mp: '4.0', sensor: 'CCD', lens: ['5.6mm', 'f/2.7'],
+    body: { hi: '#4f5a76', base: '#2f3850', lo: '#1a2033', ink: '#e9edf6', soft: '#bcc5d9', accent: '#8fd0ff' },
+    p: { lowres: 900, chromaRes: 180, smear: true, scan: .26, exposure: .12, contrast: .95, sat: 1.25, gain: [1.06, .97, .98], bloom: .45, bloomR: .012, bloomTint: [1, .8, .75], black: [.05, .04, .05], grain: .04, chroma: .05, vignette: .15, ccd: .7, iso: 400, css: 'saturate(1.2) contrast(1.05) blur(.6px)' } },
+  { id: 'c7', code: 'C-7', model: 'C-7 EASY', ko: '골드 이지', mood: '사진관의 노란 햇살', year: 2004, mp: '4.0', sensor: 'CCD', lens: ['5.6mm', 'f/2.7'],
     story: '가족사진은 다 이걸로 찍었다. 사진관에 인화 맡기면 노란 햇살 색으로 나오던 카메라.',
-    body: { hi: '#f4e8c8', base: '#d8bf8a', lo: '#a88e5b', ink: '#43341a', soft: '#6e5c3a', accent: '#7a4406' },
-    p: { exposure: .08, contrast: 1.1, sat: 1.25, gain: [1.07, 1.02, .86], highTint: [.035, .025, -.02], black: [.04, .03, 0], sharpen: .15, grain: .05, chroma: .03, bloom: .16, vignette: .22, iso: 200, css: 'sepia(.2) saturate(1.3) contrast(1.1)' } },
-  { id: 'vga', code: 'VGA', model: 'VGA FOLDER', ko: '폴더폰 카메라', year: 2004, mp: '0.3', sensor: 'CMOS', lens: ['3.2mm', 'f/2.8'],
+    body: { hi: '#f4e8c8', base: '#d8bf8a', lo: '#a88e5b', ink: '#43341a', soft: '#5e4d2d', accent: '#7a4406' },
+    p: { exposure: .08, contrast: 1.1, sat: 1.25, gain: [1.07, 1.02, .86], highTint: [.035, .025, -.02], black: [.04, .03, 0], sharpen: .15, grain: .05, chroma: .03, bloom: .16, vignette: .22, ccd: .35, iso: 200, css: 'sepia(.2) saturate(1.3) contrast(1.1)' } },
+  { id: 'vga', code: 'VGA', model: 'VGA FOLDER', ko: '폴더폰 카메라', mood: '미니홈피 폴더폰', year: 2004, mp: '0.3', sensor: 'CMOS', lens: ['3.2mm', 'f/2.8'],
     story: '폴더를 열고 찰칵. 30만 화소 폰카로 찍어 미니홈피에 올리던 그 사진.',
-    body: { hi: '#a63d4e', base: '#7d2534', lo: '#511521', ink: '#f8ecef', soft: '#dbb4bc', accent: '#ffd27a' },
-    p: { lowres: 640, pixelate: .6, chromaRes: 150, poster: 26, exposure: .1, contrast: 1.2, sat: .9, gain: [1, 1.06, .88], vignette: .45, chroma: .1, grain: .06, sharpen: .4, clip: .3, iso: 100, css: 'contrast(1.2) saturate(.9) sepia(.15) hue-rotate(10deg)' } },
-  { id: 'ixa55', code: 'IXA55', model: 'IXA 55', ko: '은색 똑딱이', year: 2005, mp: '5.0', sensor: 'CCD', lens: ['5.8mm', 'f/2.8'],
+    body: { hi: '#a63d4e', base: '#7d2534', lo: '#511521', ink: '#f8ecef', soft: '#e3c1c8', accent: '#ffd27a' },
+    p: { lowres: 640, pixelate: .6, chromaRes: 150, poster: 26, exposure: .1, contrast: 1.2, sat: .9, gain: [1, 1.06, .88], vignette: .45, chroma: .1, grain: .06, sharpen: .4, clip: .3, ccd: 0, iso: 100, css: 'contrast(1.2) saturate(.9) sepia(.15) hue-rotate(10deg)' } },
+  { id: 'ixa55', code: 'IXA55', model: 'IXA 55', ko: '은색 똑딱이', mood: '여행 가방 속 은빛', year: 2005, mp: '5.0', sensor: 'CCD', lens: ['5.8mm', 'f/2.8'],
     story: '여행 가방 앞주머니엔 늘 이 은색 디카. 사람 얼굴이 따뜻하고 예쁘게 나왔다.',
-    body: { hi: '#eeeae1', base: '#cfc9bd', lo: '#9e988b', ink: '#46433c', soft: '#6b665b', accent: '#2f4e7a' },
-    p: { exposure: .12, contrast: 1.08, sat: 1.12, gain: [1.06, 1, .92], highTint: [.02, .01, -.01], black: [.02, .015, .01], sharpen: .25, grain: .025, chroma: .02, bloom: .12, vignette: .12, clip: .2, iso: 100, css: 'saturate(1.12) contrast(1.08) sepia(.08) brightness(1.05)' } },
-  { id: 'exs5', code: 'EX-S5', model: 'EX-S5 CARD', ko: '카드 디카', year: 2005, mp: '5.0', sensor: 'CCD', lens: ['6.2mm', 'f/3.1'],
+    body: { hi: '#eeeae1', base: '#cfc9bd', lo: '#9e988b', ink: '#46433c', soft: '#5f5a50', accent: '#2f4e7a' },
+    p: { exposure: .12, contrast: 1.08, sat: 1.12, gain: [1.06, 1, .92], highTint: [.02, .01, -.01], black: [.02, .015, .01], sharpen: .25, grain: .025, chroma: .02, bloom: .12, vignette: .12, clip: .2, ccd: .35, iso: 100, css: 'saturate(1.12) contrast(1.08) sepia(.08) brightness(1.05)' } },
+  { id: 'exs5', code: 'EX-S5', model: 'EX-S5 CARD', ko: '카드 디카', mood: '지갑 속 파스텔', year: 2005, mp: '5.0', sensor: 'CCD', lens: ['6.2mm', 'f/3.1'],
     story: '지갑만큼 얇아서 매일 들고 다녔다. 하늘은 하얗게 날아가고 색은 파스텔처럼.',
-    body: { hi: '#f7f9fc', base: '#dde3ea', lo: '#aeb8c4', ink: '#363e4c', soft: '#5f6878', accent: '#3b5ba8' },
-    p: { exposure: .38, contrast: .86, sat: .82, gain: [1, .99, 1.05], black: [.08, .08, .11], highTint: [.02, .01, .03], clip: .5, sharpen: .2, grain: .03, chroma: .03, bloom: .25, vignette: .06, iso: 100, css: 'brightness(1.18) contrast(.86) saturate(.82)' } },
-  { id: 't77', code: 'T-77', model: 'T-77 SLIM', ko: '핑크 슬림', year: 2006, mp: '7.2', sensor: 'CCD', lens: ['6.3mm', 'f/3.5'],
+    body: { hi: '#f7f9fc', base: '#dde3ea', lo: '#aeb8c4', ink: '#363e4c', soft: '#525b6b', accent: '#3b5ba8' },
+    p: { exposure: .38, contrast: .86, sat: .82, gain: [1, .99, 1.05], black: [.08, .08, .11], highTint: [.02, .01, .03], clip: .5, sharpen: .2, grain: .03, chroma: .03, bloom: .25, vignette: .06, ccd: .35, iso: 100, css: 'brightness(1.18) contrast(.86) saturate(.82)' } },
+  { id: 't77', code: 'T-77', model: 'T-77 SLIM', ko: '핑크 슬림', mood: '언니 화장대의 핑크', year: 2006, mp: '7.2', sensor: 'CCD', lens: ['6.3mm', 'f/3.5'],
     story: '언니 화장대 위에 있던 핑크 슬림 디카. 플래시가 터지면 볼이 발그레하게 나왔다.',
-    body: { hi: '#f8dde5', base: '#e7b5c3', lo: '#c58c9d', ink: '#55283a', soft: '#7f4f60', accent: '#8a1f45' },
-    p: { exposure: .25, contrast: 1.1, sat: 1.08, gain: [1.03, .94, 1.07], highTint: [.03, -.01, .035], shadowTint: [0, -.01, .03], sharpen: .6, chroma: .05, grain: .03, bloom: .18, ca: .004, vignette: .1, clip: .35, iso: 100, css: 'brightness(1.12) contrast(1.1) saturate(1.12) hue-rotate(-8deg)' } },
-  { id: 'f31', code: 'F-31', model: 'F-31 NIGHT', ko: '밤의 디카', year: 2006, mp: '6.3', sensor: 'HR CCD', lens: ['8.0mm', 'f/2.8'],
+    body: { hi: '#f8dde5', base: '#e7b5c3', lo: '#c58c9d', ink: '#55283a', soft: '#73414f', accent: '#8a1f45' },
+    p: { exposure: .25, contrast: 1.1, sat: 1.08, gain: [1.03, .94, 1.07], highTint: [.03, -.01, .035], shadowTint: [0, -.01, .03], sharpen: .6, chroma: .05, grain: .03, bloom: .18, ca: .004, vignette: .1, clip: .35, ccd: .4, iso: 100, css: 'brightness(1.12) contrast(1.1) saturate(1.12) hue-rotate(-8deg)' } },
+  { id: 'f31', code: 'F-31', model: 'F-31 NIGHT', ko: '밤의 디카', mood: '밤 골목의 까만 디카', year: 2006, mp: '6.3', sensor: 'HR CCD', lens: ['8.0mm', 'f/2.8'],
     story: '플래시 없이도 밤 골목이 담기던 까만 디카. 초록빛이 유난히 깊었다.',
-    body: { hi: '#4b4c51', base: '#2b2c30', lo: '#17181b', ink: '#ecebe7', soft: '#b0aea8', accent: '#ffcf7a' },
-    p: { exposure: -.1, contrast: 1.2, sat: .95, gain: [.9, 1, 1], shadowTint: [-.035, .045, .04], highTint: [-.01, .01, 0], black: [0, .02, .025], sharpen: .35, grain: .04, chroma: .02, bloom: .3, bloomR: .01, vignette: .2, iso: 800, css: 'contrast(1.12) hue-rotate(8deg) saturate(1.05)' } },
-  { id: 'aqua', code: 'AQUA', model: 'AQUA-720', ko: '방수 디카', year: 2006, mp: '7.1', sensor: 'CCD', lens: ['6.7mm', 'f/3.5'],
+    body: { hi: '#4b4c51', base: '#2b2c30', lo: '#17181b', ink: '#ecebe7', soft: '#bdbbb5', accent: '#ffcf7a' },
+    p: { exposure: -.1, contrast: 1.2, sat: .95, gain: [.9, 1, 1], shadowTint: [-.035, .045, .04], highTint: [-.01, .01, 0], black: [0, .02, .025], sharpen: .35, grain: .04, chroma: .02, bloom: .3, bloomR: .01, vignette: .2, ccd: .55, iso: 800, css: 'contrast(1.12) hue-rotate(8deg) saturate(1.05)' } },
+  { id: 'aqua', code: 'AQUA', model: 'AQUA-720', ko: '방수 디카', mood: '그해 여름 바다', year: 2006, mp: '7.1', sensor: 'CCD', lens: ['6.7mm', 'f/3.5'],
     story: '그해 여름 계곡이랑 바다에 데려간 방수 디카. 물빛이 유난히 시원하게 찍혔다.',
-    body: { hi: '#e2f2f6', base: '#a3d2de', lo: '#6aa6b8', ink: '#163e4a', soft: '#3f6b78', accent: '#0b5870' },
-    p: { exposure: .14, contrast: 1.18, sat: 1.25, gain: [.88, 1, 1.12], highTint: [-.02, .03, .05], shadowTint: [-.02, .02, .04], sharpen: .55, grain: .03, chroma: .04, bloom: .14, ca: .004, vignette: .16, clip: .3, iso: 100, css: 'contrast(1.18) saturate(1.2) hue-rotate(-6deg) brightness(1.08)' } },
+    body: { hi: '#e2f2f6', base: '#a3d2de', lo: '#6aa6b8', ink: '#163e4a', soft: '#335e6a', accent: '#0b5870' },
+    p: { exposure: .14, contrast: 1.18, sat: 1.25, gain: [.88, 1, 1.12], highTint: [-.02, .03, .05], shadowTint: [-.02, .02, .04], sharpen: .55, grain: .03, chroma: .04, bloom: .14, ca: .004, vignette: .16, clip: .3, ccd: .35, iso: 100, css: 'contrast(1.18) saturate(1.2) hue-rotate(-6deg) brightness(1.08)' } },
 ];
 const camById = id => CAMERAS.find(c => c.id === id) || CAMERAS[CAMERAS.length - 1];
 if (!CAMERAS.some(c => c.id === S.cam)) S.cam = DEFAULTS.cam;
 const camParams = cam => Object.assign({}, BASE, cam.p);
 const currentCam = () => camById(S.cam);
-const filterParams = () => camParams(currentCam());
+
+/* front/side illustrations of the ten bodies, drawn in each body's colours */
+function camIcon(c, sfx = '') {
+  const b = c.body, id = 'ci-' + c.id + sfx;
+  const defs = `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${b.hi}"/><stop offset=".55" stop-color="${b.base}"/><stop offset="1" stop-color="${b.lo}"/></linearGradient>`
+    + `<radialGradient id="${id}-l" cx=".38" cy=".34" r=".8"><stop offset="0" stop-color="#53647d"/><stop offset=".5" stop-color="#161b24"/><stop offset="1" stop-color="#04060a"/></radialGradient></defs>`;
+  const lum = parseInt(b.base.slice(1, 3), 16) * .299 + parseInt(b.base.slice(3, 5), 16) * .587 + parseInt(b.base.slice(5, 7), 16) * .114;
+  const edge = lum < 90 ? 'stroke="rgba(255,255,255,.28)" stroke-width="1"' : 'stroke="rgba(0,0,0,.3)" stroke-width="1"';
+  const body = (x, y, w, h, r) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="url(#${id})" ${edge}/>`;
+  const lens = (cx, cy, r, ring = '#2b2e34') =>
+    `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${ring}" stroke="rgba(255,255,255,.28)" stroke-width="1"/>`
+    + `<circle cx="${cx}" cy="${cy}" r="${(r * .72).toFixed(2)}" fill="url(#${id}-l)"/>`
+    + `<circle cx="${cx}" cy="${cy}" r="${(r * .44).toFixed(2)}" fill="none" stroke="rgba(255,255,255,.13)" stroke-width=".8"/>`
+    + `<ellipse cx="${(cx - r * .26).toFixed(2)}" cy="${(cy - r * .3).toFixed(2)}" rx="${(r * .2).toFixed(2)}" ry="${(r * .12).toFixed(2)}" fill="#fff" opacity=".6"/>`;
+  const flash = (x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="1.5" fill="#f4f1e7" stroke="rgba(0,0,0,.32)" stroke-width=".8"/>`
+    + `<path d="M${x + 2} ${y + h / 2}h${w - 4}" stroke="rgba(0,0,0,.14)" stroke-width=".8"/>`;
+  const dot = (cx, cy, r, f) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${f}"/>`;
+  const label = (x, y, s, f, size = 5) => `<text x="${x}" y="${y}" font-family="Silkscreen,ui-monospace,monospace" font-size="${size}" fill="${f}">${s}</text>`;
+  const shine = (x, y, w) => `<path d="M${x} ${y}h${w}" stroke="rgba(255,255,255,.55)" stroke-width="1" stroke-linecap="round"/>`;
+  let g = '';
+  switch (c.id) {
+    case 'digi130':
+      g = body(8, 14, 80, 42, 8) + shine(16, 16, 60) + `<rect x="14" y="19" width="11" height="8" rx="1.5" fill="#1b1e24"/>`
+        + lens(38, 37, 15) + flash(62, 19, 17, 8) + `<rect x="62" y="45" width="20" height="3" rx="1.5" fill="#c8323a"/>` + label(63, 41, 'DIGI', b.ink, 4.6);
+      break;
+    case 'q2100':
+      g = body(10, 16, 80, 40, 6) + `<rect x="6" y="13" width="24" height="46" rx="10" fill="url(#${id})" ${edge}/>` + shine(36, 18, 48)
+        + lens(58, 37, 16, '#1f2226') + flash(72, 20, 13, 7) + dot(34, 22, 1.7, '#e0453a') + label(12, 52, 'Q', b.ink, 6);
+      break;
+    case 'dv03':
+      g = `<rect x="8" y="9" width="28" height="12" rx="4" fill="#161b28" stroke="rgba(255,255,255,.15)" stroke-width=".8"/>`
+        + body(10, 18, 62, 34, 9) + shine(16, 20, 50)
+        + `<rect x="64" y="23" width="24" height="26" rx="5" fill="#1b2130" stroke="rgba(255,255,255,.18)" stroke-width=".8"/>`
+        + `<ellipse cx="87" cy="36" rx="4.2" ry="11" fill="url(#${id}-l)" stroke="rgba(255,255,255,.3)" stroke-width=".8"/>`
+        + dot(20, 30, 2.4, '#e8412f') + label(16, 46, 'DV-03', b.ink, 5.5) + `<path d="M22 52v5h30v-5" fill="none" stroke="rgba(0,0,0,.35)" stroke-width="2"/>`;
+      break;
+    case 'c7':
+      g = body(10, 14, 78, 42, 9) + `<rect x="6" y="12" width="22" height="46" rx="11" fill="url(#${id})" ${edge}/>` + shine(32, 16, 50)
+        + lens(60, 37, 15) + flash(34, 19, 15, 7) + dot(36, 48, 3.2, '#d8262c') + label(72, 53, 'C7', b.ink, 5);
+      break;
+    case 'vga':
+      g = `<rect x="57" y="1" width="6" height="9" rx="2.5" fill="url(#${id})" ${edge}/>` + body(30, 5, 36, 55, 10) + shine(36, 8, 24)
+        + `<rect x="30" y="41" width="36" height="5" fill="rgba(0,0,0,.22)"/>`
+        + `<rect x="38" y="19" width="20" height="15" rx="2.5" fill="#0c1814" stroke="rgba(255,255,255,.22)" stroke-width=".8"/>`
+        + label(40, 29, '12:34', '#7fe3a6', 4.2) + lens(48, 12, 4.4)
+        + dot(42, 52, 1, 'rgba(0,0,0,.35)') + dot(46, 52, 1, 'rgba(0,0,0,.35)') + dot(50, 52, 1, 'rgba(0,0,0,.35)') + dot(54, 52, 1, 'rgba(0,0,0,.35)');
+      break;
+    case 'ixa55':
+      g = body(10, 14, 76, 42, 11) + `<rect x="14.5" y="18.5" width="67" height="33" rx="8" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1"/>`
+        + lens(62, 34, 13) + flash(20, 21, 15, 7) + label(20, 47, 'IXA 55', b.ink, 4.8);
+      break;
+    case 'exs5':
+      g = body(6, 19, 84, 29, 5) + shine(12, 21, 70) + lens(80, 27, 5.4) + flash(62, 23, 11, 5) + label(11, 43, 'EX-S5', b.accent, 5.5)
+        + `<path d="M6 44h84" stroke="rgba(0,0,0,.12)" stroke-width="1"/>`;
+      break;
+    case 't77':
+      g = body(8, 12, 80, 44, 6) + `<rect x="54" y="12" width="34" height="44" rx="6" fill="rgba(255,255,255,.28)"/>`
+        + `<path d="M58 16v36M61 16v36M64 16v36" stroke="rgba(0,0,0,.08)" stroke-width="1"/>`
+        + lens(76, 23, 7.5) + flash(57, 20, 9, 6) + label(13, 51, 'T-77', b.ink, 5.5) + shine(12, 14, 36);
+      break;
+    case 'f31':
+      g = body(8, 14, 80, 42, 6) + `<path d="M12 16h72" stroke="rgba(255,255,255,.22)" stroke-width="1" stroke-linecap="round"/>`
+        + lens(48, 36, 16, '#3a3b41') + `<circle cx="48" cy="36" r="17.5" fill="none" stroke="rgba(255,255,255,.18)" stroke-width=".8"/>`
+        + flash(68, 19, 14, 7) + label(12, 24, 'F31', b.soft, 5);
+      break;
+    case 'aqua':
+      g = body(8, 12, 80, 44, 13) + `<rect x="55" y="16" width="27" height="27" rx="7" fill="rgba(255,255,255,.4)" stroke="rgba(0,0,0,.25)" stroke-width=".8"/>`
+        + lens(68.5, 29.5, 9.5) + flash(17, 18, 15, 7)
+        + dot(13, 17, 1.4, 'rgba(0,0,0,.35)') + dot(83, 17, 1.4, 'rgba(0,0,0,.35)') + dot(13, 51, 1.4, 'rgba(0,0,0,.35)') + dot(83, 51, 1.4, 'rgba(0,0,0,.35)')
+        + `<path d="M16 47q4-4 8 0t8 0t8 0" fill="none" stroke="${b.accent}" stroke-width="1.6" stroke-linecap="round"/>` + label(17, 38, 'AQUA', b.ink, 5.5);
+      break;
+  }
+  return `<svg viewBox="0 0 96 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">${defs}<ellipse cx="48" cy="60.5" rx="38" ry="2.6" fill="rgba(0,0,0,.22)"/>${g}</svg>`;
+}
 
 /* ───────── WebGL lens: one fragment shader does the whole look ───────── */
 const VS = 'attribute vec2 p;varying vec2 v;void main(){v=p*.5+.5;gl_Position=vec4(p,0.,1.);}';
@@ -438,6 +651,10 @@ uniform float u_exposure,u_contrast,u_sat,u_grain,u_chroma,u_vignette,u_bloom,u_
 uniform vec3 u_gain,u_black,u_shadowTint,u_highTint,u_bloomTint;
 uniform float u_lowres,u_pixelate,u_poster,u_scan,u_fringe,u_clip;
 uniform vec2 u_chromaGrid;
+uniform float u_lightAmt,u_smearAmt,u_flareAmt,u_dustAmt,u_leakAmt;
+uniform vec2 u_seed,u_leakPos;
+uniform vec3 u_leakColor;
+uniform vec4 u_light[3];
 const vec3 W=vec3(.299,.587,.114);
 vec3 tap(vec2 uv){
   uv=clamp(uv,0.,1.);
@@ -454,7 +671,8 @@ vec3 src(vec2 uv){
 float hash(vec2 p){vec3 p3=fract(vec3(p.xyx)*.1031);p3+=dot(p3,p3.yzx+33.33);return fract((p3.x+p3.y)*p3.z);}
 void main(){
   vec2 uv=v; vec2 d=uv-.5;
-  float r=length(d*vec2(u_aspect,1.))/length(vec2(u_aspect,1.)*.5);
+  vec2 asp=vec2(u_aspect,1.);
+  float r=length(d*asp)/length(asp*.5);
   vec3 o=tap(uv);
   vec2 px=1./grid();
   vec3 c=src(uv);
@@ -487,17 +705,51 @@ void main(){
   c*=u_gain;
   if(u_clip>0.) c=mix(c,vec3(1.),smoothstep(.7,.97,dot(c,W))*u_clip);
   c=(c-.5)*u_contrast+.5;
-  float l=dot(c,vec3(.299,.587,.114));
+  float l=dot(c,W);
   c=mix(vec3(l),c,u_sat);
   if(u_mono>.5) c=vec3(l);
   float lc=clamp(l,0.,1.);
   c+=u_shadowTint*(1.-lc)*(1.-lc)+u_highTint*lc*lc;
   c=u_black+c*(1.-u_black);
   c*=1.-u_vignette*smoothstep(.3,1.15,r);
+  if(u_lightAmt>0.){
+    for(int i=0;i<3;i++){
+      vec4 Lt=u_light[i];
+      if(Lt.z>0.){
+        float dx=abs(uv.x-Lt.x)*u_aspect;
+        float cw=.003+.004*Lt.z;
+        c+=vec3(1.,.94,1.)*exp(-dx*dx/(cw*cw))*(1.-.15*abs(uv.y-Lt.y))*Lt.z*u_smearAmt;
+        float hd=length((uv-Lt.xy)*asp);
+        c+=vec3(1.,.9,.78)*exp(-hd*hd/.004)*.3*Lt.z;
+        vec2 dir=vec2(.5)-Lt.xy;
+        for(int k=1;k<4;k++){
+          float fk=float(k);
+          vec2 gpos=Lt.xy+dir*fk*.78;
+          float gd=length((uv-gpos)*asp);
+          float rad=.02+.022*fk;
+          vec3 tint=k==1?vec3(.35,1.,.6):(k==2?vec3(1.,.45,.85):vec3(1.,.75,.35));
+          c+=tint*(1.-smoothstep(rad*.5,rad,gd))*.11*Lt.z*u_flareAmt;
+        }
+      }
+    }
+    if(u_dustAmt>0.){
+      for(int j=0;j<9;j++){
+        float fj=float(j);
+        vec2 dp=vec2(hash(u_seed+vec2(fj*7.13,1.7)),hash(u_seed+vec2(3.1,fj*5.37)));
+        float dr=.004+.01*hash(u_seed+vec2(fj*2.9,fj*1.3));
+        float dd=length((uv-dp)*asp);
+        c*=1.-u_dustAmt*.32*(1.-smoothstep(dr*.25,dr,dd));
+      }
+    }
+    if(u_leakAmt>0.){
+      float ld=length((uv-u_leakPos)*asp);
+      c+=u_leakColor*u_leakAmt*(1.-smoothstep(0.,.95,ld))*.6;
+    }
+  }
   if(u_scan>0.) c*=1.-u_scan*(.5+.5*cos(v.y*240.*6.2832));
   float cell=max(1.,floor(u_res.x/720.+.5));
   vec2 gp=floor(gl_FragCoord.xy/cell);
-  float lum=clamp(dot(c,vec3(.299,.587,.114)),0.,1.);
+  float lum=clamp(dot(c,W),0.,1.);
   c+=(hash(gp+fract(u_time)*317.)-.5)*u_grain*(1.15-abs(lum-.5)*1.1);
   if(u_chroma>0.){
     vec3 cn=vec3(hash(gp+19.7+u_time*3.1),hash(gp+47.3+u_time*1.7),hash(gp+83.1+u_time*2.3))-.5;
@@ -513,7 +765,29 @@ function coverCrop(sw, sh, w, h) {
   if (sa > a) { const cw = sh * a; return { x: (sw - cw) / 2, y: 0, w: cw, h: sh }; }
   const ch = sw / a; return { x: 0, y: (sh - ch) / 2, w: sw, h: ch };
 }
+function zoomCrop(cr, z) {
+  if (!z || z <= 1) return cr;
+  const w = cr.w / z, h = cr.h / z;
+  return { x: cr.x + (cr.w - w) / 2, y: cr.y + (cr.h - h) / 2, w, h };
+}
 const srcSize = s => ({ w: s.videoWidth || s.naturalWidth || s.width, h: s.videoHeight || s.naturalHeight || s.height });
+
+/* light effects: CCD smear + lens flare from detected lights, dust, and (random mode) a warm leak */
+const NO_LIGHT = { amt: 0, smear: 0, flare: 0, dust: 0, leak: 0, seed: [0, 0], leakPos: [0, 0], leakColor: [0, 0, 0], lights: [] };
+function lightUniforms(cam, mode, seed, lights) {
+  if (mode !== 'soft' && mode !== 'rand') return NO_LIGHT;
+  let s = seed;
+  const rnd = () => { s = (s * 16807 + 11) % 2147483647; return s / 2147483647; };
+  const rand = mode === 'rand';
+  const corners = [[0, 1], [1, 1], [0, 0], [1, 0], [.5, 1.05], [-.05, .5], [1.05, .5]];
+  const warm = [[1, .55, .25], [1, .4, .55], [1, .75, .35]];
+  const leakPos = corners[Math.floor(rnd() * corners.length)];
+  const leakColor = warm[Math.floor(rnd() * warm.length)];
+  return {
+    amt: 1, smear: camParams(cam).ccd, flare: rand ? .85 : .45, dust: rand ? .6 : .25,
+    leak: rand ? .3 + .4 * rnd() : 0, seed: [seed % 97 + .5, (seed * 7) % 89 + .5], leakPos, leakColor, lights
+  };
+}
 
 class Lens {
   constructor(canvas) {
@@ -536,7 +810,7 @@ class Lens {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     this.U = {};
     const n = gl.getProgramParameter(pr, gl.ACTIVE_UNIFORMS);
-    for (let i = 0; i < n; i++) { const u = gl.getActiveUniform(pr, i); this.U[u.name] = gl.getUniformLocation(pr, u.name); }
+    for (let i = 0; i < n; i++) { const u = gl.getActiveUniform(pr, i); this.U[u.name.replace(/\[0\]$/, '')] = gl.getUniformLocation(pr, u.name); }
     this.max = Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE), gl.getParameter(gl.MAX_VIEWPORT_DIMS)[0]);
   }
   upload(src) {
@@ -550,17 +824,27 @@ class Lens {
     if (c.width !== w) c.width = w;
     if (c.height !== h) c.height = h;
     gl.viewport(0, 0, w, h);
-    const cr = coverCrop(this.sw, this.sh, w, h);
+    const cr = zoomCrop(coverCrop(this.sw, this.sh, w, h), o.zoom);
     const f1 = (k, val) => { if (U[k]) gl.uniform1f(U[k], val); };
+    const f2 = (k, val) => { if (U[k]) gl.uniform2fv(U[k], val); };
     const f3 = (k, val) => { if (U[k]) gl.uniform3fv(U[k], val); };
     if (U.u_crop) gl.uniform4f(U.u_crop, cr.x / this.sw, cr.y / this.sh, cr.w / this.sw, cr.h / this.sh);
     if (U.u_res) gl.uniform2f(U.u_res, w, h);
     f1('u_mirror', o.mirror ? 1 : 0); f1('u_time', o.time || 0); f1('u_amount', o.amount ?? 1);
     f1('u_flash', o.flash || 0); f1('u_aspect', w / h);
-    ['exposure', 'contrast', 'sat', 'grain', 'chroma', 'vignette', 'bloom', 'bloomR', 'ca', 'sharpen', 'mono',
+    ['contrast', 'sat', 'grain', 'chroma', 'vignette', 'bloom', 'bloomR', 'ca', 'sharpen', 'mono',
       'lowres', 'pixelate', 'poster', 'scan', 'fringe', 'clip'].forEach(k => f1('u_' + k, P[k]));
+    f1('u_exposure', P.exposure + (o.ev || 0));
     if (U.u_chromaGrid) gl.uniform2f(U.u_chromaGrid, P.chromaRes, P.chromaRes ? (P.smear ? h : P.chromaRes * h / w) : 0);
     ['gain', 'black', 'shadowTint', 'highTint', 'bloomTint'].forEach(k => f3('u_' + k, P[k]));
+    const L = o.light || NO_LIGHT;
+    f1('u_lightAmt', L.amt); f1('u_smearAmt', L.smear); f1('u_flareAmt', L.flare); f1('u_dustAmt', L.dust); f1('u_leakAmt', L.leak);
+    f2('u_seed', L.seed); f2('u_leakPos', L.leakPos); f3('u_leakColor', L.leakColor);
+    if (U.u_light) {
+      const a = new Float32Array(12);
+      L.lights.slice(0, 3).forEach((p, i) => { a[i * 4] = p.x; a[i * 4 + 1] = p.y; a[i * 4 + 2] = p.i; a[i * 4 + 3] = 1; });
+      gl.uniform4fv(U.u_light, a);
+    }
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 }
@@ -572,7 +856,7 @@ class Lens2D {
     const c = this.canvas, x = this.ctx;
     if (c.width !== w) c.width = w;
     if (c.height !== h) c.height = h;
-    const cr = coverCrop(this.sw, this.sh, w, h);
+    const cr = zoomCrop(coverCrop(this.sw, this.sh, w, h), o.zoom);
     x.save();
     if (o.mirror) { x.translate(w, 0); x.scale(-1, 1); }
     x.filter = (o.amount ?? 1) > 0.05 ? P.css : 'none';
@@ -593,13 +877,19 @@ const scaleLayout = (L, k) => { const o = { tpl: L.tpl }; for (const key in L) i
 
 /* ───────── dates, D-day, exposure ───────── */
 const WEEK = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-function stampDate(base) {
-  if (S.dateMode === 'custom' && S.customDate) { const d = new Date(S.customDate); if (!isNaN(d)) return d; }
-  return base || new Date();
+function stampDate(cfg, cam, base) {
+  if (cfg.dateMode === 'custom' && cfg.customDate) { const d = new Date(cfg.customDate); if (!isNaN(d)) return d; }
+  const d = new Date(base || Date.now());
+  if (cfg.dateMode === 'year') {
+    const y = new Date(d); y.setFullYear(cam.year);
+    if (y.getMonth() !== d.getMonth()) y.setDate(0); // 29 Feb in a non-leap year → 28 Feb
+    return y;
+  }
+  return d;
 }
-function ddayText(date) {
-  if (!S.ddayOn || !S.anniv) return '';
-  const a = new Date(S.anniv + 'T00:00:00');
+function ddayText(cfg, date) {
+  if (!cfg.ddayOn || !cfg.anniv) return '';
+  const a = new Date(cfg.anniv + 'T00:00:00');
   if (isNaN(a)) return '';
   const d0 = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const diff = Math.round((d0 - a) / 864e5);
@@ -610,18 +900,18 @@ function estimateExposure(lum, cam, front) {
   const [focal, fnum] = front ? ['3.9mm', 'f/2.4'] : cam.lens;
   return { focal, fnum, shutter: SHUTTERS[clamp(Math.round(lum * 9) - 1, 0, 7)] + 's', iso: 'ISO' + camParams(cam).iso };
 }
-function buildMeta(base, exif, lum, live) {
-  const date = stampDate(base);
-  const cam = currentCam(), est = estimateExposure(lum, cam, live && S.facing === 'user');
+function buildMeta(cfg, cam, base, exif, lum, front) {
+  const date = stampDate(cfg, cam, base);
+  const est = estimateExposure(lum, cam, front);
   const ex = exif || {};
   return {
-    cam, date, dday: ddayText(date), caption: (S.caption || '').trim(), loc: S.geo ? geoText : '',
+    cam, date, dday: ddayText(cfg, date), caption: (cfg.caption || '').trim(), loc: cfg.geo ? geoText : '',
     exif: { focal: ex.focal || est.focal, fnum: ex.fnum || est.fnum, shutter: ex.shutter || est.shutter, iso: ex.iso || est.iso }
   };
 }
 function orderDate(d, sep, fullYear) {
   const y = fullYear ? String(d.getFullYear()) : pad2(d.getFullYear() % 100), m = pad2(d.getMonth() + 1), dd = pad2(d.getDate());
-  return S.dateOrder === 'mdy' ? [m, dd, y].join(sep) : S.dateOrder === 'dmy' ? [dd, m, y].join(sep) : [y, m, dd].join(sep);
+  return R.dateOrder === 'mdy' ? [m, dd, y].join(sep) : R.dateOrder === 'dmy' ? [dd, m, y].join(sep) : [y, m, dd].join(sep);
 }
 const timeText = d => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 
@@ -664,14 +954,14 @@ function segPath(text, h) {
 }
 function filmText(d) {
   const y = pad2(d.getFullYear() % 100), m = String(d.getMonth() + 1), dd = String(d.getDate());
-  let s = S.dateOrder === 'mdy' ? `${m} ${dd} '${y}` : S.dateOrder === 'dmy' ? `${dd} ${m} '${y}` : `'${y} ${m} ${dd}`;
-  if (S.showTime) s += '  ' + timeText(d);
+  let s = R.dateOrder === 'mdy' ? `${m} ${dd} '${y}` : R.dateOrder === 'dmy' ? `${dd} ${m} '${y}` : `'${y} ${m} ${dd}`;
+  if (R.showTime) s += '  ' + timeText(d);
   return s;
 }
 function drawFilmStamp(ctx, L, meta, col) {
   const m = Math.min(L.iw, L.ih), h = m * .05, margin = m * .065;
   const { path, width } = segPath(filmText(meta.date), h);
-  const x = S.align === 'left' ? L.ix + margin : L.ix + L.iw - margin - width - h * .12;
+  const x = R.align === 'left' ? L.ix + margin : L.ix + L.iw - margin - width - h * .12;
   const y = L.iy + L.ih - m * .058;
   ctx.save();
   ctx.translate(x, y);
@@ -754,18 +1044,18 @@ function drawDotText(ctx, text, x, yb, p, col, align) {
 function drawDigiStamp(ctx, L, meta, col) {
   const m = Math.min(L.iw, L.ih), p = m * .0062, margin = m * .055;
   let date = orderDate(meta.date, '/', true);
-  if (S.showTime) date += ' ' + timeText(meta.date);
+  if (R.showTime) date += ' ' + timeText(meta.date);
   const lines = [];
   if (meta.caption) lines.push(meta.caption);
   if (meta.dday) lines.push('♥ ' + meta.dday);
   lines.push(date);
-  const x = S.align === 'left' ? L.ix + margin : L.ix + L.iw - margin;
+  const x = R.align === 'left' ? L.ix + margin : L.ix + L.iw - margin;
   let y = L.iy + L.ih - margin;
-  for (let i = lines.length - 1; i >= 0; i--) y -= drawDotText(ctx, lines[i], x, y, p, col, S.align) + p * 3.2;
+  for (let i = lines.length - 1; i >= 0; i--) y -= drawDotText(ctx, lines[i], x, y, p, col, R.align) + p * 3.2;
 }
 
 /* bottom info bar */
-const infoColors = () => S.infoTheme === 'dark' ? { bg: '#111214', fg: '#f1efe9', sub: '#8e8b84' } : { bg: '#f7f5f0', fg: '#1c1b19', sub: '#8b877e' };
+const infoColors = () => R.infoTheme === 'dark' ? { bg: '#111214', fg: '#f1efe9', sub: '#8e8b84' } : { bg: '#f7f5f0', fg: '#1c1b19', sub: '#8b877e' };
 function fitText(ctx, text, max, size, weight, family) {
   let s = size;
   ctx.font = `${weight} ${s}px ${family}`;
@@ -779,7 +1069,7 @@ function drawInfoText(ctx, L, meta, col) {
   const c = infoColors(), b = L.bar, W = L.W, y0 = L.iy + L.ih;
   const padX = Math.max(b * .3, W * .045), fBig = b * .2, fSmall = b * .135;
   const y1 = y0 + b * .47, y2 = y0 + b * .75;
-  const right1 = orderDate(meta.date, '.', true) + (S.showTime ? '  ' + timeText(meta.date) : '');
+  const right1 = orderDate(meta.date, '.', true) + (R.showTime ? '  ' + timeText(meta.date) : '');
   const right2 = [WEEK[meta.date.getDay()], meta.dday && '♥ ' + meta.dday, meta.loc].filter(Boolean).join('  ·  ');
   ctx.save();
   ctx.textBaseline = 'alphabetic';
@@ -805,7 +1095,7 @@ function drawPolaroidText(ctx, L, meta) {
   ctx.save();
   ctx.strokeStyle = 'rgba(0,0,0,.14)'; ctx.lineWidth = Math.max(1, m * .0016); ctx.strokeRect(L.ix, L.iy, L.iw, L.ih);
   ctx.fillStyle = '#2d3047'; ctx.textBaseline = 'alphabetic';
-  const date = orderDate(meta.date, '.', false) + (S.showTime ? '  ' + timeText(meta.date) : '');
+  const date = orderDate(meta.date, '.', false) + (R.showTime ? '  ' + timeText(meta.date) : '');
   const big = meta.caption || date;
   const small = meta.caption ? [meta.dday, date].filter(Boolean).join('   ') : meta.dday;
   ctx.save();
@@ -827,7 +1117,7 @@ function drawBackground(ctx, L) {
   }
 }
 function drawForeground(ctx, L, meta) {
-  const col = STAMP[S.color] || STAMP.orange;
+  const col = STAMP[R.color] || STAMP.orange;
   if (L.tpl === 'film') drawFilmStamp(ctx, L, meta, col);
   else if (L.tpl === 'digi') drawDigiStamp(ctx, L, meta, col);
   else if (L.tpl === 'info') drawInfoText(ctx, L, meta, col);
@@ -836,16 +1126,12 @@ function drawForeground(ctx, L, meta) {
 async function ensureFonts(text) {
   if (!document.fonts || !document.fonts.load) return;
   const t = (text || '') + '0123456789.:+-DIGITAL';
-  try {
-    await Promise.race([Promise.all([
-      document.fonts.load(`400 40px "Nanum Pen Script"`, t),
-      document.fonts.load(`600 40px "IBM Plex Sans KR"`, t),
-      document.fonts.load(`400 40px "IBM Plex Sans KR"`, t)
-    ]), sleep(1500)]);
-  } catch {}
+  const specs = ['400 40px "Nanum Pen Script"', '600 40px "IBM Plex Sans KR"', '400 40px "IBM Plex Sans KR"'];
+  try { if (specs.every(s => document.fonts.check(s, t))) return; } catch {}
+  try { await Promise.race([Promise.all(specs.map(s => document.fonts.load(s, t))), sleep(1500)]); } catch {}
 }
 
-/* ───────── sample scene for when no live camera is available ───────── */
+/* ───────── sample scene: the picker's preview when no live camera is available ───────── */
 function makeSample() {
   const w = 960, h = 1280, c = document.createElement('canvas'); c.width = w; c.height = h;
   const g = c.getContext('2d'); let seed = 7;
@@ -893,21 +1179,21 @@ function makeSample() {
 
 /* ───────── DOM refs & state ───────── */
 const video = $('#video'), lcd = $('#lcd'), frame = $('#frame'), glc = $('#gl'), deco = $('#deco'), osd = $('#osd');
-let lens = null, capLens = null, stream = null, track = null, live = false, sampleSrc = null;
-let needsStatic = true, busy = false, cdCancel = null, geoText = '', liveLum = .55, lastSig = '';
-let lastVW = 0, lastVH = 0;
+let lens = null, capLens = null, stream = null, track = null, live = false, sampleSrc = null, cameraWanted = false;
+let needsStatic = true, shooting = false, cdCancel = null, geoText = '', liveLum = .55, lastSig = '';
+let lastVW = 0, lastVH = 0, zoom = 1, ev = 0, lightSeed = Math.floor(Math.random() * 100000), previewLights = [], devRot = 0;
 const view = { L: null, glW: 2, glH: 2 };
 let photos = [];
+const jobs = [];
+let busyOther = 0;
 
-/* ───────── toast / led ───────── */
+/* ───────── feedback: toast, LED, sound, haptics ───────── */
 let toastT = 0;
 function toast(msg, ms = 2600) {
   const t = $('#toast'); t.textContent = msg; t.classList.add('show');
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), ms);
 }
-const setLed = s => { $('#led').className = 'led' + (s && s !== 'ready' ? ' ' + s : ''); };
-
-/* ───────── sound: synthesized digicam beeps & shutter ───────── */
+function setLed() { $('#led').className = 'led' + (cdCancel ? ' timer' : jobs.length + busyOther ? ' busy' : ''); }
 let actx = null;
 function audio() {
   if (!actx) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) try { actx = new AC(); } catch {} }
@@ -930,11 +1216,18 @@ function click(when, dur, vol, freq) {
   src.connect(bp).connect(g).connect(a.destination); src.start(t);
 }
 function shutterSound() { if (!S.sound || !audio()) return; click(0, .03, .9, 3400); click(.07, .055, .7, 1700); }
+function haptic(kind) {
+  if (!S.haptics) return;
+  if (NATIVE) { native('haptic', kind); return; }
+  if (navigator.vibrate) try { navigator.vibrate(kind === 'tick' ? 5 : kind === 'confirm' ? 14 : kind === 'reject' ? [10, 40, 10] : 8); } catch {}
+}
 
 /* ───────── camera ───────── */
 function stopCamera() {
   if (stream) stream.getTracks().forEach(t => t.stop());
   stream = null; track = null; live = false;
+  native('keepScreenOn', false);
+  syncVolumeKey();
 }
 async function startCamera() {
   stopCamera();
@@ -948,21 +1241,48 @@ async function startCamera() {
   for (let i = 0; i < 60 && !video.videoWidth; i++) await sleep(50);
   if (!video.videoWidth) throw new Error('camera produced no frames');
   live = true;
-  track.addEventListener('ended', () => { live = false; needsStatic = true; showFallback(true); });
-  showFallback(false);
+  track.addEventListener('ended', () => { if (stream === s) { live = false; needsStatic = true; showPerm('error'); } });
+  hidePerm();
+  native('keepScreenOn', true);
+  syncVolumeKey();
 }
-function showFallback(on, err) {
-  $('#osdSample').hidden = !on;
-  $('#btnRetry').hidden = !on || window.self !== window.top;
-  $('#shutter').setAttribute('aria-label', on ? '기본 카메라로 촬영' : '촬영');
-  if (on && err) {
-    const msg = err.name === 'InsecureContext' ? 'HTTPS 주소에서 열어야 실시간 카메라가 켜져요. 셔터를 누르면 기본 카메라로 찍어요.'
-      : err.name === 'NotAllowedError' ? '카메라 미리보기가 막혀 있어요. 셔터를 누르면 기본 카메라 앱으로 찍고 바로 날짜를 찍어 드려요.'
-      : '실시간 미리보기를 쓸 수 없어요. 셔터를 누르면 기본 카메라로 찍어요.';
-    toast(msg, 6000);
+async function startCameraSafe() {
+  cameraWanted = true;
+  try { await startCamera(); }
+  catch (e) {
+    console.info('live camera unavailable:', e && e.name);
+    if (NATIVE) showPerm('native-' + (native('cameraPermission') || 'denied'));
+    else showPerm(e && e.name === 'InsecureContext' ? 'web-insecure' : e && e.name === 'NotAllowedError' ? 'web-denied' : 'web-unsupported');
   }
-  needsStatic = true;
   relayout();
+}
+const PERM = {
+  'native-prompt': ['CAMERA', '그해여름이 카메라를 쓰려면 권한이 필요해요.', '카메라 허용', 'askCamera'],
+  'native-denied': ['CAMERA', '카메라 권한을 허용하면 바로 찍을 수 있어요. 허용하지 않아도 갖고 있는 사진을 현상할 수 있어요.', '카메라 허용', 'askCamera'],
+  'native-blocked': ['CAMERA OFF', '카메라 권한이 꺼져 있어요. 설정 › 권한 › 카메라에서 허용해 주세요.', '설정 열기', 'settings'],
+  'native-granted': ['NO CAMERA', '카메라를 켜지 못했어요. 다른 앱이 카메라를 쓰고 있는지 확인해 주세요.', '다시 연결', 'retry'],
+  'web-denied': ['NO PREVIEW', '이 화면에선 실시간 미리보기가 막혀 있어요. 기본 카메라로 찍으면 바로 이 카메라로 현상해 드려요.', '기본 카메라로 찍기', 'capture'],
+  'web-insecure': ['NO PREVIEW', 'HTTPS 주소에서 열어야 실시간 카메라가 켜져요. 기본 카메라로 찍어도 바로 현상해 드려요.', '기본 카메라로 찍기', 'capture'],
+  'web-unsupported': ['NO PREVIEW', '이 브라우저에선 실시간 카메라를 쓸 수 없어요. 기본 카메라로 찍어도 바로 현상해 드려요.', '기본 카메라로 찍기', 'capture'],
+  'error': ['NO CAMERA', '카메라 연결이 끊겼어요.', '다시 연결', 'retry'],
+};
+let permKind = '';
+function showPerm(kind) {
+  const p = PERM[kind] || PERM.error;
+  permKind = kind;
+  $('#permTitle').textContent = p[0]; $('#permText').textContent = p[1];
+  $('#permPrimary').textContent = p[2]; $('#permPrimary').dataset.act = p[3];
+  $('#permSecondary').textContent = '앨범 사진 현상하기';
+  $('#perm').hidden = false; frame.classList.add('dim');
+  $('#shutter').setAttribute('aria-label', p[3] === 'capture' ? '기본 카메라로 촬영' : '촬영');
+  needsStatic = true;
+}
+function hidePerm() { permKind = ''; $('#perm').hidden = true; frame.classList.remove('dim'); $('#shutter').setAttribute('aria-label', '촬영'); }
+function permAction(act) {
+  if (act === 'askCamera') native('requestCamera');
+  else if (act === 'settings') native('openAppSettings');
+  else if (act === 'capture') $('#fileCapture').click();
+  else startCameraSafe();
 }
 async function setTorch(on) {
   try {
@@ -983,7 +1303,7 @@ function captureDims() {
 }
 function relayout() {
   const r = lcd.getBoundingClientRect();
-  const aw = r.width - 20, ah = r.height - 20;
+  const aw = r.width - 8, ah = r.height - 8;
   if (aw <= 0 || ah <= 0) return;
   const d = captureDims(), L = layoutFor(S.stamp, d.w, d.h);
   const k = Math.min(aw / L.W, ah / L.H), bw = Math.round(L.W * k), bh = Math.round(L.H * k);
@@ -999,10 +1319,7 @@ function relayout() {
   drawOverlay();
   needsStatic = true;
 }
-function previewMeta() {
-  const m = buildMeta(new Date(), null, liveLum, live);
-  return m;
-}
+const previewMeta = () => buildMeta(S, currentCam(), new Date(), null, liveLum, live && S.facing === 'user');
 function drawOverlay() {
   if (!view.L) return;
   const ctx = deco.getContext('2d');
@@ -1014,15 +1331,18 @@ function drawOverlay() {
   lastSig = sigOf(meta);
 }
 const sigOf = m => [m.cam.id, m.date.getFullYear(), m.date.getMonth(), m.date.getDate(), m.date.getHours(), m.date.getMinutes(), m.dday, m.exif.shutter, m.exif.iso, m.loc].join('|');
+const overlayOpen = () => !$('#viewer').hidden || !$('#onb').hidden || $$('.sheet').some(s => !s.hidden);
 function renderPreview(t) {
-  lens.render(view.glW, view.glH, filterParams(), {
-    mirror: live && S.facing === 'user', time: (t * .001) % 100, amount: S.amount / 100, flash: S.flash ? .5 : 0
+  const cam = currentCam();
+  lens.render(view.glW, view.glH, camParams(cam), {
+    mirror: live && S.facing === 'user', time: (t * .001) % 100, amount: S.amount / 100, flash: S.flash ? .5 : 0,
+    zoom, ev, light: lightUniforms(cam, S.light, lightSeed, previewLights)
   });
 }
 let sampleUploaded = false;
 function loop(t) {
   requestAnimationFrame(loop);
-  if (!lens) return;
+  if (!lens || document.hidden || overlayOpen()) return;
   if (live && video.readyState >= 2 && video.videoWidth) {
     if (video.videoWidth !== lastVW || video.videoHeight !== lastVH) { lastVW = video.videoWidth; lastVH = video.videoHeight; relayout(); }
     lens.upload(video); sampleUploaded = false;
@@ -1042,70 +1362,195 @@ function measureLum(src) {
     return s / (d.length / 4) / 255;
   } catch { return .5; }
 }
-
-/* ───────── capture & compose ───────── */
-function compose(src, dims, meta, opts) {
-  if (!capLens) capLens = makeLens(document.createElement('canvas'));
-  let { w, h } = dims;
-  const k = Math.min(1, capLens.max / Math.max(w, h)); w = Math.round(w * k); h = Math.round(h * k);
-  const L = layoutFor(S.stamp, w, h);
-  const out = document.createElement('canvas'); out.width = L.W; out.height = L.H;
-  const ctx = out.getContext('2d');
-  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, L.W, L.H);
-  drawBackground(ctx, L);
-  capLens.upload(src);
-  capLens.render(L.iw, L.ih, filterParams(), { mirror: !!opts.mirror, time: Math.random() * 100, amount: S.amount / 100, flash: opts.flash || 0 });
-  ctx.drawImage(capLens.canvas, L.ix, L.iy, L.iw, L.ih);
-  drawForeground(ctx, L, meta);
-  return out;
-}
-function countdown(n) {
-  return new Promise(res => {
-    const el = $('#countdown'); let left = n;
-    el.hidden = false; el.textContent = left; setLed('timer'); beep(1800, .06);
-    const iv = setInterval(() => {
-      left--;
-      if (left <= 0) { clearInterval(iv); el.hidden = true; cdCancel = null; res(true); }
-      else { el.textContent = left; beep(left <= 2 ? 2500 : 1800, .06); }
-    }, 1000);
-    cdCancel = () => { clearInterval(iv); el.hidden = true; cdCancel = null; res(false); };
-  });
-}
-function afLock() { const af = $('#af'); af.classList.add('lock'); setTimeout(() => af.classList.remove('lock'), 500); }
-function blink() { const b = $('#blink'); b.classList.remove('on'); void b.offsetWidth; b.classList.add('on'); }
-async function shoot() {
-  audio();
-  if (cdCancel) { cdCancel(); toast('타이머를 취소했어요'); return; }
-  if (busy) return;
-  if (!live) { $('#fileCapture').click(); return; }
-  busy = true;
-  let torchOn = false;
+/* bright points for smear/flare, in output uv (y up); geo = source crop for a raw frame */
+const ldC = document.createElement('canvas'), ldX = ldC.getContext('2d', { willReadFrequently: true });
+function detectLights(src, outW, outH, geo, mirror) {
   try {
-    if (S.timer) { const go = await countdown(S.timer); if (!go) return; }
-    setLed('busy'); afLock(); beep(2900, .04); beep(2900, .04, .085);
-    await sleep(170);
-    if (S.flash) {
-      if (S.facing === 'user') { $('#flashScreen').classList.add('on'); await sleep(280); }
-      else { torchOn = await setTorch(true); if (torchOn) await sleep(450); }
+    const portrait = outH > outW, gw = portrait ? 27 : 36, gh = portrait ? 36 : 27;
+    ldC.width = gw; ldC.height = gh;
+    ldX.save();
+    if (mirror) { ldX.translate(gw, 0); ldX.scale(-1, 1); }
+    if (geo) ldX.drawImage(src, geo.x, geo.y, geo.w, geo.h, 0, 0, gw, gh); else ldX.drawImage(src, 0, 0, gw, gh);
+    ldX.restore();
+    const d = ldX.getImageData(0, 0, gw, gh).data, lum = new Float32Array(gw * gh);
+    for (let i = 0; i < lum.length; i++) lum[i] = (d[i * 4] * .299 + d[i * 4 + 1] * .587 + d[i * 4 + 2] * .114) / 255;
+    const out = [];
+    for (let n = 0; n < 3; n++) {
+      let bi = -1, bv = .86;
+      for (let i = 0; i < lum.length; i++) if (lum[i] > bv) { bv = lum[i]; bi = i; }
+      if (bi < 0) break;
+      const cx = bi % gw, cy = Math.floor(bi / gw);
+      out.push({ x: (cx + .5) / gw, y: 1 - (cy + .5) / gh, i: .25 + .75 * clamp((bv - .86) / .14, 0, 1) });
+      for (let y = Math.max(0, cy - 4); y <= Math.min(gh - 1, cy + 4); y++) for (let x = Math.max(0, cx - 4); x <= Math.min(gw - 1, cx + 4); x++) lum[y * gw + x] = 0;
     }
-    const meta = buildMeta(new Date(), null, measureLum(video), true);
-    await ensureFonts(meta.caption);
-    const out = compose(video, captureDims(), meta, { mirror: S.facing === 'user', flash: S.flash ? .55 : 0 });
-    shutterSound(); blink();
-    if (navigator.vibrate) try { navigator.vibrate(12); } catch {}
-    $('#flashScreen').classList.remove('on');
-    if (torchOn) { setTorch(false); torchOn = false; }
-    const rec = await storePhoto(out, meta);
-    openViewer(rec, true);
-  } catch (e) {
-    console.error(e); toast('촬영하지 못했어요. 한 번 더 눌러 주세요');
-  } finally {
-    busy = false; setLed('ready'); $('#flashScreen').classList.remove('on');
-    if (torchOn) setTorch(false);
+    return out;
+  } catch { return []; }
+}
+function updatePreviewLights() {
+  if (S.light === 'off') { previewLights = []; return; }
+  if (live && video.videoWidth) {
+    const geo = zoomCrop(coverCrop(video.videoWidth, video.videoHeight, view.glW, view.glH), zoom);
+    previewLights = detectLights(video, view.glW, view.glH, geo, S.facing === 'user');
+  } else if (sampleSrc) {
+    previewLights = detectLights(sampleSrc, view.glW, view.glH, zoomCrop(coverCrop(sampleSrc.width, sampleSrc.height, view.glW, view.glH), zoom), false);
+    needsStatic = true;
   }
 }
 
-/* ───────── imports & native-camera captures ───────── */
+/* ───────── capture pipeline: grab now, develop in the background ───────── */
+function orientationRot() { return live ? devRot : 0; }
+async function grabFrame() {
+  if (window.createImageBitmap) { try { return await createImageBitmap(video); } catch {} }
+  const c = document.createElement('canvas'); c.width = video.videoWidth; c.height = video.videoHeight;
+  c.getContext('2d').drawImage(video, 0, 0); return c;
+}
+/* crop, digital zoom, selfie mirror and sideways-hold rotation, applied to the raw frame */
+function geometry(src, dims, mirror, z, rot) {
+  const s = srcSize(src), { w, h } = dims;
+  const cr = zoomCrop(coverCrop(s.w, s.h, w, h), z);
+  const c = document.createElement('canvas');
+  if (rot) { c.width = h; c.height = w; } else { c.width = w; c.height = h; }
+  const g = c.getContext('2d');
+  g.imageSmoothingQuality = 'high';
+  if (rot === 90) { g.translate(c.width, 0); g.rotate(Math.PI / 2); }
+  else if (rot === -90) { g.translate(0, c.height); g.rotate(-Math.PI / 2); }
+  if (mirror) { g.translate(w, 0); g.scale(-1, 1); }
+  g.drawImage(src, cr.x, cr.y, cr.w, cr.h, 0, 0, w, h);
+  return c;
+}
+function compose(src, meta, o) {
+  if (!capLens) capLens = makeLens(document.createElement('canvas'));
+  const prev = R; R = o.cfg;
+  try {
+    let w = src.width, h = src.height;
+    const k = Math.min(1, capLens.max / Math.max(w, h)); w = Math.round(w * k); h = Math.round(h * k);
+    const L = layoutFor(R.stamp, w, h);
+    const out = document.createElement('canvas'); out.width = L.W; out.height = L.H;
+    const ctx = out.getContext('2d');
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, L.W, L.H);
+    drawBackground(ctx, L);
+    capLens.upload(src);
+    capLens.render(L.iw, L.ih, camParams(o.cam), { mirror: false, zoom: 1, time: Math.random() * 100, amount: R.amount / 100, flash: o.flash || 0, ev: o.ev || 0, light: o.light });
+    ctx.drawImage(capLens.canvas, L.ix, L.iy, L.iw, L.ih);
+    drawForeground(ctx, L, meta);
+    return out;
+  } finally { R = prev; }
+}
+function scaledCopy(canvas, maxSide) {
+  const k = Math.min(1, maxSide / Math.max(canvas.width, canvas.height));
+  if (k === 1) return canvas;
+  const c = document.createElement('canvas'); c.width = Math.round(canvas.width * k); c.height = Math.round(canvas.height * k);
+  c.getContext('2d').drawImage(canvas, 0, 0, c.width, c.height); return c;
+}
+/* develop a geometry-corrected source into a stamped photo and store it */
+async function develop(origin, j) {
+  const lum = measureLum(origin);
+  const meta = buildMeta(j.cfg, j.cam, j.date, j.exif, lum, j.front);
+  const lights = j.lightMode !== 'off' ? detectLights(origin, origin.width, origin.height, null, false) : [];
+  await ensureFonts(meta.caption);
+  const out = compose(origin, meta, { cfg: j.cfg, cam: j.cam, flash: j.flash, ev: j.ev, light: lightUniforms(j.cam, j.lightMode, j.seed, lights) });
+  if (j.fly) flyToThumb(out);
+  await nextFrame();
+  const orig = await toBlob(scaledCopy(origin, 2048), 'image/jpeg', .9);
+  const rec = await storePhoto(out, meta, { orig, ometa: { taken: j.date.getTime(), exif: j.exif || null, front: !!j.front, ev: j.ev || 0, flash: j.flash || 0, light: j.lightMode, seed: j.seed } }, j.date);
+  if (NATIVE && j.cfg.autoSave) await saveToGallery(rec, true);
+  return rec;
+}
+function enqueue(job) { jobs.push(job); syncWorking(); if (jobs.length === 1) runJobs(); }
+async function runJobs() {
+  while (jobs.length) {
+    const j = jobs[0];
+    try {
+      await nextFrame();
+      const origin = geometry(j.bmp, j.dims, j.mirror, j.zoom, j.rot);
+      if (j.bmp.close) j.bmp.close();
+      const rec = await develop(origin, j);
+      if (j.cfg.reviewAfter) openViewer(rec);
+    } catch (e) { console.error(e); toast('사진을 현상하지 못했어요. 다시 찍어 주세요'); haptic('reject'); }
+    jobs.shift(); syncWorking();
+  }
+}
+function syncWorking() { $('#btnGallery').classList.toggle('working', jobs.length + busyOther > 0); setLed(); }
+function countdown(n) {
+  return new Promise(res => {
+    const el = $('#countdown'); let left = n;
+    el.hidden = false; el.textContent = left; beep(1800, .06); haptic('tick');
+    $('#shutter').classList.add('cancel'); $('#shutter').setAttribute('aria-label', '타이머 취소');
+    const done = ok => { clearInterval(iv); el.hidden = true; cdCancel = null; $('#shutter').classList.remove('cancel'); $('#shutter').setAttribute('aria-label', '촬영'); setLed(); res(ok); };
+    const iv = setInterval(() => {
+      left--;
+      if (left <= 0) done(true);
+      else { el.textContent = left; beep(left <= 2 ? 2500 : 1800, .06); haptic('tick'); }
+    }, 1000);
+    cdCancel = () => done(false);
+    setLed();
+  });
+}
+let afT = 0;
+function afLock(on) { const af = $('#af'); clearTimeout(afT); af.classList.toggle('lock', on); if (on) afT = setTimeout(() => af.classList.remove('lock'), 900); }
+function blink() { const b = $('#blink'); b.classList.remove('on'); void b.offsetWidth; b.classList.add('on'); }
+let halfPressed = false;
+function halfPress() {
+  if (!live || shooting || cdCancel) return;
+  halfPressed = true; afLock(true); beep(2900, .04); beep(2900, .04, .085); haptic('tick');
+  $('#shutter').classList.add('half');
+}
+function releaseHalf() { halfPressed = false; $('#shutter').classList.remove('half'); }
+async function shoot() {
+  audio();
+  if (cdCancel) { cdCancel(); toast('타이머를 취소했어요'); return; }
+  if (!live) { releaseHalf(); if (permKind && PERM[permKind][3] === 'capture') $('#fileCapture').click(); else if (permKind) permAction(PERM[permKind][3]); return; }
+  if (shooting) return;
+  if (jobs.length >= 3) { toast('앞 사진을 현상하는 중이에요. 잠깐만요'); haptic('reject'); releaseHalf(); return; }
+  shooting = true;
+  let torchOn = false;
+  try {
+    if (S.timer) { releaseHalf(); if (!await countdown(S.timer)) return; }
+    if (!halfPressed) { afLock(true); beep(2900, .04); beep(2900, .04, .085); await sleep(150); }
+    if (S.flash) {
+      if (S.facing === 'user') { $('#flashScreen').classList.add('on'); await sleep(260); }
+      else { torchOn = await setTorch(true); if (torchOn) await sleep(420); }
+    }
+    const bmp = await grabFrame();
+    shutterSound(); blink(); haptic('confirm');
+    $('#flashScreen').classList.remove('on');
+    if (torchOn) { setTorch(false); torchOn = false; }
+    const front = S.facing === 'user';
+    enqueue({
+      bmp, dims: captureDims(), mirror: front && S.mirrorSelfie, zoom, rot: orientationRot(), date: new Date(), exif: null,
+      cfg: { ...S }, cam: currentCam(), front, flash: S.flash ? .55 : 0, ev, lightMode: S.light, seed: lightSeed, fly: true
+    });
+    if (S.light === 'rand') lightSeed = Math.floor(Math.random() * 100000);
+  } catch (e) {
+    console.error(e); toast('찍지 못했어요. 한 번 더 눌러 주세요'); haptic('reject');
+  } finally {
+    shooting = false; releaseHalf(); $('#flashScreen').classList.remove('on');
+    if (torchOn) setTorch(false);
+  }
+}
+function flyToThumb(out) {
+  try {
+    const small = scaledCopy(out, 360);
+    const url = small.toDataURL('image/jpeg', .8);
+    const thumb = $('#btnGallery');
+    thumb.style.backgroundImage = `url("${url}")`; thumb.classList.add('has');
+    const fr = frame.getBoundingClientRect(), tr = thumb.getBoundingClientRect();
+    if (!fr.width || matchMedia('(prefers-reduced-motion: reduce)').matches || !Element.prototype.animate) return;
+    const img = new Image(); img.src = url; img.className = 'fly';
+    const k = Math.min(fr.width / small.width, fr.height / small.height);
+    const w = small.width * k, h = small.height * k, x = fr.left + (fr.width - w) / 2, y = fr.top + (fr.height - h) / 2;
+    Object.assign(img.style, { left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px' });
+    document.body.appendChild(img);
+    const s = tr.width / w;
+    const anim = img.animate([{ transform: 'none', opacity: 1 }, { transform: `translate(${tr.left - x}px,${tr.top - y}px) rotate(-6deg) scale(${s})`, opacity: .9 }],
+      { duration: 440, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    const done = () => { img.remove(); thumb.classList.remove('bump'); void thumb.offsetWidth; thumb.classList.add('bump'); };
+    anim.onfinish = done; anim.oncancel = () => img.remove();
+    setTimeout(() => { if (img.isConnected) img.remove(); }, 1500);
+  } catch {}
+}
+
+/* ───────── imports and re-developing ───────── */
 function readExif(buf) {
   try {
     const v = new DataView(buf);
@@ -1140,32 +1585,42 @@ function parseTiff(v, t) {
   if (m) out.date = new Date(+m[1], m[2] - 1, +m[3], +m[4], +m[5], +m[6]);
   return out;
 }
-async function importOne(file, source) {
-  const buf = await file.arrayBuffer();
-  const ex = readExif(buf) || {};
-  const url = URL.createObjectURL(file);
+async function decodeToCanvas(blob, maxSide) {
+  const url = URL.createObjectURL(blob);
   try {
     const img = new Image(); img.src = url; await img.decode();
-    const k = Math.min(1, qualityLong() / Math.max(img.naturalWidth, img.naturalHeight));
-    const w = Math.round(img.naturalWidth * k), h = Math.round(img.naturalHeight * k);
-    const c = document.createElement('canvas'); c.width = w; c.height = h;
-    c.getContext('2d').drawImage(img, 0, 0, w, h);
-    const base = ex.date || (source === 'camera' ? new Date() : new Date(file.lastModified || Date.now()));
-    const meta = buildMeta(base, ex, measureLum(c), false);
-    await ensureFonts(meta.caption);
-    return storePhoto(compose(c, { w, h }, meta, {}), meta);
+    const k = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    return c;
   } finally { URL.revokeObjectURL(url); }
+}
+async function importOne(file, source) {
+  const ex = readExif(await file.arrayBuffer()) || {};
+  const c = await decodeToCanvas(file, qualityLong());
+  const base = ex.date || (source === 'camera' ? new Date() : new Date(file.lastModified || Date.now()));
+  return develop(c, { cfg: { ...S }, cam: currentCam(), date: base, exif: ex, front: false, flash: 0, ev: 0, lightMode: S.light, seed: lightSeed, fly: false });
 }
 async function importFiles(files, source) {
   files = [...files]; if (!files.length) return;
-  setLed('busy'); let last = null, ok = 0;
-  if (files.length > 1) toast(`${files.length}장에 날짜를 찍는 중…`, 8000);
+  busyOther++; syncWorking();
+  let last = null, ok = 0;
+  if (files.length > 1) toast(`${files.length}장을 현상하는 중…`, 8000);
   for (const f of files) {
     try { last = await importOne(f, source); ok++; } catch (e) { console.warn(e); toast('이 사진은 열 수 없어요. JPG나 PNG로 다시 골라 주세요'); }
   }
-  setLed('ready');
-  if (ok === 1) { shutterSound(); openViewer(last, true); }
-  else if (ok > 1) { toast(`${ok}장에 날짜를 찍었어요`); openGallery(); }
+  busyOther--; syncWorking();
+  if (ok === 1) { shutterSound(); haptic('confirm'); openViewer(last); }
+  else if (ok > 1) { toast(`${ok}장을 현상했어요`); openGallery(); }
+}
+async function redevelop(rec, camId) {
+  const src = await decodeToCanvas(rec.orig, qualityLong());
+  const om = rec.ometa || {};
+  const nrec = await develop(src, {
+    cfg: { ...S }, cam: camById(camId), date: new Date(om.taken || rec.taken), exif: om.exif, front: om.front,
+    flash: om.flash || 0, ev: om.ev || 0, lightMode: om.light || 'off', seed: om.seed || lightSeed, fly: false
+  });
+  return nrec;
 }
 
 /* ───────── storage: IndexedDB album ───────── */
@@ -1191,12 +1646,13 @@ const DB = {
   put(r) { return this.run('readwrite', s => s.put(r)); },
   del(id) { return this.run('readwrite', s => s.delete(id)); }
 };
+const storable = rec => { const o = {}; for (const k in rec) if (k[0] !== '_') o[k] = rec[k]; return o; };
 function exifApp1(date, cam) {
   const dt = `${date.getFullYear()}:${pad2(date.getMonth() + 1)}:${pad2(date.getDate())} ${pad2(date.getHours())}:${pad2(date.getMinutes())}:${pad2(date.getSeconds())}`;
   const asc = s => { const a = new TextEncoder().encode(s), b = new Uint8Array(a.length + 1); b.set(a); return { type: 2, count: b.length, data: b }; };
   const ifd0 = [
     { tag: 0x010F, ...asc('THAT SUMMER') }, { tag: 0x0110, ...asc(cam.model) }, { tag: 0x0112, type: 3, count: 1, value: 1 },
-    { tag: 0x0131, ...asc('THAT SUMMER web') }, { tag: 0x0132, ...asc(dt) }, { tag: 0x8769, type: 4, count: 1, value: 0 }
+    { tag: 0x0131, ...asc('THAT SUMMER ' + (NATIVE ? 'android' : 'web')) }, { tag: 0x0132, ...asc(dt) }, { tag: 0x8769, type: 4, count: 1, value: 0 }
   ];
   const exif = [{ tag: 0x9003, ...asc(dt) }, { tag: 0x9004, ...asc(dt) }];
   const ext = e => e.data && e.data.length > 4 ? e.data.length + (e.data.length & 1) : 0;
@@ -1230,20 +1686,17 @@ async function withExif(blob, date, cam) {
   } catch { return blob; }
 }
 const toBlob = (c, type, q) => new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('encode failed')), type, q));
-async function storePhoto(canvas, meta) {
-  const blob = await withExif(await toBlob(canvas, 'image/jpeg', .92), meta.date, meta.cam);
-  const tk = 360 / Math.max(canvas.width, canvas.height), tc = document.createElement('canvas');
-  tc.width = Math.round(canvas.width * tk); tc.height = Math.round(canvas.height * tk);
-  tc.getContext('2d').drawImage(canvas, 0, 0, tc.width, tc.height);
-  const thumb = await toBlob(tc, 'image/jpeg', .8);
+async function storePhoto(canvas, meta, extra, real) {
+  const blob = await withExif(await toBlob(canvas, 'image/jpeg', .92), real, meta.cam);
+  const thumb = await toBlob(scaledCopy(canvas, 360), 'image/jpeg', .8);
   S.seq = (S.seq || 0) + 1; persist();
-  const d = meta.date, no = S.seq;
-  const rec = {
-    id: `${Date.now()}-${no}`, no, created: Date.now(), taken: d.getTime(), blob, thumb, cam: meta.cam.id,
+  const d = real, no = S.seq;
+  const rec = Object.assign({
+    id: `${Date.now()}-${no}`, no, created: Date.now(), taken: d.getTime(), blob, thumb, cam: meta.cam.id, saved: '',
     name: `SUMMER_${meta.cam.code.replace(/[^A-Za-z0-9]/g, '')}_${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}_${pad4(no)}.jpg`
-  };
+  }, extra || {});
   photos.unshift(rec);
-  try { await DB.put(rec); } catch { toast('이 브라우저에선 앨범이 남지 않아요. 마음에 들면 바로 저장해 주세요', 4000); }
+  try { await DB.put(storable(rec)); } catch { toast('이 브라우저에선 앨범이 남지 않아요. 마음에 들면 바로 저장해 주세요', 4000); }
   syncAlbum();
   return rec;
 }
@@ -1256,15 +1709,32 @@ async function loadPhotos() {
 function syncAlbum() {
   const btn = $('#btnGallery');
   if (photos[0]) { btn.style.backgroundImage = `url("${urlOf(photos[0], 'thumb')}")`; btn.classList.add('has'); }
-  else { btn.style.backgroundImage = ''; btn.classList.remove('has'); }
+  else if (!jobs.length && !busyOther) { btn.style.backgroundImage = ''; btn.classList.remove('has'); }
   $('#osdCount').textContent = `[${pad4(Math.max(0, 9999 - photos.length))}]`;
   if (!$('#gallerySheet').hidden) renderGrid();
 }
 
-/* ───────── saving to the device ───────── */
+/* ───────── saving to the phone ───────── */
+const blobToBase64 = blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = () => rej(r.error); r.readAsDataURL(blob); });
+async function saveToGallery(rec, quiet) {
+  if (!NATIVE) return false;
+  if (rec.saved) return true;
+  const uri = native('saveImage', await blobToBase64(rec.blob), rec.name, rec.taken) || '';
+  if (uri === 'need-permission') { if (!quiet) toast('사진 저장 권한을 허용한 뒤 다시 눌러 주세요'); return false; }
+  if (!uri) { toast('갤러리에 저장하지 못했어요'); return false; }
+  rec.saved = uri;
+  try { await DB.put(storable(rec)); } catch {}
+  if (viewing === rec) syncViewer();
+  return true;
+}
 const downloadsCap = (window.claude && typeof window.claude.use === 'function')
   ? Promise.resolve().then(() => window.claude.use('downloads')).catch(() => null) : Promise.resolve(null);
 async function saveToDevice(rec) {
+  if (NATIVE) {
+    if (!(await saveToGallery(rec))) return;
+    native('shareImage', rec.saved);
+    return;
+  }
   const dl = await Promise.race([downloadsCap, sleep(1200).then(() => null)]);
   if (dl) {
     try { await dl.save({ filename: rec.name, data: rec.blob }); toast('저장했어요'); return; }
@@ -1284,31 +1754,64 @@ async function saveToDevice(rec) {
   toast('사진 파일을 내려받았어요');
 }
 
-/* ───────── viewer / gallery / menu ───────── */
+/* ───────── viewer ───────── */
 let viewing = null, armT = 0, lastFocus = null;
-function openViewer(rec, review) {
-  viewing = rec;
+function openViewer(rec) {
+  viewing = rec; disarmDelete();
+  if ($('#viewer').hidden) lastFocus = document.activeElement;
+  $('#viewer').hidden = false; syncViewer(); syncVolumeKey();
+  $('#btnSave').focus();
+}
+function syncViewer() {
+  const rec = viewing; if (!rec) return;
   $('#viewerImg').src = urlOf(rec, 'blob');
-  $('#viewerNo').textContent = `100-${pad4(rec.no)}` + (rec.cam ? '  ' + camById(rec.cam).code : '');
+  $('#viewerNo').textContent = `100-${pad4(rec.no)}` + (rec.cam ? '  ' + camById(rec.cam).model : '');
   const d = new Date(rec.taken);
   $('#viewerDate').textContent = `${d.getFullYear()}.${pad2(d.getMonth() + 1)}.${pad2(d.getDate())} ${timeText(d)}`;
-  $('#btnViewerClose').textContent = review ? '계속 찍기' : '닫기';
-  disarmDelete();
-  lastFocus = document.activeElement;
-  $('#viewer').hidden = false; $('#btnSave').focus();
+  $('#btnSave').textContent = NATIVE ? '보내기' : '기기에 저장';
+  $('#btnRedevelop').disabled = !rec.orig;
+  $('#viewerNote').textContent = NATIVE ? (rec.saved ? '✓ 휴대폰 갤러리에 저장됨' : '아직 앱 안에만 있어요') : '앱 안 앨범에 보관 중';
+  $('#btnSaveNow').hidden = !NATIVE || !!rec.saved;
 }
-function closeViewer() { $('#viewer').hidden = true; viewing = null; disarmDelete(); if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+function closeViewer() { $('#viewer').hidden = true; viewing = null; disarmDelete(); syncVolumeKey(); if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+function stepViewer(dir) {
+  const i = photos.indexOf(viewing), n = photos[i + dir];
+  if (!n) { haptic('reject'); return; }
+  viewing = n; disarmDelete(); syncViewer(); haptic('tick');
+}
 function disarmDelete() { clearTimeout(armT); const b = $('#btnDelete'); b.classList.remove('armed'); b.textContent = '삭제'; }
 async function deleteViewing() {
   const b = $('#btnDelete');
-  if (!b.classList.contains('armed')) { b.classList.add('armed'); b.textContent = '한 번 더 눌러 삭제'; armT = setTimeout(disarmDelete, 3000); return; }
+  if (!b.classList.contains('armed')) { b.classList.add('armed'); b.textContent = '한 번 더 눌러 삭제'; armT = setTimeout(disarmDelete, 3000); haptic('tick'); return; }
   const rec = viewing; if (!rec) return;
+  const i = photos.indexOf(rec);
   photos = photos.filter(p => p !== rec);
   try { await DB.del(rec.id); } catch {}
-  closeViewer(); releaseUrls(rec); syncAlbum(); toast('사진을 지웠어요');
+  releaseUrls(rec); syncAlbum();
+  toast(rec.saved ? '앱에서 지웠어요. 휴대폰 갤러리의 사진은 그대로 있어요' : '사진을 지웠어요');
+  const next = photos[i] || photos[i - 1];
+  if (next) { viewing = next; disarmDelete(); syncViewer(); } else closeViewer();
 }
-function openSheet(id) { lastFocus = document.activeElement; const s = $(id); s.hidden = false; const f = $('[data-close]', s); if (f) f.focus(); }
-function closeSheet(s) { s.hidden = true; if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+async function onRedevelop() {
+  const rec = viewing; if (!rec || !rec.orig) return;
+  const camId = await pickCamera(rec);
+  if (!camId) return;
+  busyOther++; syncWorking();
+  try {
+    const n = await redevelop(rec, camId);
+    openViewer(n); toast(`${camById(camId).model}로 다시 현상했어요`); haptic('confirm');
+  } catch (e) { console.error(e); toast('다시 현상하지 못했어요'); }
+  busyOther--; syncWorking();
+}
+
+/* ───────── sheets, popover, album ───────── */
+function openSheet(id) { lastFocus = document.activeElement; const s = $(id); s.hidden = false; const f = $('[data-close]', s); if (f) f.focus(); syncVolumeKey(); }
+function closeSheet(s) {
+  s.hidden = true; $('.panel', s).style.transform = '';
+  if (s.id === 'camSheet') { s.classList.remove('over'); if (pickResolve) { pickResolve(null); pickResolve = null; } }
+  syncVolumeKey(); needsStatic = true; relayout();
+  if (lastFocus && lastFocus.focus) lastFocus.focus();
+}
 function openGallery() { renderGrid(); openSheet('#gallerySheet'); }
 function renderGrid() {
   const grid = $('#grid'); grid.textContent = '';
@@ -1318,93 +1821,235 @@ function renderGrid() {
     const b = document.createElement('button');
     b.style.backgroundImage = `url("${urlOf(rec, 'thumb')}")`;
     b.setAttribute('aria-label', `사진 100-${pad4(rec.no)} 보기`);
-    const tag = document.createElement('span'); tag.textContent = pad4(rec.no); b.appendChild(tag);
-    b.addEventListener('click', () => openViewer(rec, false));
+    const tag = document.createElement('span'); tag.textContent = (rec.cam ? camById(rec.cam).code + ' ' : '') + pad4(rec.no); b.appendChild(tag);
+    b.addEventListener('click', () => openViewer(rec));
     grid.appendChild(b);
   }
 }
+function openDatePop() {
+  const pop = $('#datePop'), key = $('#btnDate').getBoundingClientRect();
+  $('#datePanel').style.top = (key.bottom + 8) + 'px';
+  pop.hidden = false; $('#btnDate').setAttribute('aria-expanded', 'true');
+  const cur = $(`#datePanel .styles [data-v="${S.stamp}"]`); if (cur) cur.focus();
+  syncVolumeKey();
+}
+function closeDatePop() { $('#datePop').hidden = true; $('#btnDate').setAttribute('aria-expanded', 'false'); syncVolumeKey(); }
+/* drag a sheet down by its handle to close it */
+function bindSheetDrag(sheet) {
+  const head = $('.panel-head', sheet), panel = $('.panel', sheet);
+  let y0 = null, dy = 0;
+  head.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; y0 = e.clientY; dy = 0; panel.style.transition = 'none'; head.setPointerCapture(e.pointerId); });
+  head.addEventListener('pointermove', e => { if (y0 === null) return; dy = Math.max(0, e.clientY - y0); panel.style.transform = `translateY(${dy}px)`; });
+  const end = () => { if (y0 === null) return; y0 = null; panel.style.transition = ''; if (dy > 90) closeSheet(sheet); else panel.style.transform = ''; };
+  head.addEventListener('pointerup', end); head.addEventListener('pointercancel', end);
+}
 
-/* ───────── controls ↔ settings ───────── */
-function buildDial() {
-  const dial = $('#dial');
-  for (const c of CAMERAS) {
+/* ───────── camera strip (wraps around) ───────── */
+const COPIES = 3, ITEM = 76;
+let carTarget = null, carCenter = -1;
+function buildCarousel() {
+  const car = $('#car');
+  for (let k = 0; k < COPIES; k++) for (const c of CAMERAS) {
     const b = document.createElement('button');
-    b.setAttribute('role', 'radio'); b.dataset.v = c.id;
-    b.innerHTML = '<b></b><small></small>'; b.firstChild.textContent = c.code; b.lastChild.textContent = c.ko;
-    b.addEventListener('click', () => { if (S.cam === c.id) openCamSheet(); else { selectCam(c.id); centerDial(true); } });
-    dial.appendChild(b);
+    b.setAttribute('role', 'radio'); b.dataset.v = c.id; b.dataset.k = k;
+    b.setAttribute('aria-label', `${c.mood} — ${c.model}, ${c.year}`);
+    if (k !== 1) { b.setAttribute('aria-hidden', 'true'); b.tabIndex = -1; }
+    b.innerHTML = camIcon(c, '-' + k);
+    b.addEventListener('click', () => { if (S.cam === c.id) openCamSheet(); else { selectCam(c.id); centerCar(true, +b.dataset.k); } });
+    car.appendChild(b);
   }
   let st = 0;
-  const release = () => { dialTarget = null; };
-  ['pointerdown', 'touchstart', 'wheel'].forEach(ev => dial.addEventListener(ev, release, { passive: true }));
-  dial.addEventListener('scroll', () => {
+  const release = () => { carTarget = null; };
+  ['pointerdown', 'touchstart', 'wheel'].forEach(ev => car.addEventListener(ev, release, { passive: true }));
+  car.addEventListener('scroll', () => {
+    const idx = clamp(Math.round(car.scrollLeft / ITEM), 0, car.children.length - 1);
+    if (idx !== carCenter) {
+      if (car.children[carCenter]) car.children[carCenter].classList.remove('center');
+      car.children[idx].classList.add('center'); carCenter = idx;
+      if (!carTarget) haptic('tick');
+    }
     clearTimeout(st);
     st = setTimeout(() => {
-      const mid = dial.scrollLeft + dial.clientWidth / 2; let best = null, bd = 1e9;
-      for (const b of dial.children) { const c = b.offsetLeft + b.offsetWidth / 2, dd = Math.abs(c - mid); if (dd < bd) { bd = dd; best = b; } }
-      if (!best) return;
-      if (dialTarget) { if (best.dataset.v === dialTarget) dialTarget = null; return; }
-      if (best.dataset.v !== S.cam) selectCam(best.dataset.v);
-    }, 120);
+      const b = car.children[idx]; if (!b) return;
+      if (carTarget) { if (b.dataset.v === carTarget) { carTarget = null; recentreCar(); } return; }
+      if (b.dataset.v !== S.cam) selectCam(b.dataset.v);
+      recentreCar();
+    }, 130);
   }, { passive: true });
 }
-let dialTarget = null;
-function centerDial(smooth) {
-  const dial = $('#dial'), b = $(`button[data-v="${S.cam}"]`, dial);
-  if (!b) return;
-  const left = b.offsetLeft + b.offsetWidth / 2 - dial.clientWidth / 2;
-  if (Math.abs(dial.scrollLeft - left) < 2) return;
-  dialTarget = S.cam;
-  dial.scrollTo({ left, behavior: smooth ? 'smooth' : 'auto' });
+function recentreCar() {
+  const car = $('#car'), i = carCenter;
+  if (i < CAMERAS.length || i >= CAMERAS.length * 2) {
+    const j = CAMERAS.length + (i % CAMERAS.length);
+    carTarget = car.children[j].dataset.v;
+    car.scrollTo({ left: j * ITEM, behavior: 'auto' });
+  }
+}
+function centerCar(smooth, fromCopy) {
+  const car = $('#car'), base = CAMERAS.findIndex(c => c.id === S.cam);
+  let j = CAMERAS.length + base;
+  if (fromCopy !== undefined) j = fromCopy * CAMERAS.length + base;
+  const left = j * ITEM;
+  if (Math.abs(car.scrollLeft - left) < 2) { carCenter = -1; car.dispatchEvent(new Event('scroll')); return; }
+  carTarget = S.cam;
+  car.scrollTo({ left, behavior: smooth ? 'smooth' : 'auto' });
 }
 function applyBody(cam) {
   const b = cam.body, st = $('#cam').style;
-  st.setProperty('--body-hi', b.hi); st.setProperty('--body', b.base); st.setProperty('--body-lo', b.lo);
-  st.setProperty('--ink', b.ink); st.setProperty('--ink-soft', b.soft); st.setProperty('--ink-accent', b.accent);
+  [['--body-hi', b.hi], ['--body', b.base], ['--body-lo', b.lo], ['--ink', b.ink], ['--ink-soft', b.soft], ['--ink-accent', b.accent]]
+    .forEach(([k, v]) => { st.setProperty(k, v); document.documentElement.style.setProperty(k, v); });
   const meta = $('meta[name="theme-color"]'); if (meta) meta.setAttribute('content', b.base);
+  const lumOf = hex => parseInt(hex.slice(1, 3), 16) * .299 + parseInt(hex.slice(3, 5), 16) * .587 + parseInt(hex.slice(5, 7), 16) * .114;
+  native('setBarColors', b.hi, b.lo, lumOf(b.hi) > 140, lumOf(b.lo) > 140);
 }
+let tagT = 0;
 function selectCam(id) {
   if (S.cam === id) return;
-  S.cam = id; persist(); syncUI(); needsStatic = true;
-  drawOverlay();
-  const c = currentCam();
-  toast(`${c.code} · ${c.ko} · ${c.year} · ${c.mp}M ${c.sensor}\n${c.story}`, 3600);
+  S.cam = id; persist(); syncUI(); needsStatic = true; drawOverlay();
+  const c = currentCam(), boot = $('#boot'), tag = $('#camTag');
+  $('#bootText').textContent = c.model;
+  boot.classList.remove('on'); void boot.offsetWidth; boot.classList.add('on');
+  tag.textContent = `${c.model} · ${c.year}`; tag.classList.add('show');
+  clearTimeout(tagT); tagT = setTimeout(() => tag.classList.remove('show'), 1400);
   beep(3400, .02, 0, .03);
 }
-function stepFilter(dir) {
+function stepCam(dir) {
   const i = CAMERAS.findIndex(c => c.id === S.cam);
-  selectCam(CAMERAS[(i + dir + CAMERAS.length) % CAMERAS.length].id); centerDial(true);
+  const car = $('#car');
+  selectCam(CAMERAS[(i + dir + CAMERAS.length) % CAMERAS.length].id);
+  const j = clamp(carCenter + dir, 0, car.children.length - 1);
+  carTarget = S.cam; car.scrollTo({ left: j * ITEM, behavior: 'smooth' });
+  haptic('tick');
 }
+
+/* ───────── camera sheet: browse, or pick one to re-develop with ───────── */
+let pickResolve = null, thumbJob = 0;
 function buildCamGrid() {
   const grid = $('#camGrid');
   for (const c of CAMERAS) {
     const b = document.createElement('button');
     b.className = 'cam-card'; b.dataset.v = c.id;
-    b.innerHTML = '<span class="cam-shot"><img alt=""><span></span></span><span class="cam-name"><i class="mini"></i><b></b></span><strong></strong><span class="spec"></span><small></small>';
-    $('.cam-shot span', b).textContent = c.year;
+    b.innerHTML = '<span class="cam-shot"><img alt=""></span><span class="cam-name"></span><strong></strong><span class="spec"></span><small></small>';
+    $('.cam-name', b).innerHTML = camIcon(c, '-s') + '<b></b>';
     $('.cam-name b', b).textContent = c.model;
-    $('strong', b).textContent = c.ko;
-    $('.spec', b).textContent = `${c.mp}M ${c.sensor} · ${c.lens.join(' ')}`;
+    $('strong', b).textContent = c.mood;
+    $('.spec', b).textContent = `${c.year} · ${c.mp}M ${c.sensor} · ${c.ko}`;
     $('small', b).textContent = c.story;
-    const m = $('.mini', b).style; m.setProperty('--bh', c.body.hi); m.setProperty('--bb', c.body.base); m.setProperty('--bl', c.body.lo);
-    b.addEventListener('click', () => { selectCam(c.id); centerDial(true); closeSheet($('#camSheet')); });
+    b.addEventListener('click', () => {
+      if (pickResolve) { const r = pickResolve; pickResolve = null; closeSheet($('#camSheet')); r(c.id); return; }
+      selectCam(c.id); centerCar(true); closeSheet($('#camSheet'));
+    });
     grid.appendChild(b);
   }
 }
-function renderCamThumbs() {
+async function renderCamThumbs(source, mirror) {
+  const my = ++thumbJob;
   if (!capLens) capLens = makeLens(document.createElement('canvas'));
-  const useLive = live && video.readyState >= 2 && video.videoWidth;
-  try { capLens.upload(useLive ? video : sampleSrc); } catch { return; }
+  for (const b of $$('#camGrid .cam-card')) $('img', b).removeAttribute('src');
   for (const b of $$('#camGrid .cam-card')) {
-    capLens.render(320, 240, camParams(camById(b.dataset.v)), { mirror: useLive && S.facing === 'user', time: 1.7, amount: S.amount / 100, flash: 0 });
-    $('img', b).src = capLens.canvas.toDataURL('image/jpeg', .82);
+    await nextFrame();
+    if (my !== thumbJob || $('#camSheet').hidden) return;
+    try {
+      capLens.upload(source);
+      capLens.render(320, 240, camParams(camById(b.dataset.v)), { mirror, zoom: 1, time: 1.7, amount: S.amount / 100, flash: 0 });
+      $('img', b).src = capLens.canvas.toDataURL('image/jpeg', .82);
+    } catch { return; }
   }
 }
 function openCamSheet() {
+  $('#camTitle').textContent = 'CAMERA · 10';
+  $('#camLede').textContent = '2001년부터 2006년까지, 그 시절 디카 10대예요. 지금 장면이 카메라마다 어떻게 찍히는지 미리 보여 드려요.';
   $$('#camGrid .cam-card').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === S.cam)));
   openSheet('#camSheet');
-  renderCamThumbs();
+  const useLive = live && video.readyState >= 2 && video.videoWidth;
+  let source = sampleSrc;
+  if (useLive) { const c = document.createElement('canvas'); c.width = video.videoWidth; c.height = video.videoHeight; c.getContext('2d').drawImage(video, 0, 0); source = c; }
+  renderCamThumbs(source, useLive && S.facing === 'user');
   const cur = $(`#camGrid .cam-card[data-v="${S.cam}"]`); if (cur) cur.scrollIntoView({ block: 'nearest' });
+}
+async function pickCamera(rec) {
+  $('#camSheet').classList.add('over');
+  $('#camTitle').textContent = 'RE-DEVELOP';
+  $('#camLede').textContent = '이 사진을 어떤 카메라로 다시 현상할까요? 원본에서 새로 현상해 새 사진으로 저장해요.';
+  $$('#camGrid .cam-card').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === rec.cam)));
+  openSheet('#camSheet');
+  const src = await decodeToCanvas(rec.orig, 640);
+  renderCamThumbs(src, false);
+  return new Promise(res => { pickResolve = res; });
+}
+
+/* ───────── viewfinder gestures: swipe = camera, drag up/down = EV, pinch = zoom, tap = AF, double tap = reset ───────── */
+let osdT = 0;
+function showZoomEv(which) {
+  const zb = $('#zoomBar'), eb = $('#evBar');
+  if (which === 'zoom') {
+    zb.hidden = false; $('#zoomVal').textContent = '×' + zoom.toFixed(1); zb.classList.toggle('digital', zoom > 2);
+    $('#zoomKnob').style.left = ((zoom - 1) / 3 * 100) + '%';
+  } else {
+    eb.hidden = false; $('#evVal').textContent = (ev > 0 ? '+' : ev < 0 ? '−' : '±') + Math.abs(ev).toFixed(1);
+    $('#evKnob').style.top = ((2 - ev) / 4 * 100) + '%';
+  }
+  clearTimeout(osdT); osdT = setTimeout(() => { zb.hidden = true; eb.hidden = true; }, 1600);
+  needsStatic = true; syncFlags();
+}
+function bindGestures() {
+  const pts = new Map();
+  let mode = null, x0 = 0, y0 = 0, t0 = 0, startZoom = 1, startEv = 0, startDist = 0, lastTap = 0, edge = false;
+  const dist = () => { const [a, b] = [...pts.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
+  lcd.addEventListener('pointerdown', e => {
+    if (e.target.closest('.perm')) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    try { lcd.setPointerCapture(e.pointerId); } catch {}
+    if (pts.size === 2) { mode = 'pinch'; startZoom = zoom; startDist = dist() || 1; return; }
+    mode = null; x0 = e.clientX; y0 = e.clientY; t0 = performance.now(); startEv = ev;
+    edge = e.clientX < 24 || e.clientX > window.innerWidth - 24;
+  });
+  lcd.addEventListener('pointermove', e => {
+    if (!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (mode === 'pinch' && pts.size === 2) { zoom = clamp(startZoom * dist() / startDist, 1, 4); showZoomEv('zoom'); return; }
+    const dx = e.clientX - x0, dy = e.clientY - y0;
+    if (!mode && Math.hypot(dx, dy) > 12) mode = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'swipe' : 'ev';
+    if (mode === 'ev' && live) {
+      const nv = clamp(Math.round((startEv - dy / 70) / .3) * .3, -2.1, 2.1);
+      if (Math.abs(nv - ev) > .01) { ev = Math.round(nv * 10) / 10; haptic('tick'); }
+      showZoomEv('ev');
+    }
+  });
+  const up = e => {
+    if (!pts.has(e.pointerId)) return;
+    pts.delete(e.pointerId);
+    if (mode === 'pinch') { if (!pts.size) mode = null; return; }
+    const dx = e.clientX - x0, dy = e.clientY - y0, dt = performance.now() - t0;
+    if (mode === 'swipe' && !edge && Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) stepCam(dx < 0 ? 1 : -1);
+    else if (!mode && dt < 300 && e.type === 'pointerup') {
+      const now = performance.now();
+      if (now - lastTap < 320) { zoom = 1; ev = 0; showZoomEv('zoom'); showZoomEv('ev'); toast('줌·밝기를 처음으로 되돌렸어요', 1400); lastTap = 0; }
+      else { lastTap = now; tapFocus(e.clientX, e.clientY); }
+    }
+    mode = null;
+  };
+  lcd.addEventListener('pointerup', up); lcd.addEventListener('pointercancel', up);
+}
+function tapFocus(cx, cy) {
+  if (!live) return;
+  const r = osd.getBoundingClientRect();
+  if (cx < r.left || cx > r.right || cy < r.top || cy > r.bottom) return;
+  const fx = (cx - r.left) / r.width, fy = (cy - r.top) / r.height;
+  const af = $('#af'); af.style.left = (clamp(fx, .15, .85) * 100 - 15) + '%'; af.style.top = (clamp(fy, .12, .88) * 100 - 11) + '%';
+  afLock(true); beep(2900, .035); haptic('tick');
+  try {
+    const caps = track && track.getCapabilities ? track.getCapabilities() : {};
+    if (caps.focusMode && caps.focusMode.includes('single-shot')) track.applyConstraints({ advanced: [{ pointsOfInterest: [{ x: fx, y: fy }], focusMode: 'single-shot' }] }).catch(() => {});
+  } catch {}
+}
+
+/* ───────── controls ↔ settings ───────── */
+const STAMP_KO = { film: '필름', digi: '디카', info: '정보바', polaroid: '폴라', off: '없음' };
+function syncFlags() {
+  $('#osdFlags').textContent = [S.flash && 'FLASH', S.timer && `SELF ${S.timer}S`, S.light !== 'off' && (S.light === 'rand' ? 'LIGHT RND' : 'LIGHT'),
+    zoom > 1.05 && `×${zoom.toFixed(1)}`, Math.abs(ev) > .05 && `${ev > 0 ? '+' : '−'}${Math.abs(ev).toFixed(1)}EV`,
+    devRot && live && '◧ 가로', S.ddayOn && S.anniv && 'D-DAY'].filter(Boolean).join('  ');
 }
 function syncUI() {
   $$('[data-key]').forEach(el => {
@@ -1417,19 +2062,31 @@ function syncUI() {
     const radio = el.getAttribute('role') === 'radiogroup';
     $$('button[data-v]', el).forEach(b => b.setAttribute(radio ? 'aria-checked' : 'aria-pressed', String(String(S[k]) === b.dataset.v)));
   });
-  $$('#dial button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === S.cam)));
-  $('#rowCustom').hidden = S.dateMode !== 'custom';
-  $('#amountVal').textContent = S.amount + '%';
-  $('#lblFlash').textContent = S.flash ? 'ON' : 'OFF';
-  $('#btnFlash').setAttribute('aria-pressed', String(!!S.flash));
-  $('#lblTimer').textContent = S.timer ? S.timer + 'S' : 'OFF';
-  $('#btnTimer').classList.toggle('on', !!S.timer);
   const cam = currentCam();
+  $$('#car button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === S.cam)));
+  $('#optCustom').hidden = S.dateMode !== 'custom';
+  $('#segYear').textContent = `그해 (${cam.year})`;
+  $('#amountVal').textContent = S.amount + '%';
+  $('#btnFlash').classList.toggle('on', !!S.flash); $('#btnFlash').setAttribute('aria-pressed', String(!!S.flash));
+  $('#lblFlash').textContent = S.flash ? '플래시 켬' : '플래시';
+  $('#btnTimer').classList.toggle('on', !!S.timer); $('#btnTimer').setAttribute('aria-pressed', String(!!S.timer));
+  $('#lblTimer').textContent = S.timer ? S.timer + '초' : '타이머';
+  $('#btnLight').classList.toggle('on', S.light !== 'off'); $('#btnLight').setAttribute('aria-pressed', String(S.light !== 'off'));
+  $('#lblLight').textContent = S.light === 'soft' ? '약하게' : S.light === 'rand' ? '랜덤' : '빛';
+  $('#btnDate').classList.toggle('on', S.stamp !== 'off');
+  $('#lblDate').textContent = STAMP_KO[S.stamp] || '날짜';
+  $('#btnFlash').setAttribute('aria-label', S.flash ? '플래시 켜짐' : '플래시 꺼짐');
+  $('#btnTimer').setAttribute('aria-label', S.timer ? `셀프 타이머 ${S.timer}초` : '셀프 타이머 꺼짐');
+  $('#btnLight').setAttribute('aria-label', `빛 효과 ${$('#lblLight').textContent}`);
+  $('#btnDate').setAttribute('aria-label', `날짜 스탬프 ${$('#lblDate').textContent}`);
   applyBody(cam);
-  $('#brandModel').textContent = cam.code;
+  $('#chipCode').textContent = cam.code;
+  $('#plateModel').textContent = `${cam.model} · ${cam.mp}M ${cam.sensor}`;
+  $('#capTitle').textContent = cam.mood;
+  $('#capSub').textContent = `${cam.model} · ${cam.year}`;
   $('#osdMode').textContent = `AUTO  ${cam.model}`;
-  $('#osdFlags').textContent = [S.flash && 'FLASH', S.timer && `SELF ${S.timer}S`, S.ddayOn && S.anniv && 'D-DAY'].filter(Boolean).join('  ');
   $('#osdSize').textContent = cam.mp + 'M' + (S.aspect === '1:1' ? ' 1:1' : '');
+  syncFlags();
 }
 function applySetting(k) {
   persist(); syncUI();
@@ -1437,6 +2094,8 @@ function applySetting(k) {
   needsStatic = true;
   if (k === 'geo') updateGeo();
   if (k === 'caption') ensureFonts(S.caption).then(drawOverlay);
+  if (k === 'light') { updatePreviewLights(); }
+  if (k === 'volumeKey') syncVolumeKey();
 }
 function bindSettings() {
   $$('[data-key]').forEach(el => {
@@ -1456,10 +2115,15 @@ function bindSettings() {
       if (k === 'dateMode' && S.dateMode === 'custom' && !S.customDate) {
         const n = new Date(); S.customDate = `${n.getFullYear()}-${pad2(n.getMonth() + 1)}-${pad2(n.getDate())}T${timeText(n)}`;
       }
-      if (k === 'stamp') beep(2200, .025, 0, .03);
+      if (k === 'stamp' || k === 'dateMode') { beep(2200, .025, 0, .03); haptic('tick'); }
       applySetting(k);
     });
   });
+  if (!NATIVE) $$('[data-native]').forEach(el => el.hidden = true);
+  $('#menuHint').textContent = (NATIVE
+    ? '찍은 사진은 휴대폰 갤러리의 「그해여름」 앨범에도 저장돼요. '
+    : '찍은 사진은 이 브라우저 안 앨범에만 보관되니, 마음에 드는 사진은 꼭 저장해 두세요. ')
+    + '화소가 낮은 카메라(VGA 폴더폰, 첫 디카)는 저장 크기와 상관없이 그 시절 화질로 찍혀요. 정보바의 셔터 속도·ISO는 화면 밝기로 계산한 표기예요.';
 }
 
 /* ───────── location (optional) ───────── */
@@ -1477,58 +2141,129 @@ function updateGeo() {
   get(); geoTimer = setInterval(get, 120000);
 }
 
+/* ───────── Android shell hooks ───────── */
+function syncVolumeKey() { native('setVolumeShutter', !!(S.volumeKey && live && !overlayOpen() && $('#datePop').hidden)); }
+let resumeCamera = false;
+window.geuhaeOnBack = () => {
+  if (!$('#onb').hidden) return false;
+  if (!$('#viewer').hidden) { closeViewer(); return true; }
+  if (!$('#datePop').hidden) { closeDatePop(); return true; }
+  const open = $$('.sheet').find(s => !s.hidden); if (open) { closeSheet(open); return true; }
+  if (cdCancel) { cdCancel(); return true; }
+  return false;
+};
+window.geuhaeOnPause = () => { resumeCamera = live || resumeCamera; stopCamera(); };
+window.geuhaeOnResume = () => { if (resumeCamera || (cameraWanted && permKind.startsWith('native'))) { resumeCamera = false; startCameraSafe(); } };
+window.geuhaeOnPermission = (what, granted) => {
+  if (what !== 'camera') return;
+  if (granted) startCameraSafe(); else if (!live) showPerm('native-' + (native('cameraPermission') || 'denied'));
+};
+window.geuhaeShutter = () => { if (!overlayOpen() && $('#datePop').hidden) shoot(); };
+
+/* ───────── first run ───────── */
+function openOnboarding() {
+  const onb = $('#onb'), track = $('#onbTrack'), dots = $$('#onbDots i');
+  $('#onbMarquee').innerHTML = [...CAMERAS, ...CAMERAS].map((c, i) => camIcon(c, '-o' + i)).join('');
+  onb.hidden = false;
+  const page = () => Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
+  const sync = () => { const p = page(); dots.forEach((d, i) => d.classList.toggle('on', i === p)); $('#onbNext').textContent = p === 2 ? '카메라 켜기' : '다음'; };
+  track.addEventListener('scroll', sync, { passive: true });
+  const finish = () => { S.onboarded = true; persist(); onb.hidden = true; audio(); startCameraSafe(); };
+  $('#onbNext').addEventListener('click', () => { const p = page(); if (p >= 2) finish(); else track.scrollTo({ left: (p + 1) * track.clientWidth, behavior: 'smooth' }); });
+  $('#onbSkip').addEventListener('click', finish);
+  sync();
+}
+
 /* ───────── wiring ───────── */
 function wire() {
-  $('#shutter').addEventListener('click', shoot);
-  $('#btnFlash').addEventListener('click', () => { S.flash = !S.flash; applySetting('flash'); });
-  $('#btnTimer').addEventListener('click', () => { S.timer = S.timer === 0 ? 3 : S.timer === 3 ? 10 : 0; applySetting('timer'); });
-  $('#btnImport').addEventListener('click', () => $('#fileImport').click());
-  $('#btnGalleryImport').addEventListener('click', () => $('#fileImport').click());
-  $('#btnMenu').addEventListener('click', () => openSheet('#menuSheet'));
-  $('#btnCam').addEventListener('click', openCamSheet);
+  const sh = $('#shutter');
+  sh.addEventListener('pointerdown', e => { if (e.button === 0) { audio(); halfPress(); } });
+  sh.addEventListener('pointerleave', releaseHalf);
+  sh.addEventListener('pointercancel', releaseHalf);
+  sh.addEventListener('click', shoot);
+  $('#btnFlash').addEventListener('click', () => {
+    S.flash = !S.flash; applySetting('flash'); haptic('tick');
+    if (S.flash && live && S.facing === 'environment') {
+      const caps = track && track.getCapabilities ? track.getCapabilities() : {};
+      if (!caps.torch) toast('이 카메라는 플래시를 켤 수 없어서 플래시 느낌만 넣어요');
+    }
+  });
+  $('#btnTimer').addEventListener('click', () => { S.timer = S.timer === 0 ? 3 : S.timer === 3 ? 10 : 0; applySetting('timer'); haptic('tick'); });
+  $('#btnLight').addEventListener('click', () => {
+    S.light = S.light === 'off' ? 'soft' : S.light === 'soft' ? 'rand' : 'off'; applySetting('light'); haptic('tick');
+    toast(S.light === 'soft' ? '빛 효과: 밝은 곳에 CCD 번짐과 플레어가 생겨요' : S.light === 'rand' ? '빛 효과: 찍을 때마다 다른 빛과 먼지가 들어가요' : '빛 효과를 껐어요', 1800);
+  });
+  $('#btnDate').addEventListener('click', () => { haptic('tick'); $('#datePop').hidden ? openDatePop() : closeDatePop(); });
+  $('#datePop').addEventListener('pointerdown', e => { if (e.target === $('#datePop')) closeDatePop(); });
+  $('#btnMoreDate').addEventListener('click', () => { closeDatePop(); openSheet('#menuSheet'); setTimeout(() => $('#ourDay').scrollIntoView({ block: 'start' }), 60); });
+  $('#btnMenu').addEventListener('click', () => { haptic('tick'); openSheet('#menuSheet'); });
+  $('#btnCam').addEventListener('click', () => { haptic('tick'); openCamSheet(); });
   $('#btnGallery').addEventListener('click', openGallery);
-  $('#btnRetry').addEventListener('click', async () => { try { await startCamera(); } catch (e) { showFallback(true, e); } });
+  $('#permPrimary').addEventListener('click', e => permAction(e.currentTarget.dataset.act));
+  $('#permSecondary').addEventListener('click', () => $('#fileImport').click());
   $('#btnFlip').addEventListener('click', async () => {
-    if (!live) { toast('실시간 카메라가 없어서 기본 카메라 앱을 써요'); return; }
+    if (!live) { if (permKind) permAction(PERM[permKind][3]); return; }
+    haptic('tick');
     const prev = S.facing; S.facing = prev === 'user' ? 'environment' : 'user'; persist();
-    try { await startCamera(); } catch (e) { S.facing = prev; persist(); try { await startCamera(); } catch (e2) { showFallback(true, e2); } toast('다른 카메라를 찾지 못했어요'); }
+    try { await startCamera(); } catch (e) { S.facing = prev; persist(); toast('다른 카메라를 찾지 못했어요'); await startCameraSafe(); }
     relayout();
   });
   $('#fileImport').addEventListener('change', e => { importFiles(e.target.files, 'album'); e.target.value = ''; });
   $('#fileCapture').addEventListener('change', e => { importFiles(e.target.files, 'camera'); e.target.value = ''; });
+  $('#btnGalleryImport').addEventListener('click', () => $('#fileImport').click());
+  $('#btnEmptyImport').addEventListener('click', () => $('#fileImport').click());
   $('#btnSave').addEventListener('click', () => viewing && saveToDevice(viewing));
+  $('#btnSaveNow').addEventListener('click', async () => { if (viewing && await saveToGallery(viewing)) { toast('휴대폰 갤러리에 저장했어요'); haptic('confirm'); } });
   $('#btnDelete').addEventListener('click', deleteViewing);
-  $('#btnViewerClose').addEventListener('click', closeViewer);
+  $('#btnRedevelop').addEventListener('click', onRedevelop);
   $$('.sheet').forEach(s => {
     s.addEventListener('click', e => { if (e.target === s || e.target.closest('[data-close]')) closeSheet(s); });
+    bindSheetDrag(s);
   });
+  // viewer: swipe between photos, pull down to close, tap image edges to step
+  const stage = $('#viewerStage'), img = $('#viewerImg');
+  let vx = null, vy = 0, vdx = 0, vdy = 0;
+  stage.addEventListener('pointerdown', e => { vx = e.clientX; vy = e.clientY; vdx = vdy = 0; img.style.transition = 'none'; });
+  stage.addEventListener('pointermove', e => {
+    if (vx === null) return; vdx = e.clientX - vx; vdy = e.clientY - vy;
+    img.style.transform = Math.abs(vdx) > Math.abs(vdy) ? `translateX(${vdx}px)` : `translateY(${Math.max(0, vdy)}px) scale(${1 - Math.max(0, vdy) / 1200})`;
+  });
+  const vend = () => {
+    if (vx === null) return; vx = null; img.style.transition = 'transform .18s'; img.style.transform = '';
+    if (Math.abs(vdx) > 60 && Math.abs(vdx) > Math.abs(vdy)) stepViewer(vdx < 0 ? 1 : -1);
+    else if (vdy > 110) closeViewer();
+  };
+  stage.addEventListener('pointerup', vend); stage.addEventListener('pointercancel', vend);
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-      if (!$('#viewer').hidden) return closeViewer();
-      const open = $$('.sheet').find(s => !s.hidden); if (open) return closeSheet(open);
-    }
-    if (e.target !== document.body || !$('#viewer').hidden || $$('.sheet').some(s => !s.hidden)) return;
+    if (e.key === 'Escape') { if (window.geuhaeOnBack()) e.preventDefault(); return; }
+    if (!$('#viewer').hidden) { if (e.key === 'ArrowRight') stepViewer(1); else if (e.key === 'ArrowLeft') stepViewer(-1); return; }
+    if (e.target !== document.body || overlayOpen()) return;
     if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); shoot(); }
-    else if (e.key === 'ArrowRight') stepFilter(1);
-    else if (e.key === 'ArrowLeft') stepFilter(-1);
+    else if (e.key === 'ArrowRight') stepCam(1);
+    else if (e.key === 'ArrowLeft') stepCam(-1);
   });
-  let sx = 0, sy = 0, down = false;
-  lcd.addEventListener('pointerdown', e => { down = true; sx = e.clientX; sy = e.clientY; });
-  lcd.addEventListener('pointerup', e => {
-    if (!down) return; down = false;
-    const dx = e.clientX - sx, dy = e.clientY - sy;
-    if (Math.abs(dx) > 50 && Math.abs(dy) < 45) stepFilter(dx < 0 ? 1 : -1);
-  });
-  if (window.ResizeObserver) new ResizeObserver(() => relayout()).observe(lcd);
+  bindGestures();
+  if (window.ResizeObserver) new ResizeObserver(() => { if ($$('.sheet').every(s => s.hidden)) relayout(); }).observe(lcd);
   else window.addEventListener('resize', relayout);
-  document.addEventListener('visibilitychange', async () => {
-    if (document.hidden || !stream) return;
-    if (!track || track.readyState === 'ended') { try { await startCamera(); } catch (e) { showFallback(true, e); } }
+  document.addEventListener('visibilitychange', () => {
+    if (NATIVE) return; // the Android shell calls geuhaeOnPause / geuhaeOnResume
+    if (document.hidden) { if (live) { resumeCamera = true; stopCamera(); } }
+    else if (resumeCamera) { resumeCamera = false; startCameraSafe(); }
   });
   setInterval(() => {
-    if (live && video.videoWidth && !document.hidden) liveLum = measureLum(video);
+    if (document.hidden || overlayOpen()) return;
+    if (live && video.videoWidth && S.stamp === 'info') liveLum = measureLum(video);
     if (sigOf(previewMeta()) !== lastSig) drawOverlay();
-  }, 1000);
+  }, 2000);
+  setInterval(() => { if (!document.hidden && !overlayOpen() && S.light !== 'off' && live) updatePreviewLights(); }, 250);
+  window.addEventListener('devicemotion', e => {
+    const g = e.accelerationIncludingGravity; if (!g || g.x == null || g.y == null) return;
+    const x = IOS ? -g.x : g.x, y = IOS ? -g.y : g.y;
+    let r = devRot;
+    if (Math.abs(x) > 5 && Math.abs(x) > Math.abs(y) * 1.4) r = x > 0 ? -90 : 90;
+    else if (Math.abs(y) > Math.abs(x) * 1.4) r = 0;
+    if (r !== devRot) { devRot = r; syncFlags(); }
+  });
   if (navigator.getBattery) navigator.getBattery().then(b => {
     const upd = () => { const n = b.level > .66 ? 3 : b.level > .33 ? 2 : b.level > .1 ? 1 : 0; $$('#osdBat i').forEach((el, i) => el.classList.toggle('off', i >= n)); };
     upd(); b.addEventListener('levelchange', upd);
@@ -1536,18 +2271,18 @@ function wire() {
 }
 
 async function boot() {
-  buildDial(); buildCamGrid(); bindSettings(); syncUI(); wire();
+  buildCarousel(); buildCamGrid(); bindSettings(); syncUI(); wire();
   sampleSrc = makeSample();
   lens = makeLens(glc);
   relayout();
-  requestAnimationFrame(() => centerDial(false));
+  requestAnimationFrame(() => centerCar(false));
   requestAnimationFrame(loop);
   loadPhotos();
   ensureFonts(S.caption).then(drawOverlay);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawOverlay);
   if (S.geo) updateGeo();
-  try { await startCamera(); } catch (e) { console.info('live camera unavailable:', e && e.name); showFallback(true, e); }
-  if ('serviceWorker' in navigator && window.self === window.top && /^https:|^http:\/\/(localhost|127\.)/.test(location.href)) {
+  if (!S.onboarded) openOnboarding(); else startCameraSafe();
+  if (!NATIVE && 'serviceWorker' in navigator && window.self === window.top && /^https:|^http:\/\/(localhost|127\.)/.test(location.href)) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
 }

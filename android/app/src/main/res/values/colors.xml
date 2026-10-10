@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AQUA-720 body: the default camera, also the splash and icon background -->
+    <color name="body">#FFA3D2DE</color>
+    <color name="lcd">#FF07090C</color>
+    <color name="ic_bg">#FFA3D2DE</color>
+</resources>
