@@ -1,5 +1,5 @@
 // 앱 셸은 캐시해 두고 백그라운드에서 갱신(stale-while-revalidate) — 오프라인에서도 열린다.
-const CACHE = 'dx2006-v1';
+const CACHE = 'geuhae-v1';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
