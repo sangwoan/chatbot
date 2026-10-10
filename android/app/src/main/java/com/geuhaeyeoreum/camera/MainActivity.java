@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -25,6 +26,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.provider.MediaStore;
@@ -86,6 +88,11 @@ public class MainActivity extends Activity {
     private final ArrayDeque<Object[]> askQueue = new ArrayDeque<>();
     private boolean asking = false;
     private long backAskedAt = 0;
+    /** Camera dialog bookkeeping, to tell "don't ask again" apart from a dismissed dialog. */
+    private boolean camRationaleBefore = false;
+    private long camAskedAt = 0;
+    /** One storage dialog at a time (Android 9 and below); the page queues the photos meanwhile. */
+    private boolean storageAsking = false;
 
     private final Handler ui = new Handler(Looper.getMainLooper());
     private FrameLayout root;
@@ -390,7 +397,13 @@ public class MainActivity extends Activity {
     private void askNext() {
         Object[] next = askQueue.poll();
         asking = next != null;
-        if (next != null) requestPermissions((String[]) next[0], (Integer) next[1]);
+        if (next == null) return;
+        int req = (Integer) next[1];
+        if (req == REQ_CAMERA_FOR_PAGE || req == REQ_CAMERA_DIRECT) {
+            camRationaleBefore = shouldShowRequestPermissionRationale(Manifest.permission.CAMERA);
+            camAskedAt = SystemClock.uptimeMillis();
+        }
+        requestPermissions((String[]) next[0], req);
     }
 
     @Override
@@ -407,6 +420,7 @@ public class MainActivity extends Activity {
             else all = false;
         }
         if (req == REQ_CAMERA_FOR_PAGE || req == REQ_CAMERA_DIRECT) {
+            rememberCameraAnswer(all, results.length > 0);
             PermissionRequest p = pendingMedia;
             pendingMedia = null;
             if (p != null) {
@@ -419,8 +433,25 @@ public class MainActivity extends Activity {
             pendingGeo = null;
             if (cb != null) cb.invoke(pendingGeoOrigin, any, false);
         } else if (req == REQ_STORAGE) {
+            storageAsking = false;
             notifyPage("storage", all);
         }
+    }
+
+    /**
+     * Only Settings can bring the camera back once the user picked "don't ask again" (or Android 11+ stopped asking after two
+     * refusals). Rationale flips from true to false at that moment, and a dialog that was never shown answers almost at once.
+     * A dismissed or cancelled dialog does neither, so it stays "denied" and the page may ask again.
+     */
+    private void rememberCameraAnswer(boolean granted, boolean answered) {
+        SharedPreferences.Editor e = prefs().edit();
+        if (granted) {
+            e.remove("cameraBlocked");
+        } else if (answered && !shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)
+                && (camRationaleBefore || SystemClock.uptimeMillis() - camAskedAt < 400)) {
+            e.putBoolean("cameraBlocked", true);
+        }
+        e.apply();
     }
 
     private void notifyPage(String what, boolean granted) {
@@ -486,7 +517,7 @@ public class MainActivity extends Activity {
         }
         long now = System.currentTimeMillis();
         if (backAskedAt != 0 && now - backAskedAt > 1500) {
-            finish();
+            moveTaskToBack(true);
             return;
         }
         backAskedAt = now;
@@ -494,7 +525,8 @@ public class MainActivity extends Activity {
             @Override
             public void onReceiveValue(String v) {
                 backAskedAt = 0;
-                if (!"true".equals(v)) finish();
+                // keep the WebView alive: photos may still be developing in the page's queue
+                if (!"true".equals(v)) moveTaskToBack(true);
             }
         });
     }
@@ -584,13 +616,15 @@ public class MainActivity extends Activity {
         if (!has(Manifest.permission.WRITE_EXTERNAL_STORAGE)) throw new NeedPermission();
         File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), ALBUM_DIR);
         if (!dir.isDirectory() && !dir.mkdirs()) throw new IOException("cannot create " + dir);
+        String base = name.substring(0, name.length() - 4);
         File f = new File(dir, name);
+        for (int i = 1; !f.createNewFile(); i++) f = new File(dir, base + "_" + i + ".jpg");
         try (FileOutputStream os = new FileOutputStream(f)) {
             os.write(data);
         }
         ContentValues v = new ContentValues();
         v.put(MediaStore.MediaColumns.DATA, f.getAbsolutePath());
-        v.put(MediaStore.MediaColumns.DISPLAY_NAME, name);
+        v.put(MediaStore.MediaColumns.DISPLAY_NAME, f.getName());
         v.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg");
         if (takenMs > 0) v.put(MediaStore.Images.ImageColumns.DATE_TAKEN, takenMs);
         Uri uri = null;
@@ -635,6 +669,8 @@ public class MainActivity extends Activity {
                 ui.post(new Runnable() {
                     @Override
                     public void run() {
+                        if (storageAsking) return;
+                        storageAsking = true;
                         ask(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQ_STORAGE);
                     }
                 });
@@ -649,6 +685,12 @@ public class MainActivity extends Activity {
         public boolean shareImage(String contentUri) {
             if (!trusted() || contentUri == null || !contentUri.startsWith("content://")) return false;
             final Uri u = Uri.parse(contentUri);
+            // the user may have deleted it in their gallery app; the page then saves a fresh copy
+            try (Cursor c = getContentResolver().query(u, new String[]{MediaStore.MediaColumns._ID}, null, null, null)) {
+                if (c == null || !c.moveToFirst()) return false;
+            } catch (Exception e) {
+                return false;
+            }
             ui.post(new Runnable() {
                 @Override
                 public void run() {
@@ -732,9 +774,13 @@ public class MainActivity extends Activity {
         /** "granted", "prompt" (never asked), "denied" (can ask again) or "blocked" (only Settings can fix it). */
         @JavascriptInterface
         public String cameraPermission() {
-            if (has(Manifest.permission.CAMERA)) return "granted";
-            if (!prefs().getBoolean("askedCamera", false)) return "prompt";
-            return shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) ? "denied" : "blocked";
+            if (has(Manifest.permission.CAMERA)) {
+                if (prefs().getBoolean("cameraBlocked", false)) prefs().edit().remove("cameraBlocked").apply();
+                return "granted";
+            }
+            if (shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)) return "denied";
+            if (prefs().getBoolean("cameraBlocked", false)) return "blocked";
+            return prefs().getBoolean("askedCamera", false) ? "denied" : "prompt";
         }
 
         @JavascriptInterface
