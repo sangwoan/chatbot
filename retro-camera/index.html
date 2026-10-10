@@ -1248,6 +1248,8 @@ async function startCamera() {
 }
 async function startCameraSafe() {
   cameraWanted = true;
+  // a permanently refused permission would only bounce the request (and pause/resume the activity) again
+  if (NATIVE && native('cameraPermission') === 'blocked') { stopCamera(); showPerm('native-blocked'); relayout(); return; }
   try { await startCamera(); }
   catch (e) {
     console.info('live camera unavailable:', e && e.name);
@@ -2153,7 +2155,11 @@ window.geuhaeOnBack = () => {
   return false;
 };
 window.geuhaeOnPause = () => { resumeCamera = live || resumeCamera; stopCamera(); };
-window.geuhaeOnResume = () => { if (resumeCamera || (cameraWanted && permKind.startsWith('native'))) { resumeCamera = false; startCameraSafe(); } };
+window.geuhaeOnResume = () => {
+  if (resumeCamera) { resumeCamera = false; startCameraSafe(); return; }
+  // back from Settings with the permission now on
+  if (cameraWanted && !live && permKind.startsWith('native') && native('cameraPermission') === 'granted') startCameraSafe();
+};
 window.geuhaeOnPermission = (what, granted) => {
   if (what !== 'camera') return;
   if (granted) startCameraSafe(); else if (!live) showPerm('native-' + (native('cameraPermission') || 'denied'));
