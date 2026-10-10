@@ -1,0 +1,18 @@
+{
+  "name": "그날의 디카",
+  "short_name": "그날의 디카",
+  "description": "옛날 디지털 카메라처럼 사진 하단에 날짜와 정보를 찍어 주는 감성 카메라",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1d1c1a",
+  "theme_color": "#cfc9bd",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

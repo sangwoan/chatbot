@@ -1,0 +1,1415 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#cfc9bd">
+<meta name="description" content="옛날 디지털 카메라처럼 사진 하단에 날짜와 정보를 찍어 주는 감성 카메라">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="그날의 디카">
+<!-- @page -->
+<title>그날의 디카</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=Nanum+Pen+Script&family=Silkscreen:wght@400;700&display=swap">
+<style>
+/* Layout: the back of a 2006 compact digicam — brushed champagne body, a dark LCD viewfinder, controls laid out like real buttons below */
+:root{
+  --desk:#1d1c1a;
+  --body:#cfc9bd;
+  --body-hi:#eeeae1;
+  --body-lo:#9e988b;
+  --engrave:#46433c;
+  --engrave-soft:#767166;
+  --engrave-blue:#2f4e7a;
+  --lcd:#07090c;
+  --lcd-rim:#2a2c30;
+  --osd:#eef2e8;
+  --led:#57e06a;
+  --amber:#f08a24;
+  --amber-ink:#1a1206;
+  --menu-top:#17284a;
+  --menu-bot:#0c182d;
+  --menu-fg:#e9edf5;
+  --menu-sub:#8fa6cc;
+  --font-osd:"Silkscreen","VT323",ui-monospace,Menlo,monospace;
+  --font-ui:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,-apple-system,sans-serif;
+  --font-pen:"Nanum Pen Script","Gaegu",cursive;
+  color-scheme:light;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%}
+body{height:100%;margin:0;background:var(--desk);color:var(--engrave);font:14px/1.45 var(--font-ui);-webkit-tap-highlight-color:transparent;overscroll-behavior:none;display:flex;justify-content:center}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+
+.cam{position:relative;width:100%;max-width:480px;height:100%;display:flex;flex-direction:column;overflow:hidden;
+  background:
+    repeating-linear-gradient(90deg,rgba(255,255,255,.07) 0 1px,rgba(0,0,0,.035) 1px 2px,transparent 2px 3px),
+    linear-gradient(180deg,var(--body-hi),var(--body) 38%,var(--body-lo));}
+@media (min-width:600px) and (min-height:720px){
+  body{padding-block:24px}
+  .cam{border-radius:30px;max-height:980px;box-shadow:0 30px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.7)}
+}
+
+/* top strip */
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px 8px}
+.brand{display:flex;align-items:center;gap:8px;min-width:0}
+.brand b{font:600 15px/1 var(--font-ui);letter-spacing:-.01em;white-space:nowrap}
+.brand small{font:400 9px/1 var(--font-osd);letter-spacing:.14em;color:var(--engrave-blue);white-space:nowrap}
+.led{flex:none;width:7px;height:7px;border-radius:50%;background:var(--led);box-shadow:0 0 6px var(--led)}
+.led.busy{background:#ffa733;box-shadow:0 0 6px #ffa733;animation:blink .45s steps(2,end) infinite}
+.led.timer{background:#ff4a3a;box-shadow:0 0 6px #ff4a3a;animation:blink .9s steps(2,end) infinite}
+@keyframes blink{50%{opacity:.15}}
+.top-keys{display:flex;gap:6px}
+.key{appearance:none;border:0;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:46px;height:44px;padding:4px 6px;border-radius:12px;
+  background:linear-gradient(#f6f3ec,#c8c2b5);color:var(--engrave);
+  box-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 rgba(0,0,0,.16),0 1px 2px rgba(0,0,0,.28)}
+.key svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.key span{font:400 8px/1 var(--font-osd);letter-spacing:.06em;color:var(--engrave-blue)}
+.key[aria-pressed="true"] span,.key.on span{color:#b8520c}
+.key:active{transform:translateY(1px);box-shadow:inset 0 1px 3px rgba(0,0,0,.3)}
+
+/* LCD */
+.lcd-wrap{flex:1;min-height:0;display:flex;padding:4px 16px 10px}
+.lcd{position:relative;flex:1;min-height:230px;border-radius:14px;background:var(--lcd);overflow:hidden;display:grid;place-items:center;touch-action:pan-y;
+  box-shadow:0 0 0 3px var(--lcd-rim),0 0 0 4px rgba(255,255,255,.55),inset 0 0 18px rgba(0,0,0,.9)}
+.lcd::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(122deg,rgba(255,255,255,.07) 0 26%,transparent 26.3%)}
+.frame{position:relative}
+#gl{position:absolute;display:block;background:#000}
+#deco{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.osd{position:absolute;pointer-events:none;font:400 10px/1 var(--font-osd);letter-spacing:.06em;color:var(--osd);text-shadow:0 1px 2px rgba(0,0,0,.85)}
+.osd .tl{position:absolute;left:8px;top:8px;display:grid;gap:5px}
+.osd .tr{position:absolute;right:8px;top:8px;display:flex;align-items:center;gap:7px}
+.osd .chip{display:inline-block;padding:2px 4px;border:1px solid rgba(238,242,232,.7);border-radius:2px}
+.bat{display:inline-flex;gap:1px;padding:1px 3px 1px 1px;border:1px solid var(--osd);border-radius:2px;position:relative}
+.bat::after{content:"";position:absolute;right:-3px;top:2px;width:2px;height:4px;background:var(--osd)}
+.bat i{width:3px;height:6px;background:var(--osd)}
+.bat i.off{background:transparent}
+.af{position:absolute;left:34%;right:34%;top:38%;bottom:38%}
+.af i{position:absolute;width:14px;height:10px;border:2px solid rgba(238,242,232,.75)}
+.af i:nth-child(1){left:0;top:0;border-right:0;border-bottom:0}
+.af i:nth-child(2){right:0;top:0;border-left:0;border-bottom:0}
+.af i:nth-child(3){left:0;bottom:0;border-right:0;border-top:0}
+.af i:nth-child(4){right:0;bottom:0;border-left:0;border-top:0}
+.af.lock i{border-color:var(--led)}
+.sample{position:absolute;left:50%;top:44px;transform:translateX(-50%);padding:3px 6px;background:rgba(0,0,0,.45);border:1px solid rgba(238,242,232,.5)}
+.countdown{position:absolute;inset:0;display:grid;place-items:center;font:700 96px/1 var(--font-osd);color:var(--osd);text-shadow:0 2px 12px rgba(0,0,0,.8);pointer-events:none}
+.blink{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none}
+.blink.on{animation:shut .22s ease-out}
+@keyframes shut{0%{opacity:1}100%{opacity:0}}
+.toast{position:absolute;left:12px;right:12px;bottom:12px;margin:auto;width:max-content;max-width:calc(100% - 24px);padding:8px 12px;border-radius:8px;background:rgba(8,10,14,.82);color:var(--osd);font:500 12.5px/1.4 var(--font-ui);text-align:center;opacity:0;transform:translateY(6px);transition:opacity .2s,transform .2s;pointer-events:none}
+.toast.show{opacity:1;transform:none}
+.retry{position:absolute;top:72px;left:50%;transform:translateX(-50%);pointer-events:auto;white-space:nowrap;border:1px solid rgba(238,242,232,.6);background:rgba(0,0,0,.5);color:var(--osd);border-radius:8px;padding:7px 12px;font:500 12px var(--font-ui);letter-spacing:0;text-shadow:none}
+
+/* controls */
+.controls{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;padding:2px 16px 16px}
+.dial-wrap{position:relative;min-width:0;border-radius:12px;padding-top:4px;
+  background:repeating-linear-gradient(90deg,rgba(0,0,0,.07) 0 1px,rgba(255,255,255,.35) 1px 2px,transparent 2px 5px),linear-gradient(#bdb7aa,#d9d4c9);
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.25),0 1px 0 rgba(255,255,255,.7)}
+.dial-wrap::before{content:"";position:absolute;left:50%;top:0;transform:translateX(-50%);border:6px solid transparent;border-top-color:#c4560f;z-index:1}
+.dial{position:relative;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding-inline:calc(50% - 46px);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent);mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent)}
+.dial::-webkit-scrollbar{display:none}
+.dial button{flex:0 0 92px;scroll-snap-align:center;border:0;background:none;padding:8px 0 7px;display:grid;gap:3px;justify-items:center;color:var(--engrave-soft)}
+.dial b{font:700 11px/1 var(--font-osd);letter-spacing:.05em;white-space:nowrap}
+.dial small{font:500 10.5px/1 var(--font-ui);white-space:nowrap}
+.dial button[aria-checked="true"]{color:var(--engrave-blue)}
+.dial button[aria-checked="true"] b{color:#1d3458}
+.stamps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.stamps button{appearance:none;border:0;height:46px;border-radius:11px;display:grid;place-content:center;gap:3px;
+  background:linear-gradient(#f6f3ec,#c8c2b5);box-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 rgba(0,0,0,.16),0 1px 2px rgba(0,0,0,.28)}
+.stamps b{font:700 10px/1 var(--font-osd);letter-spacing:.05em;color:var(--engrave)}
+.stamps small{font:500 10.5px/1 var(--font-ui);color:var(--engrave-soft)}
+.stamps button[aria-checked="true"]{background:linear-gradient(#2c2e34,#16171b);box-shadow:inset 0 1px 3px rgba(0,0,0,.7),0 1px 0 rgba(255,255,255,.6)}
+.stamps button[aria-checked="true"] b{color:#ffb35c}
+.stamps button[aria-checked="true"] small{color:#c9c3b6}
+.shoot{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding-top:2px}
+.thumb{justify-self:start;width:56px;height:56px;border-radius:12px;border:2px solid rgba(255,255,255,.75);background:#24262b center/cover no-repeat;box-shadow:0 2px 6px rgba(0,0,0,.35);display:grid;place-items:center;color:#9a958a}
+.thumb svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6}
+.thumb.has svg{display:none}
+.shutter{width:80px;height:80px;border-radius:50%;border:0;
+  background:radial-gradient(circle at 50% 32%,#fffefa,#d2cdc1 52%,#8f897c 100%);
+  box-shadow:0 0 0 4px #b9b3a6,0 0 0 5px #c4560f,0 0 0 8px #a7a194,0 5px 12px rgba(0,0,0,.4),inset 0 -4px 7px rgba(0,0,0,.22),inset 0 2px 3px #fff;transition:transform .08s}
+.shutter:active{transform:scale(.94)}
+.flip{justify-self:end;width:56px;height:56px;border-radius:50%}
+.flip svg{width:22px;height:22px}
+
+/* sheets: on-screen MENU look */
+.sheet{position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center;background:rgba(8,10,16,.55)}
+.panel{width:100%;max-width:480px;max-height:88%;display:flex;flex-direction:column;color:var(--menu-fg);
+  background:linear-gradient(var(--menu-top),var(--menu-bot));border-radius:18px 18px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.4);padding-bottom:env(safe-area-inset-bottom,0px)}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.12)}
+.panel-head h2{margin:0;font:700 12px/1 var(--font-osd);letter-spacing:.16em;color:#ffb35c}
+.panel-head .acts{display:flex;gap:8px}
+.pbtn{border:1px solid rgba(255,255,255,.28);background:transparent;color:var(--menu-fg);border-radius:9px;padding:7px 12px;font:500 13px var(--font-ui)}
+.pbtn.amber{background:var(--amber);color:var(--amber-ink);border-color:transparent;font-weight:600}
+.panel-body{overflow:auto;padding:2px 16px 22px;overscroll-behavior:contain}
+.group h3{margin:18px 0 4px;font:700 10px/1 var(--font-osd);letter-spacing:.16em;color:var(--menu-sub)}
+.row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 12px;min-height:48px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+.row label,.row .lbl{font:500 14px var(--font-ui)}
+.seg{display:inline-flex;border:1px solid rgba(255,255,255,.26);border-radius:9px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:7px 10px;font:500 12.5px/1.2 var(--font-ui);color:#cfd7e6}
+.seg button+button{border-left:1px solid rgba(255,255,255,.14)}
+.seg button[aria-pressed="true"]{background:var(--amber);color:var(--amber-ink);font-weight:600}
+.swatches{display:flex;gap:10px}
+.swatches button{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,.2);background:var(--sw)}
+.swatches button[aria-pressed="true"]{border-color:#fff;box-shadow:0 0 0 2px var(--amber)}
+.switch{appearance:none;-webkit-appearance:none;margin:0;flex:none;width:46px;height:28px;border-radius:14px;background:#33435f;position:relative;transition:background .15s}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .15s}
+.switch:checked{background:var(--amber)}
+.switch:checked::after{transform:translateX(18px)}
+.field{background:#0a1426;color:var(--menu-fg);border:1px solid rgba(255,255,255,.26);border-radius:8px;padding:8px 10px;font:500 16px var(--font-ui);color-scheme:dark;min-width:0;max-width:100%}
+.field[type="text"]{flex:1 1 180px}
+.range{accent-color:var(--amber);width:min(180px,50vw)}
+.hint{margin:8px 0 0;font:400 12.5px/1.55 var(--font-ui);color:var(--menu-sub)}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:12px 16px 22px;overflow:auto}
+.grid button{aspect-ratio:1;border:0;padding:0;border-radius:6px;background:#0a1426 center/cover no-repeat;position:relative}
+.grid button span{position:absolute;left:5px;top:5px;padding:2px 3px;background:rgba(0,0,0,.45);border-radius:2px;font:400 8px/1 var(--font-osd);color:#fff;text-shadow:0 1px 2px #000}
+.empty{padding:36px 16px 44px;text-align:center;color:var(--menu-sub);font:400 14px/1.6 var(--font-ui)}
+
+/* playback viewer */
+.viewer{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;background:#050608;color:var(--osd)}
+.viewer-top{display:flex;justify-content:space-between;gap:12px;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 8px;font:400 10px/1 var(--font-osd);letter-spacing:.08em}
+.viewer-top .play::before{content:"";display:inline-block;margin-right:6px;border:5px solid transparent;border-left:7px solid var(--led);border-right:0;vertical-align:-1px}
+.viewer-img{flex:1;min-height:0;display:grid;place-items:center;padding:8px 16px}
+.viewer-img img{max-width:100%;max-height:100%;object-fit:contain;box-shadow:0 10px 30px rgba(0,0,0,.6)}
+.viewer-acts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px 16px calc(16px + env(safe-area-inset-bottom,0px))}
+.vbtn{height:50px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:#15181d;color:var(--osd);font:600 14px var(--font-ui)}
+.vbtn.amber{background:var(--amber);color:var(--amber-ink);border-color:transparent}
+.vbtn.armed{background:#c8321f;border-color:transparent;color:#fff}
+
+.flash-screen{position:fixed;inset:0;z-index:40;background:#fff;opacity:0;pointer-events:none;transition:opacity .12s}
+.flash-screen.on{opacity:1}
+#video{position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="cam" id="cam">
+  <header class="top">
+    <div class="brand"><span class="led" id="led"></span><b>그날의 디카</b><small>DX-2006</small></div>
+    <div class="top-keys">
+      <button class="key" id="btnFlash" aria-pressed="false" aria-label="플래시"><svg viewBox="0 0 24 24"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z"/></svg><span id="lblFlash">OFF</span></button>
+      <button class="key" id="btnTimer" aria-label="셀프 타이머"><svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 2M9.5 2.5h5"/></svg><span id="lblTimer">OFF</span></button>
+      <button class="key" id="btnImport" aria-label="앨범에서 사진 가져오기"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="14" height="14" rx="2"/><path d="m3 16 4-4 4 4 2-2 4 4M19.5 2.5v6M16.5 5.5h6"/></svg><span>IMPORT</span></button>
+      <button class="key" id="btnMenu" aria-label="설정 메뉴" aria-haspopup="dialog"><svg viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span>MENU</span></button>
+    </div>
+  </header>
+
+  <main class="lcd-wrap">
+    <div class="lcd" id="lcd">
+      <div class="frame" id="frame">
+        <canvas id="gl" aria-label="뷰파인더"></canvas>
+        <canvas id="deco" aria-hidden="true"></canvas>
+        <div class="osd" id="osd" aria-hidden="true">
+          <div class="tl"><span id="osdMode">AUTO</span><span id="osdFlags"></span></div>
+          <div class="tr"><span id="osdSize">5M</span><span id="osdCount">[9999]</span><span class="bat" id="osdBat"><i></i><i></i><i></i></span></div>
+          <div class="af" id="af"><i></i><i></i><i></i><i></i></div>
+          <span class="sample chip" id="osdSample" hidden>SAMPLE</span>
+          <button class="retry" id="btnRetry" hidden>카메라 다시 연결</button>
+        </div>
+      </div>
+      <div class="countdown" id="countdown" hidden></div>
+      <div class="blink" id="blink"></div>
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    </div>
+  </main>
+
+  <section class="controls">
+    <div class="dial-wrap"><div class="dial" id="dial" role="radiogroup" aria-label="필터"></div></div>
+    <div class="stamps" id="stamps" role="radiogroup" aria-label="날짜 스탬프" data-key="stamp">
+      <button role="radio" data-v="film"><b>FILM</b><small>필름</small></button>
+      <button role="radio" data-v="digi"><b>DIGI</b><small>디카</small></button>
+      <button role="radio" data-v="info"><b>INFO</b><small>정보바</small></button>
+      <button role="radio" data-v="polaroid"><b>POLA</b><small>폴라</small></button>
+      <button role="radio" data-v="off"><b>OFF</b><small>없음</small></button>
+    </div>
+    <div class="shoot">
+      <button class="thumb" id="btnGallery" aria-label="앨범 보기"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="14" height="13" rx="1.5"/><path d="M7 3.5h13v13"/></svg></button>
+      <button class="shutter" id="shutter" aria-label="촬영"></button>
+      <button class="key flip" id="btnFlip" aria-label="전면·후면 카메라 전환"><svg viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 0 1 13-5.1M19.5 12a7.5 7.5 0 0 1-13 5.1"/><path d="M18 3v4.2h-4.2M6 21v-4.2h4.2"/></svg></button>
+    </div>
+  </section>
+</div>
+
+<video id="video" playsinline muted autoplay></video>
+<input type="file" id="fileImport" accept="image/*" multiple hidden>
+<input type="file" id="fileCapture" accept="image/*" capture="environment" hidden>
+
+<div class="sheet" id="menuSheet" hidden role="dialog" aria-modal="true" aria-labelledby="menuTitle">
+  <div class="panel">
+    <div class="panel-head"><h2 id="menuTitle">MENU</h2><div class="acts"><button class="pbtn amber" data-close>완료</button></div></div>
+    <div class="panel-body">
+      <section class="group">
+        <h3>DATE · 날짜</h3>
+        <div class="row"><span class="lbl">날짜 순서</span>
+          <div class="seg" data-key="dateOrder"><button data-v="ymd">년 월 일</button><button data-v="mdy">월 일 년</button><button data-v="dmy">일 월 년</button></div></div>
+        <div class="row"><label for="optTime">시간도 함께 찍기</label><input type="checkbox" class="switch" id="optTime" data-key="showTime"></div>
+        <div class="row"><span class="lbl">찍히는 날짜</span>
+          <div class="seg" data-key="dateMode"><button data-v="now">자동</button><button data-v="custom">직접 지정</button></div></div>
+        <div class="row" id="rowCustom"><label for="optCustom">지정할 날짜·시간</label><input type="datetime-local" class="field" id="optCustom" data-key="customDate"></div>
+        <p class="hint">자동은 지금 시각을 찍어요. 앨범에서 가져온 사진은 원래 찍은 날짜를 그대로 써요.</p>
+      </section>
+      <section class="group">
+        <h3>STAMP · 스탬프</h3>
+        <div class="row"><span class="lbl">스탬프 색</span>
+          <div class="swatches seg-like" data-key="color">
+            <button data-v="orange" style="--sw:#ff8f2e" aria-label="오렌지"></button>
+            <button data-v="yellow" style="--sw:#ffd23f" aria-label="옐로"></button>
+            <button data-v="red" style="--sw:#ff4b33" aria-label="레드"></button>
+            <button data-v="white" style="--sw:#f4f4ef" aria-label="화이트"></button>
+          </div></div>
+        <div class="row"><span class="lbl">스탬프 위치</span>
+          <div class="seg" data-key="align"><button data-v="left">왼쪽 아래</button><button data-v="right">오른쪽 아래</button></div></div>
+        <div class="row"><span class="lbl">정보바 색</span>
+          <div class="seg" data-key="infoTheme"><button data-v="light">화이트</button><button data-v="dark">블랙</button></div></div>
+      </section>
+      <section class="group">
+        <h3>OUR DAY · 우리의 날</h3>
+        <div class="row"><label for="optDday">D-day 함께 찍기</label><input type="checkbox" class="switch" id="optDday" data-key="ddayOn"></div>
+        <div class="row"><label for="optAnniv">기념일 (그날 = D+1)</label><input type="date" class="field" id="optAnniv" data-key="anniv"></div>
+        <div class="row"><label for="optCaption">한 줄 문구</label><input type="text" class="field" id="optCaption" data-key="caption" maxlength="24" placeholder="예: 우리 첫 여행"></div>
+        <p class="hint">문구는 폴라·정보바·디카 스탬프에 들어가요. 필름 스탬프는 그 시절처럼 숫자만 찍어요.</p>
+      </section>
+      <section class="group">
+        <h3>SHOOT · 촬영</h3>
+        <div class="row"><span class="lbl">화면 비율</span>
+          <div class="seg" data-key="aspect"><button data-v="4:3">4:3</button><button data-v="1:1">1:1</button></div></div>
+        <div class="row"><span class="lbl">화질</span>
+          <div class="seg" data-key="quality"><button data-v="2M">2M</button><button data-v="5M">5M</button><button data-v="8M">8M</button></div></div>
+        <div class="row"><label for="optAmount">필터 강도 <span id="amountVal">100%</span></label><input type="range" class="range" id="optAmount" data-key="amount" min="0" max="100" step="5"></div>
+        <div class="row"><label for="optGeo">위치(좌표) 표시</label><input type="checkbox" class="switch" id="optGeo" data-key="geo"></div>
+        <div class="row"><label for="optSound">셔터음</label><input type="checkbox" class="switch" id="optSound" data-key="sound"></div>
+        <p class="hint">정보바의 셔터 속도·ISO는 화면 밝기로 계산한 감성 표기예요. 찍은 사진은 이 기기의 브라우저 안에만 보관되니, 마음에 드는 사진은 꼭 저장해 두세요.</p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="gallerySheet" hidden role="dialog" aria-modal="true" aria-labelledby="galleryTitle">
+  <div class="panel">
+    <div class="panel-head"><h2 id="galleryTitle">ALBUM</h2><div class="acts"><button class="pbtn" id="btnGalleryImport">가져오기</button><button class="pbtn amber" data-close>닫기</button></div></div>
+    <div class="grid" id="grid"></div>
+    <p class="empty" id="galleryEmpty" hidden>아직 찍은 사진이 없어요.<br>셔터를 눌러 오늘의 첫 장을 남겨 보세요.</p>
+  </div>
+</div>
+
+<div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="사진 보기">
+  <div class="viewer-top"><span class="play" id="viewerNo">100-0001</span><span id="viewerDate"></span></div>
+  <div class="viewer-img"><img id="viewerImg" alt="찍은 사진"></div>
+  <div class="viewer-acts">
+    <button class="vbtn" id="btnDelete">삭제</button>
+    <button class="vbtn amber" id="btnSave">기기에 저장</button>
+    <button class="vbtn" id="btnViewerClose">닫기</button>
+  </div>
+</div>
+<div class="flash-screen" id="flashScreen"></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ───────── helpers ───────── */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const pad2 = n => String(n).padStart(2, '0');
+const pad4 = n => String(n).padStart(4, '0');
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const MODEL = 'DX-2006';
+const UI_FONT = '"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif';
+const PEN_FONT = '"Nanum Pen Script","Gaegu",cursive';
+
+/* ───────── settings (per-viewer, browser storage) ───────── */
+const KEY = 'dx2006.settings.v1';
+const DEFAULTS = {
+  filter: 'ccd', stamp: 'film', dateOrder: 'ymd', showTime: false, dateMode: 'now', customDate: '',
+  color: 'orange', align: 'right', infoTheme: 'light', ddayOn: false, anniv: '', caption: '',
+  aspect: '4:3', quality: '5M', amount: 100, geo: false, sound: true, flash: false, timer: 0,
+  facing: 'environment', seq: 0
+};
+const S = (() => { try { return Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch { return { ...DEFAULTS }; } })();
+const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} };
+
+/* ───────── film stocks: shader parameters ───────── */
+const BASE = { exposure: 0, contrast: 1, sat: 1, gain: [1, 1, 1], black: [0, 0, 0], shadowTint: [0, 0, 0], highTint: [0, 0, 0],
+  grain: 0, chroma: 0, vignette: 0, bloom: 0, bloomR: .008, bloomTint: [1, 1, 1], ca: 0, sharpen: 0, mono: 0, iso: 100, css: 'none' };
+const FILTERS = [
+  { id: 'original', name: 'ORIGINAL', ko: '원본', p: { iso: 100 } },
+  { id: 'ccd', name: 'CCD', ko: 'CCD 디카', p: { exposure: .18, contrast: 1.12, sat: 1.18, gain: [.96, 1, 1.07], highTint: [0, .015, .035], sharpen: .7, grain: .035, chroma: .06, bloom: .2, ca: .005, vignette: .14, iso: 100, css: 'contrast(1.12) saturate(1.2) brightness(1.08)' } },
+  { id: 'warm', name: 'WARM 200', ko: '웜 필름', p: { exposure: .05, contrast: 1.06, sat: 1.08, gain: [1.08, 1, .85], black: [.06, .04, .02], highTint: [.035, .015, -.02], grain: .09, vignette: .3, bloom: .14, ca: .0025, iso: 200, css: 'sepia(.25) saturate(1.1) contrast(1.05)' } },
+  { id: 'green', name: 'GREEN 400', ko: '그린 필름', p: { contrast: 1.02, sat: .9, gain: [.95, 1.02, .99], black: [.035, .07, .06], shadowTint: [-.02, .03, .025], highTint: [.025, .02, -.01], grain: .11, vignette: .22, bloom: .1, iso: 400, css: 'saturate(.85) hue-rotate(8deg)' } },
+  { id: 'faded', name: "FADED '98", ko: '바랜 사진', p: { exposure: .1, contrast: .8, sat: .72, gain: [1.06, 1, .86], black: [.16, .12, .08], highTint: [.03, .01, -.035], grain: .08, vignette: .32, bloom: .2, iso: 200, css: 'sepia(.35) contrast(.8) brightness(1.08) saturate(.75)' } },
+  { id: 'dream', name: 'DREAM', ko: '핑크 드림', p: { exposure: .16, contrast: .9, sat: .96, gain: [1.06, .96, 1.02], black: [.12, .06, .09], highTint: [.04, 0, .03], bloom: .55, bloomR: .016, bloomTint: [1, .82, .9], grain: .05, vignette: .18, iso: 100, css: 'brightness(1.1) contrast(.9) sepia(.12) hue-rotate(-10deg)' } },
+  { id: 'mono', name: 'MONO', ko: '흑백', p: { mono: 1, exposure: .05, contrast: 1.28, black: [.03, .03, .03], grain: .14, vignette: .35, sharpen: .25, iso: 400, css: 'grayscale(1) contrast(1.3)' } },
+  { id: 'night', name: 'NIGHT 800', ko: '밤 필름', p: { exposure: .1, contrast: 1.12, sat: 1.05, gain: [.9, .98, 1.12], black: [.02, .035, .07], bloom: .45, bloomR: .012, bloomTint: [1, .32, .18], grain: .13, vignette: .25, iso: 800, css: 'contrast(1.12) hue-rotate(8deg) brightness(1.04)' } },
+];
+const filterById = id => FILTERS.find(f => f.id === id) || FILTERS[1];
+const filterParams = () => Object.assign({}, BASE, filterById(S.filter).p);
+
+/* ───────── WebGL lens: one fragment shader does the whole look ───────── */
+const VS = 'attribute vec2 p;varying vec2 v;void main(){v=p*.5+.5;gl_Position=vec4(p,0.,1.);}';
+const FS = `
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+varying vec2 v;
+uniform sampler2D u_tex;
+uniform vec4 u_crop;
+uniform vec2 u_res;
+uniform float u_mirror,u_time,u_amount,u_flash,u_aspect;
+uniform float u_exposure,u_contrast,u_sat,u_grain,u_chroma,u_vignette,u_bloom,u_bloomR,u_ca,u_sharpen,u_mono;
+uniform vec3 u_gain,u_black,u_shadowTint,u_highTint,u_bloomTint;
+vec3 tap(vec2 uv){
+  uv=clamp(uv,0.,1.);
+  if(u_mirror>.5) uv.x=1.-uv.x;
+  return texture2D(u_tex,u_crop.xy+uv*u_crop.zw).rgb;
+}
+float hash(vec2 p){vec3 p3=fract(vec3(p.xyx)*.1031);p3+=dot(p3,p3.yzx+33.33);return fract((p3.x+p3.y)*p3.z);}
+void main(){
+  vec2 uv=v; vec2 d=uv-.5;
+  float r=length(d*vec2(u_aspect,1.))/length(vec2(u_aspect,1.)*.5);
+  vec3 o=tap(uv);
+  vec3 c=o;
+  if(u_ca>0.){c.r=tap(uv-d*u_ca).r;c.b=tap(uv+d*u_ca).b;}
+  if(u_sharpen>0.){
+    vec2 px=1./u_res;
+    vec3 b=(tap(uv+vec2(px.x,0.))+tap(uv-vec2(px.x,0.))+tap(uv+vec2(0.,px.y))+tap(uv-vec2(0.,px.y)))*.25;
+    c+=(c-b)*u_sharpen;
+  }
+  if(u_bloom>0.){
+    vec3 acc=vec3(0.);
+    for(int i=0;i<12;i++){
+      float a=float(i)*.5236+.3;
+      float rr=mod(float(i),2.)<1.?u_bloomR:u_bloomR*.45;
+      acc+=max(tap(uv+vec2(cos(a)/u_aspect,sin(a))*rr)-.62,0.);
+    }
+    c+=acc*(.28*u_bloom)*u_bloomTint;
+  }
+  c*=exp2(u_exposure);
+  if(u_flash>0.){c*=1.+u_flash*(.45-r*r*1.1);c*=mix(vec3(1.),vec3(1.05,1.,.93),u_flash);}
+  c*=u_gain;
+  c=(c-.5)*u_contrast+.5;
+  float l=dot(c,vec3(.299,.587,.114));
+  c=mix(vec3(l),c,u_sat);
+  if(u_mono>.5) c=vec3(l);
+  float lc=clamp(l,0.,1.);
+  c+=u_shadowTint*(1.-lc)*(1.-lc)+u_highTint*lc*lc;
+  c=u_black+c*(1.-u_black);
+  c*=1.-u_vignette*smoothstep(.3,1.15,r);
+  float cell=max(1.,floor(u_res.x/720.+.5));
+  vec2 gp=floor(gl_FragCoord.xy/cell);
+  float lum=clamp(dot(c,vec3(.299,.587,.114)),0.,1.);
+  c+=(hash(gp+fract(u_time)*317.)-.5)*u_grain*(1.15-abs(lum-.5)*1.1);
+  if(u_chroma>0.){
+    vec3 cn=vec3(hash(gp+19.7+u_time*3.1),hash(gp+47.3+u_time*1.7),hash(gp+83.1+u_time*2.3))-.5;
+    c+=cn*u_chroma*(1.-lum);
+  }
+  c=mix(o,c,u_amount);
+  gl_FragColor=vec4(clamp(c,0.,1.),1.);
+}`;
+
+function coverCrop(sw, sh, w, h) {
+  const sa = sw / sh, a = w / h;
+  if (sa > a) { const cw = sh * a; return { x: (sw - cw) / 2, y: 0, w: cw, h: sh }; }
+  const ch = sw / a; return { x: 0, y: (sh - ch) / 2, w: sw, h: ch };
+}
+const srcSize = s => ({ w: s.videoWidth || s.naturalWidth || s.width, h: s.videoHeight || s.naturalHeight || s.height });
+
+class Lens {
+  constructor(canvas) {
+    const gl = canvas.getContext('webgl', { alpha: false, antialias: false, depth: false, stencil: false, premultipliedAlpha: false, preserveDrawingBuffer: false });
+    if (!gl) throw new Error('webgl unavailable');
+    this.canvas = canvas; this.gl = gl;
+    const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
+    const pr = gl.createProgram();
+    gl.attachShader(pr, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(pr);
+    if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(pr));
+    gl.useProgram(pr);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    this.U = {};
+    const n = gl.getProgramParameter(pr, gl.ACTIVE_UNIFORMS);
+    for (let i = 0; i < n; i++) { const u = gl.getActiveUniform(pr, i); this.U[u.name] = gl.getUniformLocation(pr, u.name); }
+    this.max = Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE), gl.getParameter(gl.MAX_VIEWPORT_DIMS)[0]);
+  }
+  upload(src) {
+    const gl = this.gl, z = srcSize(src);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, src);
+    this.sw = z.w; this.sh = z.h;
+  }
+  render(w, h, P, o) {
+    const gl = this.gl, c = this.canvas, U = this.U;
+    if (c.width !== w) c.width = w;
+    if (c.height !== h) c.height = h;
+    gl.viewport(0, 0, w, h);
+    const cr = coverCrop(this.sw, this.sh, w, h);
+    const f1 = (k, val) => { if (U[k]) gl.uniform1f(U[k], val); };
+    const f3 = (k, val) => { if (U[k]) gl.uniform3fv(U[k], val); };
+    if (U.u_crop) gl.uniform4f(U.u_crop, cr.x / this.sw, cr.y / this.sh, cr.w / this.sw, cr.h / this.sh);
+    if (U.u_res) gl.uniform2f(U.u_res, w, h);
+    f1('u_mirror', o.mirror ? 1 : 0); f1('u_time', o.time || 0); f1('u_amount', o.amount ?? 1);
+    f1('u_flash', o.flash || 0); f1('u_aspect', w / h);
+    ['exposure', 'contrast', 'sat', 'grain', 'chroma', 'vignette', 'bloom', 'bloomR', 'ca', 'sharpen', 'mono'].forEach(k => f1('u_' + k, P[k]));
+    ['gain', 'black', 'shadowTint', 'highTint', 'bloomTint'].forEach(k => f3('u_' + k, P[k]));
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+}
+/* fallback when WebGL is missing: canvas CSS filters, close enough */
+class Lens2D {
+  constructor(canvas) { this.canvas = canvas; this.ctx = canvas.getContext('2d'); this.max = 4096; }
+  upload(src) { this.src = src; const z = srcSize(src); this.sw = z.w; this.sh = z.h; }
+  render(w, h, P, o) {
+    const c = this.canvas, x = this.ctx;
+    if (c.width !== w) c.width = w;
+    if (c.height !== h) c.height = h;
+    const cr = coverCrop(this.sw, this.sh, w, h);
+    x.save();
+    if (o.mirror) { x.translate(w, 0); x.scale(-1, 1); }
+    x.filter = (o.amount ?? 1) > 0.05 ? P.css : 'none';
+    x.drawImage(this.src, cr.x, cr.y, cr.w, cr.h, 0, 0, w, h);
+    x.restore();
+  }
+}
+const makeLens = canvas => { try { return new Lens(canvas); } catch (e) { console.warn('WebGL off:', e); return new Lens2D(canvas); } };
+
+/* ───────── composition geometry ───────── */
+function layoutFor(tpl, iw, ih) {
+  const m = Math.min(iw, ih);
+  if (tpl === 'info') { const bar = Math.round(m * .16); return { tpl, W: iw, H: ih + bar, ix: 0, iy: 0, iw, ih, bar }; }
+  if (tpl === 'polaroid') { const s = Math.round(m * .06), b = Math.round(m * .27); return { tpl, W: iw + 2 * s, H: ih + s + b, ix: s, iy: s, iw, ih, side: s, bottom: b }; }
+  return { tpl, W: iw, H: ih, ix: 0, iy: 0, iw, ih };
+}
+const scaleLayout = (L, k) => { const o = { tpl: L.tpl }; for (const key in L) if (typeof L[key] === 'number') o[key] = L[key] * k; return o; };
+
+/* ───────── dates, D-day, exposure ───────── */
+const WEEK = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+function stampDate(base) {
+  if (S.dateMode === 'custom' && S.customDate) { const d = new Date(S.customDate); if (!isNaN(d)) return d; }
+  return base || new Date();
+}
+function ddayText(date) {
+  if (!S.ddayOn || !S.anniv) return '';
+  const a = new Date(S.anniv + 'T00:00:00');
+  if (isNaN(a)) return '';
+  const d0 = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diff = Math.round((d0 - a) / 864e5);
+  return diff >= 0 ? `D+${diff + 1}` : `D-${-diff}`;
+}
+const SHUTTERS = ['1/8', '1/15', '1/30', '1/60', '1/125', '1/250', '1/500', '1/1000'];
+function estimateExposure(lum, iso, front) {
+  return { focal: front ? '3.9mm' : '6.3mm', fnum: front ? 'f/2.4' : 'f/2.8', shutter: SHUTTERS[clamp(Math.round(lum * 9) - 1, 0, 7)] + 's', iso: 'ISO' + iso };
+}
+function buildMeta(base, exif, lum, live) {
+  const date = stampDate(base);
+  const est = estimateExposure(lum, filterParams().iso, live && S.facing === 'user');
+  const ex = exif || {};
+  return {
+    date, dday: ddayText(date), caption: (S.caption || '').trim(), loc: S.geo ? geoText : '',
+    exif: { focal: ex.focal || est.focal, fnum: ex.fnum || est.fnum, shutter: ex.shutter || est.shutter, iso: ex.iso || est.iso }
+  };
+}
+function orderDate(d, sep, fullYear) {
+  const y = fullYear ? String(d.getFullYear()) : pad2(d.getFullYear() % 100), m = pad2(d.getMonth() + 1), dd = pad2(d.getDate());
+  return S.dateOrder === 'mdy' ? [m, dd, y].join(sep) : S.dateOrder === 'dmy' ? [dd, m, y].join(sep) : [y, m, dd].join(sep);
+}
+const timeText = d => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+
+/* ───────── stamp colours ───────── */
+const STAMP = {
+  orange: { core: '#ff9a3d', glow: '#ff5a0a', dot: '#ff9a2e' },
+  yellow: { core: '#ffd84f', glow: '#ffa600', dot: '#ffd23f' },
+  red: { core: '#ff5a3f', glow: '#ff1d0a', dot: '#ff4b33' },
+  white: { core: '#ffffff', glow: '#b8d0ff', dot: '#f4f4ef' },
+};
+
+/* 7-segment film date (the LED that exposed digits onto film) */
+const SEG = { '0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd', '4': 'fgbc', '5': 'afgcd', '6': 'afgedc', '7': 'abc', '8': 'abcdefg', '9': 'abcdfg', '-': 'g' };
+function segPath(text, h) {
+  const p = new Path2D();
+  const w = h * .52, t = h * .13, g = t * .22, gap = h * .24;
+  const H = (x1, x2, y) => { p.moveTo(x1, y); p.lineTo(x1 + t / 2, y - t / 2); p.lineTo(x2 - t / 2, y - t / 2); p.lineTo(x2, y); p.lineTo(x2 - t / 2, y + t / 2); p.lineTo(x1 + t / 2, y + t / 2); p.closePath(); };
+  const V = (x, y1, y2) => { p.moveTo(x, y1); p.lineTo(x + t / 2, y1 + t / 2); p.lineTo(x + t / 2, y2 - t / 2); p.lineTo(x, y2); p.lineTo(x - t / 2, y2 - t / 2); p.lineTo(x - t / 2, y1 + t / 2); p.closePath(); };
+  let x = 0;
+  for (const ch of text) {
+    if (ch === ' ') { x += w * .62; continue; }
+    if (ch === "'") { p.rect(x, -h, t, h * .3); x += t + gap * .7; continue; }
+    if (ch === ':') { p.rect(x, -h * .74, t, t); p.rect(x, -h * .36, t, t); x += t + gap; continue; }
+    const segs = SEG[ch];
+    if (segs) {
+      const yt = -h + t / 2, ym = -h / 2, yb = -t / 2, xl = x + t / 2, xr = x + w - t / 2;
+      for (const s of segs) {
+        if (s === 'a') H(xl + g, xr - g, yt);
+        else if (s === 'g') H(xl + g, xr - g, ym);
+        else if (s === 'd') H(xl + g, xr - g, yb);
+        else if (s === 'f') V(xl, yt + g, ym - g);
+        else if (s === 'e') V(xl, ym + g, yb - g);
+        else if (s === 'b') V(xr, yt + g, ym - g);
+        else if (s === 'c') V(xr, ym + g, yb - g);
+      }
+    }
+    x += w + gap;
+  }
+  return { path: p, width: Math.max(0, x - gap) };
+}
+function filmText(d) {
+  const y = pad2(d.getFullYear() % 100), m = String(d.getMonth() + 1), dd = String(d.getDate());
+  let s = S.dateOrder === 'mdy' ? `${m} ${dd} '${y}` : S.dateOrder === 'dmy' ? `${dd} ${m} '${y}` : `'${y} ${m} ${dd}`;
+  if (S.showTime) s += '  ' + timeText(d);
+  return s;
+}
+function drawFilmStamp(ctx, L, meta, col) {
+  const m = Math.min(L.iw, L.ih), h = m * .05, margin = m * .065;
+  const { path, width } = segPath(filmText(meta.date), h);
+  const x = S.align === 'left' ? L.ix + margin : L.ix + L.iw - margin - width - h * .12;
+  const y = L.iy + L.ih - m * .058;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.transform(1, 0, -.12, 1, 0, 0);
+  ctx.shadowColor = col.glow;
+  ctx.globalCompositeOperation = 'screen';
+  ctx.shadowBlur = h * .9; ctx.globalAlpha = .75; ctx.fillStyle = col.glow; ctx.fill(path);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.shadowBlur = h * .18; ctx.globalAlpha = .9; ctx.fillStyle = col.core; ctx.fill(path);
+  ctx.shadowBlur = 0; ctx.globalAlpha = .28; ctx.fillStyle = '#fff3dc'; ctx.fill(path);
+  ctx.restore();
+}
+
+/* 5×7 dot-matrix (2000s digicam overlay) */
+const FONT = (() => {
+  const raw = {
+    '0': '01110 10001 10011 10101 11001 10001 01110', '1': '00100 01100 00100 00100 00100 00100 01110',
+    '2': '01110 10001 00001 00010 00100 01000 11111', '3': '11111 00010 00100 00010 00001 10001 01110',
+    '4': '00010 00110 01010 10010 11111 00010 00010', '5': '11111 10000 11110 00001 00001 10001 01110',
+    '6': '00110 01000 10000 11110 10001 10001 01110', '7': '11111 00001 00010 00100 01000 01000 01000',
+    '8': '01110 10001 10001 01110 10001 10001 01110', '9': '01110 10001 10001 01111 00001 00010 01100',
+    'A': '01110 10001 10001 10001 11111 10001 10001', 'B': '11110 10001 10001 11110 10001 10001 11110',
+    'C': '01110 10001 10000 10000 10000 10001 01110', 'D': '11100 10010 10001 10001 10001 10010 11100',
+    'E': '11111 10000 10000 11110 10000 10000 11111', 'F': '11111 10000 10000 11110 10000 10000 10000',
+    'G': '01110 10001 10000 10111 10001 10001 01111', 'H': '10001 10001 10001 11111 10001 10001 10001',
+    'I': '01110 00100 00100 00100 00100 00100 01110', 'J': '00111 00010 00010 00010 00010 10010 01100',
+    'K': '10001 10010 10100 11000 10100 10010 10001', 'L': '10000 10000 10000 10000 10000 10000 11111',
+    'M': '10001 11011 10101 10101 10001 10001 10001', 'N': '10001 10001 11001 10101 10011 10001 10001',
+    'O': '01110 10001 10001 10001 10001 10001 01110', 'P': '11110 10001 10001 11110 10000 10000 10000',
+    'Q': '01110 10001 10001 10001 10101 10010 01101', 'R': '11110 10001 10001 11110 10100 10010 10001',
+    'S': '01111 10000 10000 01110 00001 00001 11110', 'T': '11111 00100 00100 00100 00100 00100 00100',
+    'U': '10001 10001 10001 10001 10001 10001 01110', 'V': '10001 10001 10001 10001 10001 01010 00100',
+    'W': '10001 10001 10001 10101 10101 10101 01010', 'X': '10001 10001 01010 00100 01010 10001 10001',
+    'Y': '10001 10001 10001 01010 00100 00100 00100', 'Z': '11111 00001 00010 00100 01000 10000 11111',
+    '/': '00000 00001 00010 00100 01000 10000 00000', ':': '00000 01100 01100 00000 01100 01100 00000',
+    '.': '00000 00000 00000 00000 00000 01100 01100', '-': '00000 00000 00000 11111 00000 00000 00000',
+    '+': '00000 00100 00100 11111 00100 00100 00000', "'": '01100 01100 00100 01000 00000 00000 00000',
+    '!': '00100 00100 00100 00100 00100 00000 00100', '?': '01110 10001 00001 00010 00100 00000 00100',
+    '&': '01100 10010 10100 01000 10101 10010 01101', ' ': '00000 00000 00000 00000 00000 00000 00000',
+    '♥': '00000 01010 11111 11111 01110 00100 00000'
+  };
+  const out = {};
+  for (const k in raw) out[k] = raw[k].split(' ');
+  return out;
+})();
+const pixelCache = new Map();
+function pixelize(text) {
+  if (pixelCache.has(text)) return pixelCache.get(text);
+  const cell = 12, c = document.createElement('canvas'), g = c.getContext('2d', { willReadFrequently: true });
+  g.font = `600 ${cell}px ${UI_FONT}`;
+  c.width = Math.max(1, Math.ceil(g.measureText(text).width) + 2); c.height = Math.ceil(cell * 1.35);
+  g.font = `600 ${cell}px ${UI_FONT}`; g.fillStyle = '#fff'; g.fillText(text, 1, Math.round(cell * 1.02));
+  const d = g.getImageData(0, 0, c.width, c.height).data, pts = [];
+  for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) if (d[(y * c.width + x) * 4 + 3] > 110) pts.push([x, y]);
+  const r = { pts, w: c.width, h: c.height, scale: .82 };
+  pixelCache.set(text, r);
+  return r;
+}
+function dotGlyphs(text) {
+  const up = text.toUpperCase();
+  if (![...up].every(ch => FONT[ch])) return pixelize(text);
+  const pts = []; let i = 0;
+  for (const ch of up) { const g = FONT[ch]; for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++) if (g[r][c] === '1') pts.push([i * 6 + c, r]); i++; }
+  return { pts, w: Math.max(1, i * 6 - 1), h: 7, scale: 1 };
+}
+function drawDotText(ctx, text, x, yb, p, col, align) {
+  const gl = dotGlyphs(text), s = p * gl.scale, w = gl.w * s, h = gl.h * s;
+  const x0 = align === 'left' ? x : x - w, y0 = yb - h;
+  const shadow = new Path2D(), face = new Path2D();
+  for (const [cx, cy] of gl.pts) {
+    shadow.rect(x0 + cx * s + s * .45, y0 + cy * s + s * .45, s, s);
+    face.rect(x0 + cx * s, y0 + cy * s, s * .9, s * .9);
+  }
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fill(shadow);
+  ctx.fillStyle = col.dot; ctx.fill(face);
+  ctx.restore();
+  return h;
+}
+function drawDigiStamp(ctx, L, meta, col) {
+  const m = Math.min(L.iw, L.ih), p = m * .0062, margin = m * .055;
+  let date = orderDate(meta.date, '/', true);
+  if (S.showTime) date += ' ' + timeText(meta.date);
+  const lines = [];
+  if (meta.caption) lines.push(meta.caption);
+  if (meta.dday) lines.push('♥ ' + meta.dday);
+  lines.push(date);
+  const x = S.align === 'left' ? L.ix + margin : L.ix + L.iw - margin;
+  let y = L.iy + L.ih - margin;
+  for (let i = lines.length - 1; i >= 0; i--) y -= drawDotText(ctx, lines[i], x, y, p, col, S.align) + p * 3.2;
+}
+
+/* bottom info bar */
+const infoColors = () => S.infoTheme === 'dark' ? { bg: '#111214', fg: '#f1efe9', sub: '#8e8b84' } : { bg: '#f7f5f0', fg: '#1c1b19', sub: '#8b877e' };
+function fitText(ctx, text, max, size, weight, family) {
+  let s = size;
+  ctx.font = `${weight} ${s}px ${family}`;
+  while (ctx.measureText(text).width > max && s > size * .62) { s *= .94; ctx.font = `${weight} ${s}px ${family}`; }
+  if (ctx.measureText(text).width <= max) return text;
+  let t = text;
+  while (t.length > 1 && ctx.measureText(t + '…').width > max) t = t.slice(0, -1);
+  return t + '…';
+}
+function drawInfoText(ctx, L, meta, col) {
+  const c = infoColors(), b = L.bar, W = L.W, y0 = L.iy + L.ih;
+  const padX = Math.max(b * .3, W * .045), fBig = b * .2, fSmall = b * .135;
+  const y1 = y0 + b * .47, y2 = y0 + b * .75;
+  const right1 = orderDate(meta.date, '.', true) + (S.showTime ? '  ' + timeText(meta.date) : '');
+  const right2 = [WEEK[meta.date.getDay()], meta.dday && '♥ ' + meta.dday, meta.loc].filter(Boolean).join('  ·  ');
+  ctx.save();
+  ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'right';
+  ctx.font = `600 ${fBig}px ${UI_FONT}`; const rw1 = ctx.measureText(right1).width;
+  ctx.fillStyle = c.fg; ctx.fillText(right1, W - padX, y1);
+  ctx.font = `400 ${fSmall}px ${UI_FONT}`; const rw2 = ctx.measureText(right2).width;
+  ctx.fillStyle = c.sub; ctx.fillText(right2, W - padX, y2);
+  const rw = Math.max(rw1, rw2);
+  const r = fBig * .26, lx = padX + r * 2 + fBig * .45;
+  ctx.fillStyle = col.dot; ctx.beginPath(); ctx.arc(padX + r, y1 - fBig * .34, r, 0, Math.PI * 2); ctx.fill();
+  const maxLeft = Math.max(W * .2, W - padX - rw - b * .35 - lx);
+  ctx.textAlign = 'left';
+  ctx.fillStyle = c.fg; const left1 = fitText(ctx, meta.caption || `${MODEL} DIGITAL`, maxLeft, fBig, 600, UI_FONT); ctx.fillText(left1, lx, y1);
+  const e = meta.exif;
+  ctx.fillStyle = c.sub; const left2 = fitText(ctx, `${e.focal}  ${e.fnum}  ${e.shutter}  ${e.iso}`, maxLeft, fSmall, 400, UI_FONT); ctx.fillText(left2, lx, y2);
+  ctx.restore();
+}
+
+/* polaroid-style print */
+function drawPolaroidText(ctx, L, meta) {
+  const m = Math.min(L.iw, L.ih), b = L.bottom, x0 = L.ix, x1 = L.ix + L.iw, top = L.iy + L.ih;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,0,0,.14)'; ctx.lineWidth = Math.max(1, m * .0016); ctx.strokeRect(L.ix, L.iy, L.iw, L.ih);
+  ctx.fillStyle = '#2d3047'; ctx.textBaseline = 'alphabetic';
+  const date = orderDate(meta.date, '.', false) + (S.showTime ? '  ' + timeText(meta.date) : '');
+  const big = meta.caption || date;
+  const small = meta.caption ? [meta.dday, date].filter(Boolean).join('   ') : meta.dday;
+  ctx.save();
+  ctx.translate(x0 + b * .06, top + b * .52); ctx.rotate(-.018);
+  ctx.fillText(fitText(ctx, big, L.iw * .9, b * .32, 400, PEN_FONT), 0, 0);
+  ctx.restore();
+  if (small) {
+    ctx.textAlign = 'right'; ctx.globalAlpha = .82; ctx.font = `400 ${b * .2}px ${PEN_FONT}`;
+    ctx.fillText(small, x1 - b * .04, top + b * .84);
+  }
+  ctx.restore();
+}
+
+function drawBackground(ctx, L) {
+  if (L.tpl === 'info') { ctx.fillStyle = infoColors().bg; ctx.fillRect(0, L.iy + L.ih, L.W, L.H - L.iy - L.ih); }
+  else if (L.tpl === 'polaroid') {
+    const g = ctx.createLinearGradient(0, 0, 0, L.H); g.addColorStop(0, '#f8f5ee'); g.addColorStop(1, '#eeeadf');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, L.W, L.H);
+  }
+}
+function drawForeground(ctx, L, meta) {
+  const col = STAMP[S.color] || STAMP.orange;
+  if (L.tpl === 'film') drawFilmStamp(ctx, L, meta, col);
+  else if (L.tpl === 'digi') drawDigiStamp(ctx, L, meta, col);
+  else if (L.tpl === 'info') drawInfoText(ctx, L, meta, col);
+  else if (L.tpl === 'polaroid') drawPolaroidText(ctx, L, meta);
+}
+async function ensureFonts(text) {
+  if (!document.fonts || !document.fonts.load) return;
+  const t = (text || '') + '0123456789.:+-DIGITAL';
+  try {
+    await Promise.race([Promise.all([
+      document.fonts.load(`400 40px "Nanum Pen Script"`, t),
+      document.fonts.load(`600 40px "IBM Plex Sans KR"`, t),
+      document.fonts.load(`400 40px "IBM Plex Sans KR"`, t)
+    ]), sleep(1500)]);
+  } catch {}
+}
+
+/* ───────── sample scene for when no live camera is available ───────── */
+function makeSample() {
+  const w = 960, h = 1280, c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d'); let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const hz = h * .6;
+  let gr = g.createLinearGradient(0, 0, 0, hz);
+  gr.addColorStop(0, '#4c6ca1'); gr.addColorStop(.45, '#c4a2b8'); gr.addColorStop(.8, '#f2b98f'); gr.addColorStop(1, '#f8d8a6');
+  g.fillStyle = gr; g.fillRect(0, 0, w, hz);
+  g.fillStyle = 'rgba(255,226,214,.28)';
+  for (let i = 0; i < 9; i++) { g.beginPath(); g.ellipse(rnd() * w, h * (.1 + rnd() * .3), w * (.12 + rnd() * .18), h * (.012 + rnd() * .018), 0, 0, Math.PI * 2); g.fill(); }
+  const sx = w * .64, sy = hz - h * .07, sr = w * .075;
+  const rg = g.createRadialGradient(sx, sy, sr * .6, sx, sy, sr * 5);
+  rg.addColorStop(0, 'rgba(255,236,190,.95)'); rg.addColorStop(.3, 'rgba(255,196,140,.45)'); rg.addColorStop(1, 'rgba(255,170,120,0)');
+  g.fillStyle = rg; g.fillRect(0, 0, w, h);
+  g.fillStyle = '#fff4dc'; g.beginPath(); g.arc(sx, sy, sr, 0, Math.PI * 2); g.fill();
+  const ridge = (base, amp, color, f1, f2) => {
+    g.fillStyle = color; g.beginPath(); g.moveTo(0, base);
+    for (let x = 0; x <= w; x += 8) g.lineTo(x, base - amp * (.55 + .3 * Math.sin(x / w * f1 * 6.28 + 1.3) + .15 * Math.sin(x / w * f2 * 6.28)));
+    g.lineTo(w, base + 2); g.lineTo(0, base + 2); g.fill();
+  };
+  ridge(hz, h * .07, '#a08fa9', 1.2, 3.7);
+  ridge(hz, h * .04, '#7d6e8d', 2.1, 6.3);
+  gr = g.createLinearGradient(0, hz, 0, h * .84);
+  gr.addColorStop(0, '#e9b690'); gr.addColorStop(.35, '#ab8fa1'); gr.addColorStop(1, '#4b587b');
+  g.fillStyle = gr; g.fillRect(0, hz, w, h * .84 - hz);
+  for (let i = 0; i < 28; i++) {
+    const yy = hz + 5 + i * i * .62, ww = sr * (1.7 - i * .045) * (.6 + rnd() * .8);
+    g.fillStyle = `rgba(255,232,194,${Math.max(0, .6 - i * .02)})`;
+    g.fillRect(sx - ww / 2 + (rnd() - .5) * 14, yy, ww, 2 + i * .16);
+  }
+  gr = g.createLinearGradient(0, h * .8, 0, h);
+  gr.addColorStop(0, '#caa083'); gr.addColorStop(1, '#6a4d44');
+  g.fillStyle = gr; g.beginPath(); g.moveTo(0, h * .845); g.quadraticCurveTo(w * .5, h * .8, w, h * .85); g.lineTo(w, h); g.lineTo(0, h); g.fill();
+  const person = (x, base, H) => {
+    g.beginPath(); g.arc(x, base - H * .89, H * .1, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.moveTo(x - H * .13, base - H * .76); g.lineTo(x + H * .13, base - H * .76); g.lineTo(x + H * .1, base - H * .38); g.lineTo(x - H * .1, base - H * .38); g.fill();
+    g.fillRect(x - H * .09, base - H * .4, H * .07, H * .4); g.fillRect(x + H * .02, base - H * .4, H * .07, H * .4);
+  };
+  g.fillStyle = '#2c232f';
+  person(w * .3, h * .842, h * .085); person(w * .36, h * .844, h * .076);
+  g.strokeStyle = '#2c232f'; g.lineWidth = h * .01; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(w * .3 + h * .012, h * .842 - h * .05); g.lineTo(w * .36 - h * .011, h * .844 - h * .045); g.stroke();
+  return c;
+}
+
+/* ───────── DOM refs & state ───────── */
+const video = $('#video'), lcd = $('#lcd'), frame = $('#frame'), glc = $('#gl'), deco = $('#deco'), osd = $('#osd');
+let lens = null, capLens = null, stream = null, track = null, live = false, sampleSrc = null;
+let needsStatic = true, busy = false, cdCancel = null, geoText = '', liveLum = .55, lastSig = '';
+let lastVW = 0, lastVH = 0;
+const view = { L: null, glW: 2, glH: 2 };
+let photos = [];
+
+/* ───────── toast / led ───────── */
+let toastT = 0;
+function toast(msg, ms = 2600) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), ms);
+}
+const setLed = s => { $('#led').className = 'led' + (s && s !== 'ready' ? ' ' + s : ''); };
+
+/* ───────── sound: synthesized digicam beeps & shutter ───────── */
+let actx = null;
+function audio() {
+  if (!actx) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) try { actx = new AC(); } catch {} }
+  if (actx && actx.state === 'suspended') actx.resume().catch(() => {});
+  return actx;
+}
+function beep(freq = 2800, dur = .045, when = 0, vol = .06) {
+  const a = S.sound && audio(); if (!a) return;
+  const t = a.currentTime + when, o = a.createOscillator(), g = a.createGain();
+  o.type = 'square'; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + .02);
+}
+function click(when, dur, vol, freq) {
+  const a = actx; if (!a) return;
+  const n = Math.floor(a.sampleRate * dur), buf = a.createBuffer(1, n, a.sampleRate), ch = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 3);
+  const src = a.createBufferSource(), bp = a.createBiquadFilter(), g = a.createGain(), t = a.currentTime + when;
+  src.buffer = buf; bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = .9; g.gain.value = vol;
+  src.connect(bp).connect(g).connect(a.destination); src.start(t);
+}
+function shutterSound() { if (!S.sound || !audio()) return; click(0, .03, .9, 3400); click(.07, .055, .7, 1700); }
+
+/* ───────── camera ───────── */
+function stopCamera() {
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  stream = null; track = null; live = false;
+}
+async function startCamera() {
+  stopCamera();
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    const e = new Error('no getUserMedia'); e.name = window.isSecureContext === false ? 'InsecureContext' : 'NotSupportedError'; throw e;
+  }
+  const s = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: S.facing }, width: { ideal: 1920 }, height: { ideal: 1440 } } });
+  stream = s; track = s.getVideoTracks()[0];
+  video.srcObject = s;
+  try { await video.play(); } catch {}
+  for (let i = 0; i < 60 && !video.videoWidth; i++) await sleep(50);
+  if (!video.videoWidth) throw new Error('camera produced no frames');
+  live = true;
+  track.addEventListener('ended', () => { live = false; needsStatic = true; showFallback(true); });
+  showFallback(false);
+}
+function showFallback(on, err) {
+  $('#osdSample').hidden = !on;
+  $('#btnRetry').hidden = !on || window.self !== window.top;
+  $('#shutter').setAttribute('aria-label', on ? '기본 카메라로 촬영' : '촬영');
+  if (on && err) {
+    const msg = err.name === 'InsecureContext' ? 'HTTPS 주소에서 열어야 실시간 카메라가 켜져요. 셔터를 누르면 기본 카메라로 찍어요.'
+      : err.name === 'NotAllowedError' ? '카메라 미리보기가 막혀 있어요. 셔터를 누르면 기본 카메라 앱으로 찍고 바로 날짜를 찍어 드려요.'
+      : '실시간 미리보기를 쓸 수 없어요. 셔터를 누르면 기본 카메라로 찍어요.';
+    toast(msg, 6000);
+  }
+  needsStatic = true;
+  relayout();
+}
+async function setTorch(on) {
+  try {
+    if (!track || !track.getCapabilities || !track.getCapabilities().torch) return false;
+    await track.applyConstraints({ advanced: [{ torch: on }] }); return true;
+  } catch { return false; }
+}
+
+/* ───────── viewfinder layout & rendering ───────── */
+function qualityLong() { return { '2M': 1600, '5M': 2592, '8M': 3264 }[S.quality] || 2592; }
+function captureDims() {
+  const long = qualityLong(), short = Math.round(long * .75 / 2) * 2;
+  let portrait;
+  if (live && video.videoWidth) portrait = video.videoHeight > video.videoWidth;
+  else { const r = lcd.getBoundingClientRect(); portrait = r.height >= r.width; }
+  if (S.aspect === '1:1') return { w: short, h: short };
+  return portrait ? { w: short, h: long } : { w: long, h: short };
+}
+function relayout() {
+  const r = lcd.getBoundingClientRect();
+  const aw = r.width - 20, ah = r.height - 20;
+  if (aw <= 0 || ah <= 0) return;
+  const d = captureDims(), L = layoutFor(S.stamp, d.w, d.h);
+  const k = Math.min(aw / L.W, ah / L.H), bw = Math.round(L.W * k), bh = Math.round(L.H * k);
+  frame.style.width = bw + 'px'; frame.style.height = bh + 'px';
+  const ir = { left: L.ix * k + 'px', top: L.iy * k + 'px', width: L.iw * k + 'px', height: L.ih * k + 'px' };
+  Object.assign(glc.style, ir); Object.assign(osd.style, ir);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  let gw = Math.round(L.iw * k * dpr), gh = Math.round(L.ih * k * dpr);
+  const cap = 1280 / Math.max(gw, gh);
+  if (cap < 1) { gw = Math.round(gw * cap); gh = Math.round(gh * cap); }
+  view.L = L; view.glW = Math.max(2, gw); view.glH = Math.max(2, gh);
+  deco.width = Math.max(2, Math.round(bw * dpr)); deco.height = Math.max(2, Math.round(bh * dpr));
+  drawOverlay();
+  needsStatic = true;
+}
+function previewMeta() {
+  const m = buildMeta(new Date(), null, liveLum, live);
+  return m;
+}
+function drawOverlay() {
+  if (!view.L) return;
+  const ctx = deco.getContext('2d');
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, deco.width, deco.height);
+  const L = scaleLayout(view.L, deco.width / view.L.W), meta = previewMeta();
+  drawBackground(ctx, L);
+  ctx.clearRect(Math.ceil(L.ix), Math.ceil(L.iy), Math.floor(L.iw), Math.floor(L.ih));
+  drawForeground(ctx, L, meta);
+  lastSig = sigOf(meta);
+}
+const sigOf = m => [m.date.getFullYear(), m.date.getMonth(), m.date.getDate(), m.date.getHours(), m.date.getMinutes(), m.dday, m.exif.shutter, m.exif.iso, m.loc].join('|');
+function renderPreview(t) {
+  lens.render(view.glW, view.glH, filterParams(), {
+    mirror: live && S.facing === 'user', time: (t * .001) % 100, amount: S.amount / 100, flash: S.flash ? .5 : 0
+  });
+}
+let sampleUploaded = false;
+function loop(t) {
+  requestAnimationFrame(loop);
+  if (!lens) return;
+  if (live && video.readyState >= 2 && video.videoWidth) {
+    if (video.videoWidth !== lastVW || video.videoHeight !== lastVH) { lastVW = video.videoWidth; lastVH = video.videoHeight; relayout(); }
+    lens.upload(video); sampleUploaded = false;
+    renderPreview(t);
+  } else if (needsStatic && sampleSrc) {
+    if (!sampleUploaded) { lens.upload(sampleSrc); sampleUploaded = true; }
+    renderPreview(t); needsStatic = false;
+  }
+}
+const lumC = document.createElement('canvas'); lumC.width = 24; lumC.height = 18;
+const lumX = lumC.getContext('2d', { willReadFrequently: true });
+function measureLum(src) {
+  try {
+    lumX.drawImage(src, 0, 0, 24, 18);
+    const d = lumX.getImageData(0, 0, 24, 18).data; let s = 0;
+    for (let i = 0; i < d.length; i += 4) s += d[i] * .299 + d[i + 1] * .587 + d[i + 2] * .114;
+    return s / (d.length / 4) / 255;
+  } catch { return .5; }
+}
+
+/* ───────── capture & compose ───────── */
+function compose(src, dims, meta, opts) {
+  if (!capLens) capLens = makeLens(document.createElement('canvas'));
+  let { w, h } = dims;
+  const k = Math.min(1, capLens.max / Math.max(w, h)); w = Math.round(w * k); h = Math.round(h * k);
+  const L = layoutFor(S.stamp, w, h);
+  const out = document.createElement('canvas'); out.width = L.W; out.height = L.H;
+  const ctx = out.getContext('2d');
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, L.W, L.H);
+  drawBackground(ctx, L);
+  capLens.upload(src);
+  capLens.render(L.iw, L.ih, filterParams(), { mirror: !!opts.mirror, time: Math.random() * 100, amount: S.amount / 100, flash: opts.flash || 0 });
+  ctx.drawImage(capLens.canvas, L.ix, L.iy, L.iw, L.ih);
+  drawForeground(ctx, L, meta);
+  return out;
+}
+function countdown(n) {
+  return new Promise(res => {
+    const el = $('#countdown'); let left = n;
+    el.hidden = false; el.textContent = left; setLed('timer'); beep(1800, .06);
+    const iv = setInterval(() => {
+      left--;
+      if (left <= 0) { clearInterval(iv); el.hidden = true; cdCancel = null; res(true); }
+      else { el.textContent = left; beep(left <= 2 ? 2500 : 1800, .06); }
+    }, 1000);
+    cdCancel = () => { clearInterval(iv); el.hidden = true; cdCancel = null; res(false); };
+  });
+}
+function afLock() { const af = $('#af'); af.classList.add('lock'); setTimeout(() => af.classList.remove('lock'), 500); }
+function blink() { const b = $('#blink'); b.classList.remove('on'); void b.offsetWidth; b.classList.add('on'); }
+async function shoot() {
+  audio();
+  if (cdCancel) { cdCancel(); toast('타이머를 취소했어요'); return; }
+  if (busy) return;
+  if (!live) { $('#fileCapture').click(); return; }
+  busy = true;
+  let torchOn = false;
+  try {
+    if (S.timer) { const go = await countdown(S.timer); if (!go) return; }
+    setLed('busy'); afLock(); beep(2900, .04); beep(2900, .04, .085);
+    await sleep(170);
+    if (S.flash) {
+      if (S.facing === 'user') { $('#flashScreen').classList.add('on'); await sleep(280); }
+      else { torchOn = await setTorch(true); if (torchOn) await sleep(450); }
+    }
+    const meta = buildMeta(new Date(), null, measureLum(video), true);
+    await ensureFonts(meta.caption);
+    const out = compose(video, captureDims(), meta, { mirror: S.facing === 'user', flash: S.flash ? .55 : 0 });
+    shutterSound(); blink();
+    if (navigator.vibrate) try { navigator.vibrate(12); } catch {}
+    $('#flashScreen').classList.remove('on');
+    if (torchOn) { setTorch(false); torchOn = false; }
+    const rec = await storePhoto(out, meta);
+    openViewer(rec, true);
+  } catch (e) {
+    console.error(e); toast('촬영하지 못했어요. 한 번 더 눌러 주세요');
+  } finally {
+    busy = false; setLed('ready'); $('#flashScreen').classList.remove('on');
+    if (torchOn) setTorch(false);
+  }
+}
+
+/* ───────── imports & native-camera captures ───────── */
+function readExif(buf) {
+  try {
+    const v = new DataView(buf);
+    if (v.getUint16(0) !== 0xFFD8) return null;
+    let off = 2;
+    while (off + 4 < v.byteLength) {
+      const mk = v.getUint16(off);
+      if ((mk & 0xFF00) !== 0xFF00 || mk === 0xFFDA) return null;
+      const len = v.getUint16(off + 2);
+      if (mk === 0xFFE1 && v.getUint32(off + 4) === 0x45786966) return parseTiff(v, off + 10);
+      off += 2 + len;
+    }
+  } catch {}
+  return null;
+}
+function parseTiff(v, t) {
+  const le = v.getUint16(t) === 0x4949;
+  const u16 = o => v.getUint16(t + o, le), u32 = o => v.getUint32(t + o, le);
+  const list = ifd => { const n = u16(ifd), a = []; for (let i = 0; i < n; i++) { const e = ifd + 2 + i * 12; a.push({ tag: u16(e), type: u16(e + 2), count: u32(e + 4), vo: e + 8 }); } return a; };
+  const ascii = e => { const o = e.count > 4 ? u32(e.vo) : e.vo; let s = ''; for (let i = 0; i < e.count; i++) { const ch = v.getUint8(t + o + i); if (!ch) break; s += String.fromCharCode(ch); } return s; };
+  const rational = e => { const o = u32(e.vo), den = u32(o + 4); return den ? u32(o) / den : 0; };
+  const out = {}; let exifPtr = 0, dt = '', dto = '';
+  for (const e of list(u32(4))) { if (e.tag === 0x8769) exifPtr = u32(e.vo); else if (e.tag === 0x0132) dt = ascii(e); }
+  if (exifPtr) for (const e of list(exifPtr)) {
+    if (e.tag === 0x9003) dto = ascii(e);
+    else if (e.tag === 0x829A) { const x = rational(e); if (x) out.shutter = x >= 1 ? `${+x.toFixed(1)}s` : `1/${Math.round(1 / x)}s`; }
+    else if (e.tag === 0x829D) { const x = rational(e); if (x) out.fnum = `f/${+x.toFixed(1)}`; }
+    else if (e.tag === 0x8827) out.iso = 'ISO' + (e.type === 3 ? u16(e.vo) : u32(e.vo));
+    else if (e.tag === 0x920A) { const x = rational(e); if (x) out.focal = `${+x.toFixed(1)}mm`; }
+  }
+  const m = /^(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})/.exec(dto || dt);
+  if (m) out.date = new Date(+m[1], m[2] - 1, +m[3], +m[4], +m[5], +m[6]);
+  return out;
+}
+async function importOne(file, source) {
+  const buf = await file.arrayBuffer();
+  const ex = readExif(buf) || {};
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image(); img.src = url; await img.decode();
+    const k = Math.min(1, qualityLong() / Math.max(img.naturalWidth, img.naturalHeight));
+    const w = Math.round(img.naturalWidth * k), h = Math.round(img.naturalHeight * k);
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    c.getContext('2d').drawImage(img, 0, 0, w, h);
+    const base = ex.date || (source === 'camera' ? new Date() : new Date(file.lastModified || Date.now()));
+    const meta = buildMeta(base, ex, measureLum(c), false);
+    await ensureFonts(meta.caption);
+    return storePhoto(compose(c, { w, h }, meta, {}), meta);
+  } finally { URL.revokeObjectURL(url); }
+}
+async function importFiles(files, source) {
+  files = [...files]; if (!files.length) return;
+  setLed('busy'); let last = null, ok = 0;
+  if (files.length > 1) toast(`${files.length}장에 날짜를 찍는 중…`, 8000);
+  for (const f of files) {
+    try { last = await importOne(f, source); ok++; } catch (e) { console.warn(e); toast('이 사진은 열 수 없어요. JPG나 PNG로 다시 골라 주세요'); }
+  }
+  setLed('ready');
+  if (ok === 1) { shutterSound(); openViewer(last, true); }
+  else if (ok > 1) { toast(`${ok}장에 날짜를 찍었어요`); openGallery(); }
+}
+
+/* ───────── storage: IndexedDB album ───────── */
+const DB = {
+  db: null,
+  open() {
+    if (this.db) return Promise.resolve(this.db);
+    return new Promise((res, rej) => {
+      const r = indexedDB.open('dx2006', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('photos', { keyPath: 'id' });
+      r.onsuccess = () => { this.db = r.result; res(r.result); };
+      r.onerror = () => rej(r.error);
+    });
+  },
+  async run(mode, fn) {
+    const db = await this.open();
+    return new Promise((res, rej) => {
+      const tx = db.transaction('photos', mode), req = fn(tx.objectStore('photos'));
+      tx.oncomplete = () => res(req && req.result); tx.onerror = () => rej(tx.error);
+    });
+  },
+  all() { return this.run('readonly', s => s.getAll()); },
+  put(r) { return this.run('readwrite', s => s.put(r)); },
+  del(id) { return this.run('readwrite', s => s.delete(id)); }
+};
+function exifApp1(date) {
+  const dt = `${date.getFullYear()}:${pad2(date.getMonth() + 1)}:${pad2(date.getDate())} ${pad2(date.getHours())}:${pad2(date.getMinutes())}:${pad2(date.getSeconds())}`;
+  const asc = s => { const a = new TextEncoder().encode(s), b = new Uint8Array(a.length + 1); b.set(a); return { type: 2, count: b.length, data: b }; };
+  const ifd0 = [
+    { tag: 0x010F, ...asc('GEUNAL') }, { tag: 0x0110, ...asc(MODEL) }, { tag: 0x0112, type: 3, count: 1, value: 1 },
+    { tag: 0x0131, ...asc('DX-2006 web') }, { tag: 0x0132, ...asc(dt) }, { tag: 0x8769, type: 4, count: 1, value: 0 }
+  ];
+  const exif = [{ tag: 0x9003, ...asc(dt) }, { tag: 0x9004, ...asc(dt) }];
+  const ext = e => e.data && e.data.length > 4 ? e.data.length + (e.data.length & 1) : 0;
+  const size = list => 2 + list.length * 12 + 4;
+  const off0 = 8, data0 = off0 + size(ifd0), offE = data0 + ifd0.reduce((s, e) => s + ext(e), 0), dataE = offE + size(exif);
+  const total = dataE + exif.reduce((s, e) => s + ext(e), 0);
+  ifd0[5].value = offE;
+  const u8 = new Uint8Array(total), v = new DataView(u8.buffer);
+  u8[0] = 0x49; u8[1] = 0x49; v.setUint16(2, 42, true); v.setUint32(4, off0, true);
+  const write = (list, at, dataAt) => {
+    v.setUint16(at, list.length, true); let p = at + 2, d = dataAt;
+    for (const e of list) {
+      v.setUint16(p, e.tag, true); v.setUint16(p + 2, e.type, true); v.setUint32(p + 4, e.count, true);
+      if (e.data) { if (e.data.length <= 4) u8.set(e.data, p + 8); else { v.setUint32(p + 8, d, true); u8.set(e.data, d); d += ext(e); } }
+      else if (e.type === 3) v.setUint16(p + 8, e.value, true); else v.setUint32(p + 8, e.value, true);
+      p += 12;
+    }
+    v.setUint32(p, 0, true);
+  };
+  write(ifd0, off0, data0); write(exif, offE, dataE);
+  const seg = new Uint8Array(4 + 6 + total);
+  seg[0] = 0xFF; seg[1] = 0xE1; seg[2] = (seg.length - 2) >> 8; seg[3] = (seg.length - 2) & 255;
+  seg.set([0x45, 0x78, 0x69, 0x66, 0, 0], 4); seg.set(u8, 10);
+  return seg;
+}
+async function withExif(blob, date) {
+  try {
+    const b = new Uint8Array(await blob.arrayBuffer());
+    if (b[0] !== 0xFF || b[1] !== 0xD8) return blob;
+    return new Blob([b.subarray(0, 2), exifApp1(date), b.subarray(2)], { type: 'image/jpeg' });
+  } catch { return blob; }
+}
+const toBlob = (c, type, q) => new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('encode failed')), type, q));
+async function storePhoto(canvas, meta) {
+  const blob = await withExif(await toBlob(canvas, 'image/jpeg', .92), meta.date);
+  const tk = 360 / Math.max(canvas.width, canvas.height), tc = document.createElement('canvas');
+  tc.width = Math.round(canvas.width * tk); tc.height = Math.round(canvas.height * tk);
+  tc.getContext('2d').drawImage(canvas, 0, 0, tc.width, tc.height);
+  const thumb = await toBlob(tc, 'image/jpeg', .8);
+  S.seq = (S.seq || 0) + 1; persist();
+  const d = meta.date, no = S.seq;
+  const rec = {
+    id: `${Date.now()}-${no}`, no, created: Date.now(), taken: d.getTime(), blob, thumb,
+    name: `DX2006_${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}_${pad4(no)}.jpg`
+  };
+  photos.unshift(rec);
+  try { await DB.put(rec); } catch { toast('이 브라우저에선 앨범이 남지 않아요. 마음에 들면 바로 저장해 주세요', 4000); }
+  syncAlbum();
+  return rec;
+}
+const urlOf = (rec, key) => { const k = '_' + key + 'Url'; if (!rec[k]) rec[k] = URL.createObjectURL(rec[key]); return rec[k]; };
+function releaseUrls(rec) { ['_blobUrl', '_thumbUrl'].forEach(k => { if (rec[k]) URL.revokeObjectURL(rec[k]); delete rec[k]; }); }
+async function loadPhotos() {
+  try { photos = (await DB.all() || []).filter(r => r && r.blob).sort((a, b) => b.created - a.created); } catch { photos = []; }
+  syncAlbum();
+}
+function syncAlbum() {
+  const btn = $('#btnGallery');
+  if (photos[0]) { btn.style.backgroundImage = `url("${urlOf(photos[0], 'thumb')}")`; btn.classList.add('has'); }
+  else { btn.style.backgroundImage = ''; btn.classList.remove('has'); }
+  $('#osdCount').textContent = `[${pad4(Math.max(0, 9999 - photos.length))}]`;
+  if (!$('#gallerySheet').hidden) renderGrid();
+}
+
+/* ───────── saving to the device ───────── */
+const downloadsCap = (window.claude && typeof window.claude.use === 'function')
+  ? Promise.resolve().then(() => window.claude.use('downloads')).catch(() => null) : Promise.resolve(null);
+async function saveToDevice(rec) {
+  const dl = await Promise.race([downloadsCap, sleep(1200).then(() => null)]);
+  if (dl) {
+    try { await dl.save({ filename: rec.name, data: rec.blob }); toast('저장했어요'); return; }
+    catch (e) {
+      if (e && e.code === 'declined') return;
+      if (e && e.code === 'rate_limited') { toast('잠시 후 다시 눌러 주세요'); return; }
+    }
+  }
+  const file = new File([rec.blob], rec.name, { type: 'image/jpeg' });
+  const touch = window.matchMedia && matchMedia('(pointer: coarse)').matches;
+  if (touch && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file] }); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  const a = document.createElement('a');
+  a.href = urlOf(rec, 'blob'); a.download = rec.name; document.body.appendChild(a); a.click(); a.remove();
+  toast('사진 파일을 내려받았어요');
+}
+
+/* ───────── viewer / gallery / menu ───────── */
+let viewing = null, armT = 0, lastFocus = null;
+function openViewer(rec, review) {
+  viewing = rec;
+  $('#viewerImg').src = urlOf(rec, 'blob');
+  $('#viewerNo').textContent = `100-${pad4(rec.no)}`;
+  const d = new Date(rec.taken);
+  $('#viewerDate').textContent = `${d.getFullYear()}.${pad2(d.getMonth() + 1)}.${pad2(d.getDate())} ${timeText(d)}`;
+  $('#btnViewerClose').textContent = review ? '계속 찍기' : '닫기';
+  disarmDelete();
+  lastFocus = document.activeElement;
+  $('#viewer').hidden = false; $('#btnSave').focus();
+}
+function closeViewer() { $('#viewer').hidden = true; viewing = null; disarmDelete(); if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+function disarmDelete() { clearTimeout(armT); const b = $('#btnDelete'); b.classList.remove('armed'); b.textContent = '삭제'; }
+async function deleteViewing() {
+  const b = $('#btnDelete');
+  if (!b.classList.contains('armed')) { b.classList.add('armed'); b.textContent = '한 번 더 눌러 삭제'; armT = setTimeout(disarmDelete, 3000); return; }
+  const rec = viewing; if (!rec) return;
+  photos = photos.filter(p => p !== rec);
+  try { await DB.del(rec.id); } catch {}
+  closeViewer(); releaseUrls(rec); syncAlbum(); toast('사진을 지웠어요');
+}
+function openSheet(id) { lastFocus = document.activeElement; const s = $(id); s.hidden = false; const f = $('[data-close]', s); if (f) f.focus(); }
+function closeSheet(s) { s.hidden = true; if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+function openGallery() { renderGrid(); openSheet('#gallerySheet'); }
+function renderGrid() {
+  const grid = $('#grid'); grid.textContent = '';
+  $('#galleryEmpty').hidden = photos.length > 0; grid.hidden = !photos.length;
+  $('#galleryTitle').textContent = `ALBUM · ${photos.length}`;
+  for (const rec of photos) {
+    const b = document.createElement('button');
+    b.style.backgroundImage = `url("${urlOf(rec, 'thumb')}")`;
+    b.setAttribute('aria-label', `사진 100-${pad4(rec.no)} 보기`);
+    const tag = document.createElement('span'); tag.textContent = pad4(rec.no); b.appendChild(tag);
+    b.addEventListener('click', () => openViewer(rec, false));
+    grid.appendChild(b);
+  }
+}
+
+/* ───────── controls ↔ settings ───────── */
+function buildDial() {
+  const dial = $('#dial');
+  for (const f of FILTERS) {
+    const b = document.createElement('button');
+    b.setAttribute('role', 'radio'); b.dataset.v = f.id;
+    b.innerHTML = `<b></b><small></small>`; b.firstChild.textContent = f.name; b.lastChild.textContent = f.ko;
+    b.addEventListener('click', () => { selectFilter(f.id); centerDial(true); });
+    dial.appendChild(b);
+  }
+  let st = 0;
+  dial.addEventListener('scroll', () => {
+    clearTimeout(st);
+    st = setTimeout(() => {
+      const mid = dial.scrollLeft + dial.clientWidth / 2; let best = null, bd = 1e9;
+      for (const b of dial.children) { const c = b.offsetLeft + b.offsetWidth / 2, dd = Math.abs(c - mid); if (dd < bd) { bd = dd; best = b; } }
+      if (best && best.dataset.v !== S.filter) selectFilter(best.dataset.v);
+    }, 110);
+  }, { passive: true });
+}
+function centerDial(smooth) {
+  const dial = $('#dial'), b = $(`button[data-v="${S.filter}"]`, dial);
+  if (b) dial.scrollTo({ left: b.offsetLeft + b.offsetWidth / 2 - dial.clientWidth / 2, behavior: smooth ? 'smooth' : 'auto' });
+}
+function selectFilter(id) {
+  if (S.filter === id) return;
+  S.filter = id; persist(); syncUI(); needsStatic = true;
+  if (S.stamp === 'info') drawOverlay();
+  beep(3400, .02, 0, .03);
+}
+function stepFilter(dir) {
+  const i = FILTERS.findIndex(f => f.id === S.filter);
+  selectFilter(FILTERS[(i + dir + FILTERS.length) % FILTERS.length].id); centerDial(true);
+}
+function syncUI() {
+  $$('[data-key]').forEach(el => {
+    const k = el.dataset.key;
+    if (el.tagName === 'INPUT') {
+      if (el.type === 'checkbox') el.checked = !!S[k];
+      else if (document.activeElement !== el) el.value = S[k] ?? '';
+      return;
+    }
+    const radio = el.getAttribute('role') === 'radiogroup';
+    $$('button[data-v]', el).forEach(b => b.setAttribute(radio ? 'aria-checked' : 'aria-pressed', String(String(S[k]) === b.dataset.v)));
+  });
+  $$('#dial button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === S.filter)));
+  $('#rowCustom').hidden = S.dateMode !== 'custom';
+  $('#amountVal').textContent = S.amount + '%';
+  $('#lblFlash').textContent = S.flash ? 'ON' : 'OFF';
+  $('#btnFlash').setAttribute('aria-pressed', String(!!S.flash));
+  $('#lblTimer').textContent = S.timer ? S.timer + 'S' : 'OFF';
+  $('#btnTimer').classList.toggle('on', !!S.timer);
+  const f = filterById(S.filter);
+  $('#osdMode').textContent = `AUTO  ${f.name}`;
+  $('#osdFlags').textContent = [S.flash && 'FLASH', S.timer && `SELF ${S.timer}S`, S.ddayOn && S.anniv && 'D-DAY'].filter(Boolean).join('  ');
+  $('#osdSize').textContent = S.quality + (S.aspect === '1:1' ? ' 1:1' : '');
+}
+function applySetting(k) {
+  persist(); syncUI();
+  if (['stamp', 'aspect', 'quality'].includes(k)) relayout(); else drawOverlay();
+  needsStatic = true;
+  if (k === 'geo') updateGeo();
+  if (k === 'caption') ensureFonts(S.caption).then(drawOverlay);
+}
+function bindSettings() {
+  $$('[data-key]').forEach(el => {
+    const k = el.dataset.key;
+    if (el.tagName === 'INPUT') {
+      const ev = el.type === 'checkbox' || el.type === 'date' || el.type === 'datetime-local' ? 'change' : 'input';
+      el.addEventListener(ev, () => {
+        S[k] = el.type === 'checkbox' ? el.checked : el.type === 'range' ? +el.value : el.value;
+        if (k === 'anniv' && S.anniv && !S.ddayOn) S.ddayOn = true;
+        applySetting(k);
+      });
+      return;
+    }
+    el.addEventListener('click', e => {
+      const b = e.target.closest('button[data-v]'); if (!b) return;
+      S[k] = b.dataset.v;
+      if (k === 'dateMode' && S.dateMode === 'custom' && !S.customDate) {
+        const n = new Date(); S.customDate = `${n.getFullYear()}-${pad2(n.getMonth() + 1)}-${pad2(n.getDate())}T${timeText(n)}`;
+      }
+      if (k === 'stamp') beep(2200, .025, 0, .03);
+      applySetting(k);
+    });
+  });
+}
+
+/* ───────── location (optional) ───────── */
+let geoTimer = 0;
+function updateGeo() {
+  clearInterval(geoTimer);
+  if (!S.geo) { geoText = ''; drawOverlay(); return; }
+  const fail = () => { S.geo = false; geoText = ''; persist(); syncUI(); drawOverlay(); toast('위치 정보를 쓸 수 없어서 꺼 둘게요'); };
+  if (!navigator.geolocation) return fail();
+  const get = () => navigator.geolocation.getCurrentPosition(p => {
+    const a = p.coords.latitude, o = p.coords.longitude;
+    geoText = `${Math.abs(a).toFixed(2)}°${a >= 0 ? 'N' : 'S'} ${Math.abs(o).toFixed(2)}°${o >= 0 ? 'E' : 'W'}`;
+    drawOverlay();
+  }, fail, { maximumAge: 120000, timeout: 12000 });
+  get(); geoTimer = setInterval(get, 120000);
+}
+
+/* ───────── wiring ───────── */
+function wire() {
+  $('#shutter').addEventListener('click', shoot);
+  $('#btnFlash').addEventListener('click', () => { S.flash = !S.flash; applySetting('flash'); });
+  $('#btnTimer').addEventListener('click', () => { S.timer = S.timer === 0 ? 3 : S.timer === 3 ? 10 : 0; applySetting('timer'); });
+  $('#btnImport').addEventListener('click', () => $('#fileImport').click());
+  $('#btnGalleryImport').addEventListener('click', () => $('#fileImport').click());
+  $('#btnMenu').addEventListener('click', () => openSheet('#menuSheet'));
+  $('#btnGallery').addEventListener('click', openGallery);
+  $('#btnRetry').addEventListener('click', async () => { try { await startCamera(); } catch (e) { showFallback(true, e); } });
+  $('#btnFlip').addEventListener('click', async () => {
+    if (!live) { toast('실시간 카메라가 없어서 기본 카메라 앱을 써요'); return; }
+    const prev = S.facing; S.facing = prev === 'user' ? 'environment' : 'user'; persist();
+    try { await startCamera(); } catch (e) { S.facing = prev; persist(); try { await startCamera(); } catch (e2) { showFallback(true, e2); } toast('다른 카메라를 찾지 못했어요'); }
+    relayout();
+  });
+  $('#fileImport').addEventListener('change', e => { importFiles(e.target.files, 'album'); e.target.value = ''; });
+  $('#fileCapture').addEventListener('change', e => { importFiles(e.target.files, 'camera'); e.target.value = ''; });
+  $('#btnSave').addEventListener('click', () => viewing && saveToDevice(viewing));
+  $('#btnDelete').addEventListener('click', deleteViewing);
+  $('#btnViewerClose').addEventListener('click', closeViewer);
+  $$('.sheet').forEach(s => {
+    s.addEventListener('click', e => { if (e.target === s || e.target.closest('[data-close]')) closeSheet(s); });
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      if (!$('#viewer').hidden) return closeViewer();
+      const open = $$('.sheet').find(s => !s.hidden); if (open) return closeSheet(open);
+    }
+    if (e.target !== document.body || !$('#viewer').hidden || $$('.sheet').some(s => !s.hidden)) return;
+    if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); shoot(); }
+    else if (e.key === 'ArrowRight') stepFilter(1);
+    else if (e.key === 'ArrowLeft') stepFilter(-1);
+  });
+  let sx = 0, sy = 0, down = false;
+  lcd.addEventListener('pointerdown', e => { down = true; sx = e.clientX; sy = e.clientY; });
+  lcd.addEventListener('pointerup', e => {
+    if (!down) return; down = false;
+    const dx = e.clientX - sx, dy = e.clientY - sy;
+    if (Math.abs(dx) > 50 && Math.abs(dy) < 45) stepFilter(dx < 0 ? 1 : -1);
+  });
+  if (window.ResizeObserver) new ResizeObserver(() => relayout()).observe(lcd);
+  else window.addEventListener('resize', relayout);
+  document.addEventListener('visibilitychange', async () => {
+    if (document.hidden || !stream) return;
+    if (!track || track.readyState === 'ended') { try { await startCamera(); } catch (e) { showFallback(true, e); } }
+  });
+  setInterval(() => {
+    if (live && video.videoWidth && !document.hidden) liveLum = measureLum(video);
+    if (sigOf(previewMeta()) !== lastSig) drawOverlay();
+  }, 1000);
+  if (navigator.getBattery) navigator.getBattery().then(b => {
+    const upd = () => { const n = b.level > .66 ? 3 : b.level > .33 ? 2 : b.level > .1 ? 1 : 0; $$('#osdBat i').forEach((el, i) => el.classList.toggle('off', i >= n)); };
+    upd(); b.addEventListener('levelchange', upd);
+  }).catch(() => {});
+}
+
+async function boot() {
+  buildDial(); bindSettings(); syncUI(); wire();
+  sampleSrc = makeSample();
+  lens = makeLens(glc);
+  relayout();
+  requestAnimationFrame(() => centerDial(false));
+  requestAnimationFrame(loop);
+  loadPhotos();
+  ensureFonts(S.caption).then(drawOverlay);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawOverlay);
+  if (S.geo) updateGeo();
+  try { await startCamera(); } catch (e) { console.info('live camera unavailable:', e && e.name); showFallback(true, e); }
+  if ('serviceWorker' in navigator && window.self === window.top && /^https:|^http:\/\/(localhost|127\.)/.test(location.href)) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+}
+boot();
+})();
+</script>
+</body>
+</html>
