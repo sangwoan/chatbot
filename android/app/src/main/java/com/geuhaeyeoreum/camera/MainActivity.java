@@ -434,7 +434,8 @@ public class MainActivity extends Activity {
             if (cb != null) cb.invoke(pendingGeoOrigin, any, false);
         } else if (req == REQ_STORAGE) {
             storageAsking = false;
-            notifyPage("storage", all);
+            // empty results: the request was cancelled (e.g. relaunched from the launcher), not refused
+            notifyPage(results.length == 0 ? "storage-cancel" : "storage", all);
         }
     }
 
@@ -679,6 +680,12 @@ public class MainActivity extends Activity {
                 Log.w(TAG, "saveImage failed", e);
                 return "";
             }
+        }
+
+        /** True when saveImage can write without asking (Android 10+, or storage already granted). */
+        @JavascriptInterface
+        public boolean canSaveToGallery() {
+            return Build.VERSION.SDK_INT >= 29 || has(Manifest.permission.WRITE_EXTERNAL_STORAGE);
         }
 
         @JavascriptInterface
