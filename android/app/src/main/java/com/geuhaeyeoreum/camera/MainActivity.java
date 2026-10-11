@@ -79,7 +79,6 @@ public class MainActivity extends Activity {
 
     private static final int REQ_CAMERA_FOR_PAGE = 1;
     private static final int REQ_CAMERA_DIRECT = 2;
-    private static final int REQ_LOCATION = 3;
     private static final int REQ_STORAGE = 4;
     private static final int REQ_FILES = 10;
     private static final int MAX_PICK = 30;
@@ -102,8 +101,6 @@ public class MainActivity extends Activity {
 
     private PermissionRequest pendingMedia;
     private ValueCallback<Uri[]> pendingFiles;
-    private GeolocationPermissions.Callback pendingGeo;
-    private String pendingGeoOrigin;
     /** Host of the page currently loaded; the bridge only acts for our own origin. */
     private volatile String pageHost = HOST; // seeded: page scripts can call the bridge before onPageStarted arrives
     /** Set by the page while the live viewfinder is on screen: volume keys fire the shutter. */
@@ -185,7 +182,7 @@ public class MainActivity extends Activity {
         s.setBuiltInZoomControls(false);
         s.setDisplayZoomControls(false);
         s.setTextZoom(100);
-        s.setGeolocationEnabled(true);
+        s.setGeolocationEnabled(false); // no location permission: fewer sensitive permissions, nothing for scanners to misread
         if ((getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
             WebView.setWebContentsDebuggingEnabled(true);
         }
@@ -350,22 +347,7 @@ public class MainActivity extends Activity {
 
         @Override
         public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback cb) {
-            if (!HOST.equals(hostOf(origin))) {
-                cb.invoke(origin, false, false);
-                return;
-            }
-            if (has(Manifest.permission.ACCESS_FINE_LOCATION) || has(Manifest.permission.ACCESS_COARSE_LOCATION)) {
-                cb.invoke(origin, true, false);
-            } else {
-                pendingGeo = cb;
-                pendingGeoOrigin = origin;
-                ask(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, REQ_LOCATION);
-            }
-        }
-
-        @Override
-        public void onGeolocationPermissionsHidePrompt() {
-            pendingGeo = null;
+            cb.invoke(origin, false, false); // the app does not hold a location permission
         }
 
         @Override
@@ -414,10 +396,9 @@ public class MainActivity extends Activity {
                 askNext();
             }
         });
-        boolean any = false, all = results.length > 0;
+        boolean all = results.length > 0;
         for (int r : results) {
-            if (r == PackageManager.PERMISSION_GRANTED) any = true;
-            else all = false;
+            if (r != PackageManager.PERMISSION_GRANTED) all = false;
         }
         if (req == REQ_CAMERA_FOR_PAGE || req == REQ_CAMERA_DIRECT) {
             rememberCameraAnswer(all, results.length > 0);
@@ -428,10 +409,6 @@ public class MainActivity extends Activity {
                 else p.deny();
             }
             notifyPage("camera", all);
-        } else if (req == REQ_LOCATION) {
-            GeolocationPermissions.Callback cb = pendingGeo;
-            pendingGeo = null;
-            if (cb != null) cb.invoke(pendingGeoOrigin, any, false);
         } else if (req == REQ_STORAGE) {
             storageAsking = false;
             // empty results: the request was cancelled (e.g. relaunched from the launcher), not refused

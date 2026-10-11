@@ -414,7 +414,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
         <div class="row"><span class="lbl">저장 크기</span>
           <div class="seg" data-key="quality"><button data-v="2M">2M</button><button data-v="5M">5M</button><button data-v="8M">8M</button></div></div>
         <div class="row"><label for="optMirror">셀카를 보이는 그대로 저장</label><input type="checkbox" class="switch" id="optMirror" data-key="mirrorSelfie"></div>
-        <div class="row"><label for="optGeo">위치(좌표) 표시</label><input type="checkbox" class="switch" id="optGeo" data-key="geo"></div>
+        <div class="row" data-web><label for="optGeo">위치(좌표) 표시</label><input type="checkbox" class="switch" id="optGeo" data-key="geo"></div>
       </section>
       <section class="group">
         <h3>AFTER · 찍은 다음</h3>
@@ -2417,6 +2417,8 @@ function bindSettings() {
     });
   });
   if (!NATIVE) $$('[data-native]').forEach(el => el.hidden = true);
+  // the Android app holds no location permission (fewer sensitive permissions for security scanners to flag)
+  if (NATIVE) { $$('[data-web]').forEach(el => el.hidden = true); if (S.geo) { S.geo = false; persist(); } }
   $('#menuHint').textContent = (NATIVE
     ? '찍은 사진은 휴대폰 갤러리의 「그해여름」 앨범에도 저장돼요. '
     : '찍은 사진은 이 브라우저 안 앨범에만 보관되니, 마음에 드는 사진은 꼭 저장해 두세요. ')
