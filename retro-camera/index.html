@@ -105,14 +105,6 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
 #gl{position:absolute;display:block;background:#000}
 #deco{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .osd{position:absolute;pointer-events:none;font:400 11px/1 var(--font-osd);letter-spacing:.06em;color:var(--osd);text-shadow:0 1px 2px rgba(0,0,0,.85)}
-.osd .tl{position:absolute;left:8px;top:8px;display:grid;gap:5px}
-.osd .tr{position:absolute;right:8px;top:8px;display:flex;align-items:center;gap:7px}
-#osdMode{white-space:nowrap}
-.osd.narrow #osdSize{display:none}
-.bat{display:inline-flex;gap:1px;padding:1px 3px 1px 1px;border:1px solid var(--osd);border-radius:2px;position:relative}
-.bat::after{content:"";position:absolute;right:-3px;top:2px;width:2px;height:4px;background:var(--osd)}
-.bat i{width:3px;height:6px;background:var(--osd)}
-.bat i.off{background:transparent}
 .af{position:absolute;width:30%;height:22%;left:35%;top:39%;transition:left .18s,top .18s}
 .af i{position:absolute;width:14px;height:10px;border:2px solid rgba(238,242,232,.75)}
 .af i:nth-child(1){left:0;top:0;border-right:0;border-bottom:0}
@@ -325,8 +317,6 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
         <canvas id="gl" aria-label="뷰파인더"></canvas>
         <canvas id="deco" aria-hidden="true"></canvas>
         <div class="osd" id="osd" aria-hidden="true">
-          <div class="tl"><span id="osdMode">AUTO</span><span id="osdFlags"></span></div>
-          <div class="tr"><span id="osdSize">7.1M</span><span id="osdCount">[9999]</span><span class="bat" id="osdBat"><i></i><i></i><i></i></span></div>
           <div class="af" id="af"><i></i><i></i><i></i><i></i></div>
           <div class="camtag" id="camTag"></div>
           <div class="zoombar" id="zoomBar" hidden><b>W</b><span class="track"><i id="zoomKnob"></i></span><b>T</b><em id="zoomVal">×1.0</em></div>
@@ -396,6 +386,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
         <div class="row"><span class="lbl">날짜 순서</span>
           <div class="seg" data-key="dateOrder"><button data-v="ymd">년 월 일</button><button data-v="mdy">월 일 년</button><button data-v="dmy">일 월 년</button></div></div>
         <div class="row"><label for="optTime">시간도 함께 찍기</label><input type="checkbox" class="switch" id="optTime" data-key="showTime"></div>
+        <div class="row"><label for="optOsd">화면 정보(모드·남은 장수·배터리)도 찍기</label><input type="checkbox" class="switch" id="optOsd" data-key="osdOn"></div>
         <div class="row"><span class="lbl">스탬프 색</span>
           <div class="swatches" data-key="color">
             <button data-v="orange" style="--sw:#ff8f2e" aria-label="오렌지"></button>
@@ -442,8 +433,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
 
 <div class="sheet" id="camSheet" hidden role="dialog" aria-modal="true" aria-labelledby="camTitle">
   <div class="panel">
-    <div class="panel-head"><h2 id="camTitle">CAMERA · 10</h2><div class="acts"><button class="pbtn amber" data-close>닫기</button></div></div>
-    <p class="lede" id="camLede">2001년부터 2006년까지, 그 시절 디카 10대예요. 지금 장면이 카메라마다 어떻게 찍히는지 미리 보여 드려요.</p>
+    <div class="panel-head"><h2 id="camTitle">CAMERA</h2><div class="acts"><button class="pbtn amber" data-close>닫기</button></div></div>
+    <p class="lede" id="camLede"></p>
     <div class="cams" id="camGrid"></div>
   </div>
 </div>
@@ -472,7 +463,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
   <div class="onb-track" id="onbTrack">
     <section class="onb-card">
       <span class="eyebrow">2001 — 2006</span>
-      <h1>그 시절 디카 10대,<br>모두 무료로.</h1>
+      <h1>그 시절 카메라 <span id="onbCount">10</span>대,<br>모두 무료로.</h1>
       <div class="marquee"><div id="onbMarquee"></div></div>
       <p>교실 뒤 첫 디카부터 그해 여름 바다에 데려간 방수 디카까지. 카메라마다 색감, 화질, 노이즈가 달라요.</p>
     </section>
@@ -523,7 +514,7 @@ const DEFAULTS = {
   color: 'orange', align: 'right', infoTheme: 'light', ddayOn: false, anniv: '', caption: '',
   aspect: '4:3', quality: '5M', amount: 100, geo: false, sound: true, haptics: true, flash: false, timer: 0,
   light: 'off', mirrorSelfie: true, autoSave: true, reviewAfter: false, volumeKey: true,
-  facing: 'environment', seq: 0, onboarded: false
+  facing: 'environment', seq: 0, onboarded: false, osdOn: true
 };
 const S = (() => { try { return Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch { return { ...DEFAULTS }; } })();
 if (S.dateMode !== 'now' && S.dateMode !== 'year' && S.dateMode !== 'custom') S.dateMode = 'now';
@@ -531,14 +522,17 @@ const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } ca
 /* settings the stamp/date drawing reads; swapped for a snapshot while a queued shot develops */
 let R = S;
 
-/* ───────── the ten cameras ─────────
+/* ───────── the cameras (fictional names, each modelled on a real camera of its year) ─────────
    lowres = simulated sensor width in px (0 = full), pixelate = blocky vs. soft upscale,
    chromaRes = colour sampled on a coarse grid (old JPEG / video chroma bleed), smear = horizontal-only bleed,
    poster = colour levels, scan = video scanlines, fringe = purple fringing, clip = blown highlights,
-   ccd = vertical smear from bright lights (CCD sensors only; CMOS has none) */
+   ccd = vertical smear from bright lights (CCD sensors only; CMOS has none),
+   tint = colour multiplied in after B&W (infrared green, sepia), block = 8x8 JPEG blocking in flat areas,
+   palette = ordered (Bayer 4x4) dither of luminance onto a 4-colour palette, dark to light */
 const BASE = { exposure: 0, contrast: 1, sat: 1, gain: [1, 1, 1], black: [0, 0, 0], shadowTint: [0, 0, 0], highTint: [0, 0, 0],
   grain: 0, chroma: 0, vignette: 0, bloom: 0, bloomR: .008, bloomTint: [1, 1, 1], ca: 0, sharpen: 0, mono: 0,
-  lowres: 0, pixelate: 0, chromaRes: 0, smear: false, poster: 0, scan: 0, fringe: 0, clip: 0, ccd: .35, iso: 100, css: 'none' };
+  lowres: 0, pixelate: 0, chromaRes: 0, smear: false, poster: 0, scan: 0, fringe: 0, clip: 0, ccd: .35, iso: 100, css: 'none',
+  tint: [1, 1, 1], block: 0, palette: null };
 const CAMERAS = [
   { id: 'digi130', code: 'DIGI130', model: 'DIGI 130', ko: '첫 디카', mood: '교실 뒤 첫 디카', year: 2001, mp: '1.3', sensor: 'CMOS', lens: ['5.4mm', 'f/2.8'],
     story: '반 친구가 처음 들고 온 신기한 카메라. 노이즈가 자글자글해도 다 같이 몰려들어 찍었다.',
@@ -581,12 +575,12 @@ const CAMERAS = [
     body: { hi: '#e2f2f6', base: '#a3d2de', lo: '#6aa6b8', ink: '#163e4a', soft: '#223e46', accent: '#0b5870' },
     p: { exposure: .14, contrast: 1.18, sat: 1.25, gain: [.88, 1, 1.12], highTint: [-.02, .03, .05], shadowTint: [-.02, .02, .04], sharpen: .55, grain: .03, chroma: .04, bloom: .14, ca: .004, vignette: .16, clip: .3, ccd: .35, iso: 100, css: 'contrast(1.18) saturate(1.2) hue-rotate(-6deg) brightness(1.08)' } },
 ];
-const camById = id => CAMERAS.find(c => c.id === id) || CAMERAS[CAMERAS.length - 1];
+const camById = id => CAMERAS.find(c => c.id === id) || CAMERAS.find(c => c.id === DEFAULTS.cam);
 if (!CAMERAS.some(c => c.id === S.cam)) S.cam = DEFAULTS.cam;
 const camParams = cam => Object.assign({}, BASE, cam.p);
 const currentCam = () => camById(S.cam);
 
-/* front/side illustrations of the ten bodies, drawn in each body's colours */
+/* front/side illustrations of the bodies, drawn in each body's colours */
 function camIcon(c, sfx = '') {
   const b = c.body, id = 'ci-' + c.id + sfx;
   const defs = `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${b.hi}"/><stop offset=".55" stop-color="${b.base}"/><stop offset="1" stop-color="${b.lo}"/></linearGradient>`
@@ -675,7 +669,8 @@ uniform vec2 u_res;
 uniform float u_mirror,u_time,u_amount,u_flash,u_aspect;
 uniform float u_exposure,u_contrast,u_sat,u_grain,u_chroma,u_vignette,u_bloom,u_bloomR,u_ca,u_sharpen,u_mono;
 uniform vec3 u_gain,u_black,u_shadowTint,u_highTint,u_bloomTint;
-uniform float u_lowres,u_pixelate,u_poster,u_scan,u_fringe,u_clip;
+uniform float u_lowres,u_pixelate,u_poster,u_scan,u_fringe,u_clip,u_block,u_dither;
+uniform vec3 u_tint,u_pal0,u_pal1,u_pal2,u_pal3;
 uniform vec2 u_chromaGrid;
 uniform float u_lightAmt,u_smearAmt,u_flareAmt,u_dustAmt,u_leakAmt;
 uniform vec2 u_seed,u_leakPos;
@@ -695,6 +690,7 @@ vec3 src(vec2 uv){
   return mix(lin,tap((floor(uv*g)+.5)/g),u_pixelate);
 }
 float hash(vec2 p){vec3 p3=fract(vec3(p.xyx)*.1031);p3+=dot(p3,p3.yzx+33.33);return fract((p3.x+p3.y)*p3.z);}
+float bayer4(vec2 p){p=mod(floor(p),4.);vec2 a=mod(p,2.),b=floor(p/2.);return (4.*mod(2.*a.x+3.*a.y,4.)+mod(2.*b.x+3.*b.y,4.)+.5)/16.;}
 void main(){
   vec2 uv=v; vec2 d=uv-.5;
   vec2 asp=vec2(u_aspect,1.);
@@ -706,6 +702,12 @@ void main(){
   if(u_chromaGrid.x>0.){
     vec3 cc=src((floor(uv*u_chromaGrid)+.5)/u_chromaGrid);
     c=mix(c,vec3(dot(c,W))+cc-vec3(dot(cc,W)),.85);
+  }
+  if(u_block>0.){
+    vec2 bg=grid()/8.,bc=(floor(uv*bg)+.5)/bg,q=.25/bg;
+    vec3 bm=(src(bc+vec2(-q.x,-q.y))+src(bc+vec2(q.x,-q.y))+src(bc+vec2(-q.x,q.y))+src(bc+q))*.25;
+    float fl=1.-smoothstep(.03,.16,length(c-bm));
+    c=mix(c,bm+(c-bm)*.3,u_block*fl);
   }
   if(u_sharpen!=0.){
     vec3 b=(src(uv+vec2(px.x,0.))+src(uv-vec2(px.x,0.))+src(uv+vec2(0.,px.y))+src(uv-vec2(0.,px.y)))*.25;
@@ -736,6 +738,7 @@ void main(){
   if(u_mono>.5) c=vec3(l);
   float lc=clamp(l,0.,1.);
   c+=u_shadowTint*(1.-lc)*(1.-lc)+u_highTint*lc*lc;
+  c*=u_tint;
   c=u_black+c*(1.-u_black);
   c*=1.-u_vignette*smoothstep(.3,1.15,r);
   if(u_lightAmt>0.){
@@ -782,6 +785,10 @@ void main(){
     c+=cn*u_chroma*(1.-lum);
   }
   if(u_poster>0.) c=floor(clamp(c,0.,1.)*u_poster+.5)/u_poster;
+  if(u_dither>0.){
+    float k=floor(clamp(dot(c,W),0.,1.)*3.+bayer4(uv*grid()));
+    c=k<.5?u_pal0:k<1.5?u_pal1:k<2.5?u_pal2:u_pal3;
+  }
   c=mix(o,c,u_amount);
   gl_FragColor=vec4(clamp(c,0.,1.),1.);
 }`;
@@ -859,7 +866,10 @@ class Lens {
     f1('u_mirror', o.mirror ? 1 : 0); f1('u_time', o.time || 0); f1('u_amount', o.amount ?? 1);
     f1('u_flash', o.flash || 0); f1('u_aspect', w / h);
     ['contrast', 'sat', 'grain', 'chroma', 'vignette', 'bloom', 'bloomR', 'ca', 'sharpen', 'mono',
-      'lowres', 'pixelate', 'poster', 'scan', 'fringe', 'clip'].forEach(k => f1('u_' + k, P[k]));
+      'lowres', 'pixelate', 'poster', 'scan', 'fringe', 'clip', 'block'].forEach(k => f1('u_' + k, P[k]));
+    f1('u_dither', P.palette ? 1 : 0); f3('u_tint', P.tint);
+    const pal = P.palette || [[0, 0, 0], [.33, .33, .33], [.67, .67, .67], [1, 1, 1]];
+    pal.forEach((col, i) => f3('u_pal' + i, col));
     f1('u_exposure', P.exposure + (o.ev || 0));
     if (U.u_chromaGrid) gl.uniform2f(U.u_chromaGrid, P.chromaRes, P.chromaRes ? (P.smear ? h : P.chromaRes * h / w) : 0);
     ['gain', 'black', 'shadowTint', 'highTint', 'bloomTint'].forEach(k => f3('u_' + k, P[k]));
@@ -1142,6 +1152,43 @@ function drawBackground(ctx, L) {
     ctx.fillStyle = g; ctx.fillRect(0, 0, L.W, L.H);
   }
 }
+/* the LCD's on-screen display (mode, flags, size, shots left, battery), drawn the same way on screen and on the photo */
+const OSD_INK = '#eef2e8', OSD_FONT = '"Silkscreen","IBM Plex Sans KR",ui-monospace,monospace';
+function osdFor(cam, cfg, flags, count, bat) {
+  return { code: cam.code, size: cam.mp + 'M' + (cfg.aspect === '1:1' ? ' 1:1' : ''), flags: flags || [], count: clamp(Math.round(count), 0, 9999), bat: bat ?? 3 };
+}
+function drawOsd(ctx, L, o) {
+  const m = Math.min(L.iw, L.ih), fs = m * .032, pad = m * .024, u = fs / 11, gap = fs * .64;
+  const x0 = L.ix + pad, x1 = L.ix + L.iw - pad, y0 = L.iy + pad;
+  ctx.save();
+  ctx.font = `400 ${fs}px ${OSD_FONT}`; ctx.textBaseline = 'top';
+  if ('letterSpacing' in ctx) ctx.letterSpacing = (fs * .06).toFixed(2) + 'px';
+  ctx.fillStyle = OSD_INK; ctx.strokeStyle = OSD_INK;
+  ctx.shadowColor = 'rgba(0,0,0,.85)'; ctx.shadowBlur = fs * .18; ctx.shadowOffsetY = fs * .09;
+  const W = t => ctx.measureText(t).width;
+  // right block: size, [count], battery; drop "AUTO" and then the size when the frame is too narrow for both corners
+  const count = `[${pad4(o.count)}]`, batW = 17 * u;
+  let mode = 'AUTO  ' + o.code, size = o.size;
+  const fits = () => W(mode) + gap * 1.5 + (size ? W(size) + gap : 0) + W(count) + gap + batW <= x1 - x0;
+  if (!fits()) mode = o.code;
+  if (!fits()) size = '';
+  ctx.fillText(mode, x0, y0);
+  let x = x1 - batW;
+  const by = y0 + fs * .14, bh = 8 * u;
+  ctx.lineWidth = u; ctx.strokeRect(x + u / 2, by + u / 2, 15 * u - u, bh - u);
+  ctx.fillRect(x + 15 * u, by + 2 * u, 2 * u, 4 * u);
+  for (let i = 0; i < o.bat; i++) ctx.fillRect(x + 2 * u + i * 4 * u, by + u * 1, 3 * u, 6 * u);
+  x -= gap + W(count); ctx.fillText(count, x, y0);
+  if (size) { x -= gap + W(size); ctx.fillText(size, x, y0); }
+  // flags under the mode, wrapped to the frame width
+  let y = y0 + fs * 1.45, line = '';
+  for (const f of o.flags) {
+    const next = line ? line + '  ' + f : f;
+    if (line && x0 + W(next) > x1) { ctx.fillText(line, x0, y); y += fs * 1.45; line = f; } else line = next;
+  }
+  if (line) ctx.fillText(line, x0, y);
+  ctx.restore();
+}
 function drawForeground(ctx, L, meta) {
   const col = STAMP[R.color] || STAMP.orange;
   if (L.tpl === 'film') drawFilmStamp(ctx, L, meta, col);
@@ -1151,8 +1198,8 @@ function drawForeground(ctx, L, meta) {
 }
 async function ensureFonts(text) {
   if (!document.fonts || !document.fonts.load) return;
-  const t = (text || '') + '0123456789.:+-DIGITAL';
-  const specs = ['400 40px "Nanum Pen Script"', '600 40px "IBM Plex Sans KR"', '400 40px "IBM Plex Sans KR"'];
+  const t = (text || '') + '0123456789.:+-DIGITAL AUTOM[]FLSHRNDEV×';
+  const specs = ['400 40px "Nanum Pen Script"', '600 40px "IBM Plex Sans KR"', '400 40px "IBM Plex Sans KR"', '400 40px "Silkscreen"'];
   try { if (specs.every(s => document.fonts.check(s, t))) return; } catch {}
   try { await Promise.race([Promise.all(specs.map(s => document.fonts.load(s, t))), sleep(1500)]); } catch {}
 }
@@ -1206,7 +1253,7 @@ function makeSample() {
 /* ───────── DOM refs & state ───────── */
 const video = $('#video'), lcd = $('#lcd'), frame = $('#frame'), glc = $('#gl'), deco = $('#deco'), osd = $('#osd');
 let lens = null, capLens = null, stream = null, track = null, live = false, sampleSrc = null, cameraWanted = false;
-let needsStatic = true, shooting = false, cdCancel = null, geoText = '', liveLum = .55, lastSig = '';
+let needsStatic = true, shooting = false, cdCancel = null, geoText = '', liveLum = .55, lastSig = '', batLevel = 3;
 let lastVW = 0, lastVH = 0, zoom = 1, ev = 0, lightSeed = Math.floor(Math.random() * 100000), previewLights = [], devRot = 0;
 const view = { L: null, glW: 2, glH: 2 };
 let photos = [];
@@ -1351,7 +1398,6 @@ function relayout() {
   frame.style.width = bw + 'px'; frame.style.height = bh + 'px';
   const ir = { left: L.ix * k + 'px', top: L.iy * k + 'px', width: L.iw * k + 'px', height: L.ih * k + 'px' };
   Object.assign(glc.style, ir); Object.assign(osd.style, ir);
-  osd.classList.toggle('narrow', L.iw * k < (S.aspect === '1:1' ? 252 : 240)); syncOsdMode();
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   let gw = Math.round(L.iw * k * dpr), gh = Math.round(L.ih * k * dpr);
   const cap = 1280 / Math.max(gw, gh);
@@ -1361,7 +1407,9 @@ function relayout() {
   drawOverlay();
   needsStatic = true;
 }
-const previewMeta = () => buildMeta(S, currentCam(), new Date(), null, liveLum, live && S.facing === 'user');
+const previewMeta = () => Object.assign(buildMeta(S, currentCam(), new Date(), null, liveLum, live && S.facing === 'user'),
+  { osd: osdFor(currentCam(), S, previewFlags(), shotsLeft(), batLevel) });
+const shotsLeft = () => 9999 - photos.length - jobs.length;
 function drawOverlay() {
   if (!view.L) return;
   const ctx = deco.getContext('2d');
@@ -1369,10 +1417,12 @@ function drawOverlay() {
   const L = scaleLayout(view.L, deco.width / view.L.W), meta = previewMeta();
   drawBackground(ctx, L);
   ctx.clearRect(Math.ceil(L.ix), Math.ceil(L.iy), Math.floor(L.iw), Math.floor(L.ih));
+  drawOsd(ctx, L, meta.osd);
   drawForeground(ctx, L, meta);
   lastSig = sigOf(meta);
 }
-const sigOf = m => [m.cam.id, m.date.getFullYear(), m.date.getMonth(), m.date.getDate(), m.date.getHours(), m.date.getMinutes(), m.dday, m.exif.shutter, m.exif.iso, m.loc].join('|');
+const sigOf = m => [m.cam.id, m.date.getFullYear(), m.date.getMonth(), m.date.getDate(), m.date.getHours(), m.date.getMinutes(), m.dday, m.exif.shutter, m.exif.iso, m.loc,
+  m.osd ? [m.osd.size, m.osd.count, m.osd.bat, m.osd.flags.join(',')].join('/') : ''].join('|');
 const overlayOpen = () => !$('#viewer').hidden || !$('#onb').hidden || $$('.sheet').some(s => !s.hidden);
 function renderPreview(t) {
   const cam = currentCam();
@@ -1474,6 +1524,7 @@ function compose(src, meta, o) {
     capLens.upload(src);
     capLens.render(L.iw, L.ih, camParams(o.cam), { mirror: false, zoom: 1, time: Math.random() * 100, amount: R.amount / 100, flash: o.flash || 0, ev: o.ev || 0, light: o.light });
     ctx.drawImage(capLens.canvas, L.ix, L.iy, L.iw, L.ih);
+    if (R.osdOn && meta.osd) drawOsd(ctx, L, meta.osd);
     drawForeground(ctx, L, meta);
     return out;
   } finally { R = prev; }
@@ -1488,13 +1539,14 @@ function scaledCopy(canvas, maxSide) {
 async function develop(origin, j) {
   const lum = measureLum(origin);
   const meta = buildMeta(j.cfg, j.cam, j.date, j.exif, lum, j.front);
+  meta.osd = osdFor(j.cam, j.cfg, j.osdFlags, j.osdCount ?? shotsLeft(), j.bat ?? batLevel);
   const lights = j.lightMode !== 'off' ? detectLights(origin, origin.width, origin.height, null, false) : [];
   await ensureFonts(meta.caption);
   await nextFrame();
   const out = compose(origin, meta, { cfg: j.cfg, cam: j.cam, flash: j.flash, ev: j.ev, light: lightUniforms(j.cam, j.lightMode, j.seed, lights) });
   await nextFrame();
   const orig = await toBlob(scaledCopy(origin, 2048), 'image/jpeg', .9);
-  const rec = await storePhoto(out, meta, { orig, ometa: { taken: j.date.getTime(), exif: j.exif || null, front: !!j.front, ev: j.ev || 0, flash: j.flash || 0, light: j.lightMode, seed: j.seed } }, j.date);
+  const rec = await storePhoto(out, meta, { orig, ometa: { taken: j.date.getTime(), exif: j.exif || null, front: !!j.front, ev: j.ev || 0, flash: j.flash || 0, light: j.lightMode, seed: j.seed, osdFlags: j.osdFlags || [] } }, j.date);
   if (NATIVE && j.cfg.autoSave && !storageRefused) await saveToGallery(rec, true);
   return rec;
 }
@@ -1566,7 +1618,7 @@ async function shoot() {
       if (S.facing === 'user') { $('#flashScreen').classList.add('on'); await sleep(260); }
       else { torchOn = await setTorch(true); if (torchOn) await sleep(420); }
     }
-    const bmp = await grabFrame();
+    const bmp = await grabFrame(), osdAtPress = shotsLeft();
     shutterSound(); blink(); haptic('confirm');
     flyToThumb(viewfinderSnap());
     $('#flashScreen').classList.remove('on');
@@ -1575,7 +1627,8 @@ async function shoot() {
     enqueue({
       // the preview is mirrored, so for an un-mirrored selfie "up" is on the other side of the sensor
       bmp, dims: captureDims(), mirror: front && S.mirrorSelfie, zoom, rot: front && !S.mirrorSelfie ? -r : r, date: new Date(), exif: null,
-      cfg: { ...S }, cam: currentCam(), front, flash: S.flash ? .55 : 0, ev, lightMode: S.light, seed: lightSeed
+      cfg: { ...S }, cam: currentCam(), front, flash: S.flash ? .55 : 0, ev, lightMode: S.light, seed: lightSeed,
+      osdFlags: shotFlags(), osdCount: osdAtPress, bat: batLevel
     });
     if (S.light === 'rand') lightSeed = Math.floor(Math.random() * 100000);
   } catch (e) {
@@ -1700,7 +1753,7 @@ async function redevelop(rec, camId) {
   const om = rec.ometa || {};
   const nrec = await develop(src, {
     cfg: { ...S }, cam: camById(camId), date: new Date(om.taken || rec.taken), exif: om.exif, front: om.front,
-    flash: om.flash || 0, ev: om.ev || 0, lightMode: om.light || 'off', seed: om.seed || lightSeed
+    flash: om.flash || 0, ev: om.ev || 0, lightMode: om.light || 'off', seed: om.seed || lightSeed, osdFlags: om.osdFlags || []
   });
   return nrec;
 }
@@ -1793,7 +1846,7 @@ function syncAlbum() {
   if (jobs.length > 1) {} // jobs[0] is the shot being stored; a newer shot's snapshot is already on the thumb
   else if (photos[0]) { btn.style.backgroundImage = `url("${urlOf(photos[0], 'thumb')}")`; btn.classList.add('has'); }
   else if (!jobs.length && !busyOther) { btn.style.backgroundImage = ''; btn.classList.remove('has'); }
-  $('#osdCount').textContent = `[${pad4(Math.max(0, 9999 - photos.length))}]`;
+  drawOverlay(); // shots-left counter
   if (!$('#gallerySheet').hidden) renderGrid();
 }
 
@@ -2073,8 +2126,8 @@ async function renderCamThumbs(source, mirror) {
 function openCamSheet() {
   if (pickResolve) { pickResolve(null); pickResolve = null; }
   $('#camSheet').classList.remove('over');
-  $('#camTitle').textContent = 'CAMERA · 10';
-  $('#camLede').textContent = '2001년부터 2006년까지, 그 시절 디카 10대예요. 지금 장면이 카메라마다 어떻게 찍히는지 미리 보여 드려요.';
+  $('#camTitle').textContent = `CAMERA · ${CAMERAS.length}`;
+  $('#camLede').textContent = `${CAMERAS[0].year}년부터 ${CAMERAS[CAMERAS.length - 1].year}년까지, 그 시절 카메라 ${CAMERAS.length}대예요. 지금 장면이 카메라마다 어떻게 찍히는지 미리 보여 드려요.`;
   $$('#camGrid .cam-card').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === S.cam)));
   openSheet('#camSheet');
   const useLive = live && video.readyState >= 2 && video.videoWidth;
@@ -2162,12 +2215,12 @@ function tapFocus(cx, cy) {
 
 /* ───────── controls ↔ settings ───────── */
 const STAMP_KO = { film: '필름', digi: '디카', info: '정보바', polaroid: '폴라', off: '없음' };
-function syncFlags() {
-  $('#osdFlags').textContent = [S.flash && 'FLASH', S.timer && `SELF ${S.timer}S`, S.light !== 'off' && (S.light === 'rand' ? 'LIGHT RND' : 'LIGHT'),
-    zoom > 1.05 && `×${zoom.toFixed(1)}`, Math.abs(ev) > .05 && `${ev > 0 ? '+' : '−'}${Math.abs(ev).toFixed(1)}EV`,
-    devRot && live && '◧ 가로', S.ddayOn && S.anniv && 'D-DAY'].filter(Boolean).join('  ');
+function shotFlags() {
+  return [S.flash && 'FLASH', S.timer && `SELF ${S.timer}S`, S.light !== 'off' && (S.light === 'rand' ? 'LIGHT RND' : 'LIGHT'),
+    zoom > 1.05 && `×${zoom.toFixed(1)}`, Math.abs(ev) > .05 && `${ev > 0 ? '+' : '−'}${Math.abs(ev).toFixed(1)}EV`].filter(Boolean);
 }
-function syncOsdMode() { $('#osdMode').textContent = (osd.classList.contains('narrow') ? '' : 'AUTO  ') + currentCam().code; }
+const previewFlags = () => [...shotFlags(), devRot && live && '◧ 가로', S.ddayOn && S.anniv && 'D-DAY'].filter(Boolean);
+function syncFlags() { drawOverlay(); }
 function syncUI() {
   $$('[data-key]').forEach(el => {
     const k = el.dataset.key;
@@ -2202,8 +2255,6 @@ function syncUI() {
   $('#plateModel').textContent = `${cam.model} · ${cam.mp}M ${cam.sensor}`;
   $('#capTitle').textContent = cam.mood;
   $('#capSub').textContent = `${cam.model} · ${cam.year}`;
-  syncOsdMode();
-  $('#osdSize').textContent = cam.mp + 'M' + (S.aspect === '1:1' ? ' 1:1' : '');
   syncFlags();
 }
 function applySetting(k) {
@@ -2307,6 +2358,8 @@ window.geuhaeShutter = () => { if (!overlayOpen() && !popOpen()) shoot(); };
 /* ───────── first run ───────── */
 function openOnboarding() {
   const onb = $('#onb'), track = $('#onbTrack'), dots = $$('#onbDots i');
+  $('#onbCount').textContent = CAMERAS.length;
+  $('#onbMarquee').style.animationDuration = (CAMERAS.length * 2.6) + 's'; // same drift speed whatever the count
   $('#onbMarquee').innerHTML = [...CAMERAS, ...CAMERAS].map((c, i) => camIcon(c, '-o' + i)).join('');
   onb.hidden = false;
   const page = () => Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
@@ -2409,7 +2462,7 @@ function wire() {
     if (r !== devRot) { devRot = r; syncFlags(); }
   });
   if (navigator.getBattery) navigator.getBattery().then(b => {
-    const upd = () => { const n = b.level > .66 ? 3 : b.level > .33 ? 2 : b.level > .1 ? 1 : 0; $$('#osdBat i').forEach((el, i) => el.classList.toggle('off', i >= n)); };
+    const upd = () => { batLevel = b.level > .66 ? 3 : b.level > .33 ? 2 : b.level > .1 ? 1 : 0; drawOverlay(); };
     upd(); b.addEventListener('levelchange', upd);
   }).catch(() => {});
 }
