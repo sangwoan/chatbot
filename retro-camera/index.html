@@ -556,7 +556,7 @@ const CAMERAS = [
     motif: '니콘 쿨픽스 995 (2001)',
     story: '몸통을 꺾어 발밑의 꽃도, 머리 위 간판도 찍었다. 차갑고 또렷한 색, 파란 꽃은 보랏빛으로.',
     body: { hi: '#8a847d', base: '#5c5751', lo: '#3a3632', ink: '#f3efe9', soft: '#d6cfc5', accent: '#ff8a70' },
-    p: { exposure: 0, contrast: 1.15, sat: 1.08, gain: [.95, .98, 1.08], mat: [[1, -.04, .1], [-.02, 1.03, -.01], [0, -.03, 1.03]], shadowTint: [.015, -.02, .03], highTint: [0, -.01, .02], fringe: .4, ca: .005, clip: .4, sharpen: .35, grain: .035, chroma: .04, vignette: .12, ccd: .45, iso: 100, css: 'contrast(1.14) saturate(1.06) hue-rotate(6deg)' } },
+    p: { exposure: 0, contrast: 1.15, sat: 1.08, gain: [.95, .98, 1.08], mat: [[1, -.04, .1], [-.02, 1.03, -.01], [0, -.03, 1.03]], shadowTint: [.015, -.02, .03], highTint: [0, -.01, .02], fringe: .4, ca: .003, clip: .4, sharpen: .35, grain: .035, chroma: .04, vignette: .12, ccd: .45, iso: 100, css: 'contrast(1.14) saturate(1.06) hue-rotate(6deg)' } },
   { id: 'q2100', code: 'Q-2100', model: 'Q-2100', ko: '아빠 디카', mood: '거실 서랍 속 아빠 디카', year: 2002, mp: '2.0', sensor: 'CCD', lens: ['5.8mm', 'f/2.8'],
     motif: '니콘 쿨픽스 2000 (2002)',
     story: '아빠가 거실 서랍에 넣어 두던 첫 디카. 2백만 화소, 나뭇가지 끝엔 보라색 번짐.',
@@ -581,7 +581,7 @@ const CAMERAS = [
     motif: '삼성 케녹스 V4 (2003)',
     story: '꽃다발 들고 교문 앞에서 찍던 국산 디카. 담백한 색, 칼같이 또렷한 렌즈.',
     body: { hi: '#eceef1', base: '#c3c7cd', lo: '#8c929a', ink: '#1e2228', soft: '#1f242b', accent: '#a5222b' },
-    p: { exposure: .04, contrast: 1.08, sat: .9, gain: [1.02, 1.01, .95], highTint: [.01, .012, -.02], black: [.015, .015, .015], sharpen: .7, fringe: .2, ca: .003, grain: .03, chroma: .035, bloom: .06, vignette: .1, clip: .22, ccd: .4, iso: 100, css: 'saturate(.9) contrast(1.08)' } },
+    p: { exposure: .04, contrast: 1.08, sat: .9, gain: [1.02, 1.01, .95], highTint: [.01, .012, -.02], black: [.015, .015, .015], sharpen: .7, fringe: .2, ca: 0, grain: .03, chroma: .035, bloom: .06, vignette: .1, clip: .22, ccd: .4, iso: 100, css: 'saturate(.9) contrast(1.08)' } },
   { id: 'c7', code: 'C-7', model: 'C-7 EASY', ko: '골드 이지', mood: '사진관의 노란 햇살', year: 2004, mp: '4.0', sensor: 'CCD', lens: ['5.6mm', 'f/2.7'],
     motif: '코닥 이지쉐어 CX7430 (2004)',
     story: '가족사진은 다 이걸로 찍었다. 사진관에 인화 맡기면 노란 햇살 색으로 나오던 카메라.',
@@ -611,7 +611,7 @@ const CAMERAS = [
     motif: '소니 사이버샷 DSC-T10 (2006)',
     story: '언니 화장대 위에 있던 핑크 슬림 디카. 플래시가 터지면 볼이 발그레하게 나왔다.',
     body: { hi: '#f8dde5', base: '#e7b5c3', lo: '#c58c9d', ink: '#55283a', soft: '#522e38', accent: '#8a1f45' },
-    p: { exposure: .18, contrast: 1.1, sat: 1.18, gain: [1.03, .94, 1.07], highTint: [.03, -.01, .035], shadowTint: [0, -.01, .03], sharpen: .6, chroma: .05, grain: .03, bloom: .18, ca: .004, vignette: .1, clip: .35, ccd: .4, iso: 100, css: 'brightness(1.1) contrast(1.1) saturate(1.18) hue-rotate(-8deg)' } },
+    p: { exposure: .18, contrast: 1.1, sat: 1.18, gain: [1.03, .94, 1.07], highTint: [.03, -.01, .035], shadowTint: [0, -.01, .03], sharpen: .6, chroma: .05, grain: .03, bloom: .18, ca: .002, vignette: .1, clip: .35, ccd: .4, iso: 100, css: 'brightness(1.1) contrast(1.1) saturate(1.18) hue-rotate(-8deg)' } },
   { id: 'f31', code: 'F-31', model: 'F-31 NIGHT', ko: '밤의 디카', mood: '밤 골목의 까만 디카', year: 2006, mp: '6.3', sensor: 'HR CCD', lens: ['8.0mm', 'f/2.8'],
     motif: '후지필름 파인픽스 F31fd (2006)',
     story: '플래시 없이도 밤 골목이 담기던 까만 디카. 초록빛이 유난히 깊었다.',
@@ -621,12 +621,12 @@ const CAMERAS = [
     motif: '올림푸스 뮤 720 SW (2006)',
     story: '그해 여름 계곡이랑 바다에 데려간 방수 디카. 물빛이 유난히 시원하게 찍혔다.',
     body: { hi: '#e2f2f6', base: '#a3d2de', lo: '#6aa6b8', ink: '#163e4a', soft: '#223e46', accent: '#0b5870' },
-    p: { exposure: .1, contrast: 1.1, sat: 1.12, gain: [.9, 1, 1.1], highTint: [-.02, .03, .05], shadowTint: [-.02, .02, .04], sharpen: .3, grain: .05, chroma: .07, bloom: .14, ca: .004, vignette: .16, clip: .3, ccd: .35, iso: 100, css: 'contrast(1.1) saturate(1.12) hue-rotate(-6deg) brightness(1.06)' } },
+    p: { exposure: .1, contrast: 1.1, sat: 1.12, gain: [.9, 1, 1.1], highTint: [-.02, .03, .05], shadowTint: [-.02, .02, .04], sharpen: .3, grain: .05, chroma: .07, bloom: .14, ca: .003, vignette: .16, clip: .3, ccd: .35, iso: 100, css: 'contrast(1.1) saturate(1.12) hue-rotate(-6deg) brightness(1.06)' } },
   { id: 'wide28', code: 'W-28', model: 'W-28 WIDE', ko: '광각 슬림', mood: '수학여행 단체사진 한 장', year: 2006, mp: '6.0', sensor: 'CCD', lens: ['4.6mm', 'f/2.8'],
     motif: '파나소닉 루믹스 DMC-FX01 (2006)',
     story: '단체사진도 한 장에 다 들어가던 넓은 화각. 진한 색과 살짝 뭉개진 머리카락.',
     body: { hi: '#93a9d1', base: '#5a74a6', lo: '#34497a', ink: '#f7f9fe', soft: '#e6ecf7', accent: '#ffd27a' },
-    p: { exposure: .06, contrast: 1.16, sat: 1.24, gain: [.99, 1, 1.03], highTint: [-.005, .005, .015], nr: .55, chromaRes: 700, sharpen: .2, grain: .015, chroma: .05, vignette: .1, ca: .003, clip: .3, ccd: .4, iso: 200, css: 'contrast(1.15) saturate(1.25)' } },
+    p: { exposure: .06, contrast: 1.16, sat: 1.24, gain: [.99, 1, 1.03], highTint: [-.005, .005, .015], nr: .55, chromaRes: 700, sharpen: .2, grain: .015, chroma: .05, vignette: .1, ca: 0, clip: .3, ccd: .4, iso: 200, css: 'contrast(1.15) saturate(1.25)' } },
   { id: 'touch2m', code: 'TC-200', model: 'TC-200 TOUCH', ko: '풀터치폰', mood: '버스 창가의 풀터치폰', year: 2008, mp: '2.0', sensor: 'CMOS', lens: ['FIXED', ''],
     motif: '삼성 애니콜 햅틱 SCH-W420 (2008)',
     story: '화면을 톡 눌러 찍던 200만 화소 폰카. 노르스름하고 살짝 뿌연, 그 시절 등굣길.',
@@ -812,7 +812,9 @@ void main(){
   vec3 c=src(uv);
   if(u_ca>0.){c.r=src(uv-d*u_ca).r;c.b=src(uv+d*u_ca).b;}
   if(u_chromaGrid.x>0.){
-    vec3 cc=src((floor(uv*u_chromaGrid)+.5)/u_chromaGrid);
+    vec2 cg=(floor(uv*u_chromaGrid)+.5)/u_chromaGrid;
+    vec3 cc=src(cg);
+    if(u_ca>0.){cc.r=src(cg-d*u_ca).r;cc.b=src(cg+d*u_ca).b;} // keep the lens CA on coarse-chroma bodies
     c=mix(c,vec3(dot(c,W))+cc-vec3(dot(cc,W)),.85);
   }
   if(u_block>0.){
@@ -861,6 +863,7 @@ void main(){
   c+=u_shadowTint*(1.-lc)*(1.-lc)+u_highTint*lc*lc;
   c=u_black+c*(1.-u_black);
   c*=1.-u_vignette*smoothstep(.3,1.15,r);
+  vec3 preLight=c;
   if(u_lightAmt>0.){
     for(int i=0;i<3;i++){
       vec4 Lt=u_light[i];
@@ -894,6 +897,8 @@ void main(){
       float ld=length((uv-u_leakPos)*asp);
       c+=u_leakColor*u_leakAmt*(1.-smoothstep(0.,.95,ld))*.6;
     }
+    // B&W bodies: smear, flare, dust and leaks only change brightness, in the body's own tint
+    if(u_mono>.5) c=preLight+dot(c-preLight,W)*u_tint/max(dot(u_tint,W),.01);
   }
   if(u_scan>0.) c*=1.-u_scan*(.5+.5*cos(v.y*240.*6.2832));
   float cell=max(1.,floor(u_res.x/720.+.5));
