@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#a3d2de">
-<meta name="description" content="2000년대 디지털 카메라 10대의 색감으로 찍고, 사진 하단에 날짜와 정보를 남기는 감성 카메라">
+<meta name="description" content="1998–2009년 카메라 20대의 색감으로 찍고, 사진에 날짜와 그 시절 화면 정보를 남기는 감성 카메라">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -251,6 +251,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
 .cam-name b{font:700 10.5px/1.15 var(--font-osd);letter-spacing:.04em;min-width:0}
 .cam-card strong{font:600 15px/1.3 var(--font-ui)}
 .cam-card .spec{font:400 9.5px/1.2 var(--font-osd);letter-spacing:.05em;color:var(--menu-sub)}
+.cam-card .motif{font:500 11.5px/1.35 var(--font-ui);color:#ffcf8f}
 .cam-card small{font:400 12.5px/1.5 var(--font-ui);color:#c3cee2;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 
 /* playback viewer */
@@ -528,52 +529,114 @@ let R = S;
    poster = colour levels, scan = video scanlines, fringe = purple fringing, clip = blown highlights,
    ccd = vertical smear from bright lights (CCD sensors only; CMOS has none),
    tint = colour multiplied in after B&W (infrared green, sepia), block = 8x8 JPEG blocking in flat areas,
-   palette = ordered (Bayer 4x4) dither of luminance onto a 4-colour palette, dark to light */
+   palette = ordered (Bayer 4x4) dither of luminance onto a 4-colour palette, dark to light,
+   nr = edge-preserving "watercolour" noise reduction, monoW = B&W channel weights (infrared: red-heavy),
+   mat = 3x3 colour matrix given as rows (sensor colour-filter quirks, e.g. CYGM blues turning violet) */
 const BASE = { exposure: 0, contrast: 1, sat: 1, gain: [1, 1, 1], black: [0, 0, 0], shadowTint: [0, 0, 0], highTint: [0, 0, 0],
   grain: 0, chroma: 0, vignette: 0, bloom: 0, bloomR: .008, bloomTint: [1, 1, 1], ca: 0, sharpen: 0, mono: 0,
   lowres: 0, pixelate: 0, chromaRes: 0, smear: false, poster: 0, scan: 0, fringe: 0, clip: 0, ccd: .35, iso: 100, css: 'none',
-  tint: [1, 1, 1], block: 0, palette: null };
+  tint: [1, 1, 1], block: 0, palette: null, nr: 0, monoW: [.299, .587, .114], mat: null };
 const CAMERAS = [
-  { id: 'digi130', code: 'DIGI130', model: 'DIGI 130', ko: '첫 디카', mood: '교실 뒤 첫 디카', year: 2001, mp: '1.3', sensor: 'CMOS', lens: ['5.4mm', 'f/2.8'],
+  { id: 'px128', code: 'PX-128', model: 'PX-128 BIT', ko: '게임기 카메라', mood: '초록 화면 속 네 가지 색', year: 1998, mp: '0.01', sensor: 'CMOS', lens: ['FIXED', ''],
+    motif: '닌텐도 게임보이 카메라 (1998)',
+    story: '건전지 넣은 게임기에 꽂아 찍던 사진. 점점이 박힌 무늬로 얼굴이 그려지고, 화면은 늘 연둣빛이었다.',
+    body: { hi: '#e3edc0', base: '#b4c77e', lo: '#7d9447', ink: '#1f2b0c', soft: '#16200a', accent: '#304d0c' },
+    p: { lowres: 128, pixelate: 1, mono: 1, exposure: .1, contrast: 1.25, sharpen: .9, palette: [[.059, .22, .059], [.188, .384, .188], [.545, .675, .059], [.608, .737, .059]], ccd: 0, iso: 100, css: 'grayscale(1) contrast(1.6) sepia(.6) hue-rotate(40deg) saturate(1.4)' } },
+  { id: 'disk', code: 'DK-144', model: 'DK-144 DISK', ko: '디스켓 디카', mood: '아빠 서재의 디스켓 디카', year: 1999, mp: '0.3', sensor: 'CCD', lens: ['4.2mm', 'f/1.8'],
+    motif: '소니 마비카 MVC-FD73 (1999)',
+    story: '디스켓 한 장에 서른 장. 찰칵, 그리고 지-잉 하고 디스크 돌아가던 소리까지 사진에 남았다.',
+    body: { hi: '#7d8899', base: '#4d5868', lo: '#2c3442', ink: '#eef1f6', soft: '#c9d0dc', accent: '#ffd27a' },
+    p: { lowres: 640, pixelate: .25, chromaRes: 200, block: .6, exposure: .05, contrast: 1.28, sat: 1.12, gain: [1.02, 1, .96], black: [.02, .02, .03], fringe: 1.1, ca: .012, clip: .5, sharpen: .35, bloom: .22, bloomR: .012, grain: .05, chroma: .08, vignette: .18, ccd: .85, iso: 100, css: 'contrast(1.25) saturate(1.1) blur(.4px)' } },
+  { id: 'digi130', code: 'DIGI130', model: 'DIGI 130', ko: '첫 디카', mood: '교실 뒤 첫 디카', year: 2001, mp: '1.3', sensor: 'CCD', lens: ['5.5mm', 'f/2.8'],
+    motif: '삼성 디지맥스 130 (2001)',
     story: '반 친구가 처음 들고 온 신기한 카메라. 노이즈가 자글자글해도 다 같이 몰려들어 찍었다.',
     body: { hi: '#e6e6e2', base: '#bdbdb8', lo: '#8f8f8a', ink: '#31312e', soft: '#30302e', accent: '#2b4f8a' },
-    p: { lowres: 800, pixelate: .5, chromaRes: 240, poster: 32, exposure: .1, contrast: 1.22, sat: 1.35, gain: [1.08, .94, 1.06], clip: .4, chroma: .16, grain: .06, sharpen: .45, vignette: .22, ccd: 0, iso: 100, css: 'contrast(1.15) saturate(1.25) brightness(1.1)' } },
+    p: { lowres: 1000, pixelate: .15, chromaRes: 240, poster: 32, block: .25, exposure: .1, contrast: 1.22, sat: 1.2, gain: [1.08, .94, 1.06], clip: .4, chroma: .16, grain: .06, sharpen: .3, vignette: .22, ccd: .3, iso: 100, css: 'contrast(1.15) saturate(1.2) brightness(1.1)' } },
+  { id: 'swivel', code: 'SW-33', model: 'SW-33 SWIVEL', ko: '회전 바디', mood: '렌즈가 돌아가는 회색 디카', year: 2001, mp: '3.3', sensor: 'CCD', lens: ['8.0mm', 'f/2.6'],
+    motif: '니콘 쿨픽스 995 (2001)',
+    story: '몸통을 꺾어 발밑의 꽃도, 머리 위 간판도 찍었다. 차갑고 또렷한 색, 파란 꽃은 보랏빛으로.',
+    body: { hi: '#8a847d', base: '#5c5751', lo: '#3a3632', ink: '#f3efe9', soft: '#d6cfc5', accent: '#ff8a70' },
+    p: { exposure: 0, contrast: 1.15, sat: 1.08, gain: [.95, .98, 1.08], mat: [[1, -.04, .1], [-.02, 1.03, -.01], [0, -.03, 1.03]], shadowTint: [.015, -.02, .03], highTint: [0, -.01, .02], fringe: .4, ca: .005, clip: .4, sharpen: .35, grain: .035, chroma: .04, vignette: .12, ccd: .45, iso: 100, css: 'contrast(1.14) saturate(1.06) hue-rotate(6deg)' } },
   { id: 'q2100', code: 'Q-2100', model: 'Q-2100', ko: '아빠 디카', mood: '거실 서랍 속 아빠 디카', year: 2002, mp: '2.0', sensor: 'CCD', lens: ['5.8mm', 'f/2.8'],
+    motif: '니콘 쿨픽스 2000 (2002)',
     story: '아빠가 거실 서랍에 넣어 두던 첫 디카. 2백만 화소, 나뭇가지 끝엔 보라색 번짐.',
     body: { hi: '#9a9ea5', base: '#6b6f76', lo: '#46494e', ink: '#f2f2f0', soft: '#d7dade', accent: '#ffd27a' },
-    p: { lowres: 1300, chromaRes: 420, exposure: 0, contrast: 1.1, sat: .82, gain: [.98, 1.04, .9], black: [.04, .05, .02], fringe: .9, ca: .012, vignette: .35, grain: .05, chroma: .06, clip: .25, ccd: .45, iso: 100, css: 'saturate(.9) contrast(1.06) sepia(.08)' } },
-  { id: 'dv03', code: 'DV-03', model: 'DV-03 HANDYCAM', ko: '캠코더 한 장', mood: '운동회 날 캠코더', year: 2003, mp: '0.7', sensor: 'CCD', lens: ['4.2mm', 'f/1.8'],
+    p: { lowres: 1600, chromaRes: 420, exposure: 0, contrast: 1.1, sat: 1, gain: [.98, 1, 1], black: [.03, .03, .02], fringe: .6, ca: .008, sharpen: -.12, vignette: .35, grain: .05, chroma: .06, clip: .25, ccd: .45, iso: 100, css: 'saturate(1) contrast(1.08) sepia(.05)' } },
+  { id: 'nightir', code: 'IR-02', model: 'IR-02 OWL', ko: '야간 적외선', mood: '캠핑 밤의 초록 야간모드', year: 2002, mp: '5.0', sensor: 'CCD', lens: ['9.7mm', 'f/2.0'],
+    motif: '소니 사이버샷 DSC-F717 나이트샷 (2002)',
+    story: '불 꺼진 텐트 안에서 야간 모드를 켜면, 친구 얼굴이 초록빛 흑백으로 떠올랐다.',
+    body: { hi: '#5f6863', base: '#3b433f', lo: '#222826', ink: '#e8f0ea', soft: '#bfd0c4', accent: '#7dff9a' },
+    p: { mono: 1, monoW: [.5, .4, .1], tint: [.55, 1, .5], highTint: [.12, .02, .12], black: [0, .02, .005], exposure: .15, contrast: 1.2, vignette: .6, bloom: .4, bloomR: .016, bloomTint: [.6, 1, .6], grain: .14, chroma: 0, sharpen: .15, clip: .3, ccd: .6, iso: 800, css: 'grayscale(1) sepia(1) hue-rotate(50deg) saturate(2.2) brightness(1.05) contrast(1.2)' } },
+  { id: 'dv03', code: 'DV-03', model: 'DV-03 TAPE', ko: '캠코더 한 장', mood: '운동회 날 캠코더', year: 2003, mp: '0.7', sensor: 'CCD', lens: ['3.3mm', 'f/1.7'],
+    motif: '소니 DCR-TRV22 캠코더 (2003)',
     story: '운동회 날 아빠가 들고 온 캠코더. 테이프에서 뽑아낸 한 장에 번지는 빛과 가로줄.',
     body: { hi: '#4f5a76', base: '#2f3850', lo: '#1a2033', ink: '#e9edf6', soft: '#bcc5d9', accent: '#8fd0ff' },
-    p: { lowres: 900, chromaRes: 180, smear: true, scan: .26, exposure: .12, contrast: .95, sat: 1.25, gain: [1.06, .97, .98], bloom: .45, bloomR: .012, bloomTint: [1, .8, .75], black: [.05, .04, .05], grain: .04, chroma: .05, vignette: .15, ccd: .7, iso: 400, css: 'saturate(1.2) contrast(1.05) blur(.6px)' } },
+    p: { lowres: 640, chromaRes: 180, smear: true, scan: .26, exposure: .12, contrast: .95, sat: 1.15, gain: [1.06, .97, .98], bloom: .45, bloomR: .012, bloomTint: [1, .8, .75], black: [.05, .04, .05], sharpen: .25, grain: .04, chroma: .05, vignette: .15, ccd: .7, iso: 400, css: 'saturate(1.15) contrast(1.05) blur(.6px)' } },
+  { id: 'webcam', code: 'WC-30', model: 'WC-30 USB', ko: 'PC캠', mood: '모니터 위 PC캠 셀카', year: 2003, mp: '0.3', sensor: 'CMOS', lens: ['FIXED', ''],
+    motif: '로지텍 퀵캠 계열 30만 화소 PC캠 (2003)',
+    story: '모니터 위 동그란 PC캠 앞에서 얼짱 각도로 고개 기울이고 찰칵. 방 불빛에 얼굴만 뽀얗게 떴다.',
+    body: { hi: '#ffe4c8', base: '#f5b27a', lo: '#cf7a3e', ink: '#3d1d06', soft: '#3d1f0a', accent: '#1d4fa8' },
+    p: { lowres: 352, pixelate: .3, chromaRes: 140, block: .35, exposure: .22, contrast: .9, sat: .85, gain: [1.08, .98, .88], black: [.05, .04, .05], clip: .5, sharpen: -.35, bloom: .3, bloomR: .014, bloomTint: [1, .9, .85], grain: .12, chroma: .14, vignette: .32, ccd: 0, iso: 400, css: 'brightness(1.12) contrast(.9) saturate(.85) sepia(.12) blur(.5px)' } },
+  { id: 'kenox', code: 'K-400', model: 'K-400 SILVER', ko: '국산 은색 디카', mood: '졸업식 날 삼촌의 은색 디카', year: 2003, mp: '4.0', sensor: 'CCD', lens: ['7.7mm', 'f/2.7'],
+    motif: '삼성 케녹스 V4 (2003)',
+    story: '꽃다발 들고 교문 앞에서 찍던 국산 디카. 담백한 색, 칼같이 또렷한 렌즈.',
+    body: { hi: '#eceef1', base: '#c3c7cd', lo: '#8c929a', ink: '#1e2228', soft: '#1f242b', accent: '#a5222b' },
+    p: { exposure: .04, contrast: 1.08, sat: .9, gain: [1.02, 1.01, .95], highTint: [.01, .012, -.02], black: [.015, .015, .015], sharpen: .7, fringe: .2, ca: .003, grain: .03, chroma: .035, bloom: .06, vignette: .1, clip: .22, ccd: .4, iso: 100, css: 'saturate(.9) contrast(1.08)' } },
   { id: 'c7', code: 'C-7', model: 'C-7 EASY', ko: '골드 이지', mood: '사진관의 노란 햇살', year: 2004, mp: '4.0', sensor: 'CCD', lens: ['5.6mm', 'f/2.7'],
+    motif: '코닥 이지쉐어 CX7430 (2004)',
     story: '가족사진은 다 이걸로 찍었다. 사진관에 인화 맡기면 노란 햇살 색으로 나오던 카메라.',
     body: { hi: '#f4e8c8', base: '#d8bf8a', lo: '#a88e5b', ink: '#403119', soft: '#3b311c', accent: '#7a4406' },
-    p: { exposure: .08, contrast: 1.1, sat: 1.25, gain: [1.07, 1.02, .86], highTint: [.035, .025, -.02], black: [.04, .03, 0], sharpen: .15, grain: .05, chroma: .03, bloom: .16, vignette: .22, ccd: .35, iso: 200, css: 'sepia(.2) saturate(1.3) contrast(1.1)' } },
+    p: { exposure: .08, contrast: 1.2, sat: 1.28, gain: [1.07, 1.02, .86], highTint: [.035, .025, -.02], black: [.01, .01, 0], sharpen: .4, block: .15, grain: .03, chroma: .03, bloom: .16, vignette: .22, clip: .3, ccd: .35, iso: 200, css: 'sepia(.2) saturate(1.3) contrast(1.15)' } },
   { id: 'vga', code: 'VGA', model: 'VGA FOLDER', ko: '폴더폰 카메라', mood: '미니홈피 폴더폰', year: 2004, mp: '0.3', sensor: 'CMOS', lens: ['3.2mm', 'f/2.8'],
+    motif: '삼성 애니콜 SPH-X9750 (2004)',
     story: '폴더를 열고 찰칵. 30만 화소 폰카로 찍어 미니홈피에 올리던 그 사진.',
     body: { hi: '#a63d4e', base: '#7d2534', lo: '#511521', ink: '#f8ecef', soft: '#e3c1c8', accent: '#ffd27a' },
-    p: { lowres: 640, pixelate: .6, chromaRes: 150, poster: 26, exposure: .1, contrast: 1.2, sat: .9, gain: [1, 1.06, .88], vignette: .45, chroma: .1, grain: .06, sharpen: .4, clip: .3, ccd: 0, iso: 100, css: 'contrast(1.2) saturate(.9) sepia(.15) hue-rotate(10deg)' } },
+    p: { lowres: 640, pixelate: .6, chromaRes: 150, poster: 40, block: .5, exposure: .1, contrast: 1.2, sat: .9, gain: [1, 1.06, .88], vignette: .45, chroma: .1, grain: .06, sharpen: .4, clip: .3, ccd: 0, iso: 100, css: 'contrast(1.2) saturate(.9) sepia(.15) hue-rotate(10deg)' } },
   { id: 'ixa55', code: 'IXA55', model: 'IXA 55', ko: '은색 똑딱이', mood: '여행 가방 속 은빛', year: 2005, mp: '5.0', sensor: 'CCD', lens: ['5.8mm', 'f/2.8'],
+    motif: '캐논 익서스 55 (2005)',
     story: '여행 가방 앞주머니엔 늘 이 은색 디카. 사람 얼굴이 따뜻하고 예쁘게 나왔다.',
     body: { hi: '#eeeae1', base: '#cfc9bd', lo: '#9e988b', ink: '#3b3832', soft: '#3b3832', accent: '#2f4e7a' },
-    p: { exposure: .12, contrast: 1.08, sat: 1.12, gain: [1.06, 1, .92], highTint: [.02, .01, -.01], black: [.02, .015, .01], sharpen: .25, grain: .025, chroma: .02, bloom: .12, vignette: .12, clip: .2, ccd: .35, iso: 100, css: 'saturate(1.12) contrast(1.08) sepia(.08) brightness(1.05)' } },
-  { id: 'exs5', code: 'EX-S5', model: 'EX-S5 CARD', ko: '카드 디카', mood: '지갑 속 파스텔', year: 2005, mp: '5.0', sensor: 'CCD', lens: ['6.2mm', 'f/3.1'],
+    p: { exposure: .12, contrast: 1.08, sat: 1.12, gain: [1.06, 1, .92], highTint: [.02, .01, -.01], black: [.02, .015, .01], sharpen: .1, fringe: .35, grain: .025, chroma: .02, bloom: .12, vignette: .12, clip: .2, ccd: .35, iso: 100, css: 'saturate(1.12) contrast(1.08) sepia(.08) brightness(1.05)' } },
+  { id: 'exs5', code: 'EX-S5', model: 'EX-S5 CARD', ko: '카드 디카', mood: '지갑 속 파스텔', year: 2005, mp: '5.0', sensor: 'CCD', lens: ['6.2mm', 'f/2.7'],
+    motif: '카시오 엑슬림 카드 EX-S500 (2005)',
     story: '지갑만큼 얇아서 매일 들고 다녔다. 하늘은 하얗게 날아가고 색은 파스텔처럼.',
     body: { hi: '#f7f9fc', base: '#dde3ea', lo: '#aeb8c4', ink: '#363e4c', soft: '#454c5a', accent: '#3b5ba8' },
-    p: { exposure: .38, contrast: .86, sat: .82, gain: [1, .99, 1.05], black: [.08, .08, .11], highTint: [.02, .01, .03], clip: .5, sharpen: .2, grain: .03, chroma: .03, bloom: .25, vignette: .06, ccd: .35, iso: 100, css: 'brightness(1.18) contrast(.86) saturate(.82)' } },
+    p: { exposure: .22, contrast: .92, sat: .92, gain: [1, .99, 1.05], black: [.05, .05, .07], highTint: [.02, .01, .03], clip: .5, sharpen: 0, grain: .05, chroma: .05, bloom: .25, vignette: .06, ccd: .35, iso: 100, css: 'brightness(1.12) contrast(.92) saturate(.92)' } },
+  { id: 'snap28', code: 'SN-28', model: 'SN-28 MONO', ko: '흑백 스냅', mood: '골목 산책 흑백 스냅', year: 2005, mp: '8.1', sensor: 'CCD', lens: ['5.9mm', 'f/2.4'],
+    motif: '리코 GR 디지털 (2005)',
+    story: '주머니에서 꺼내 바로 누르던 28mm 흑백. 거친 입자가 골목의 공기까지 담았다.',
+    body: { hi: '#47433f', base: '#2a2725', lo: '#141312', ink: '#efebe4', soft: '#c4beb4', accent: '#ffb35c' },
+    p: { mono: 1, monoW: [.36, .53, .11], exposure: -.05, contrast: 1.42, sharpen: .5, grain: .13, chroma: 0, vignette: .28, clip: .25, bloom: .05, ccd: .35, iso: 1600, css: 'grayscale(1) contrast(1.45) brightness(.97)' } },
   { id: 't77', code: 'T-77', model: 'T-77 SLIM', ko: '핑크 슬림', mood: '언니 화장대의 핑크', year: 2006, mp: '7.2', sensor: 'CCD', lens: ['6.3mm', 'f/3.5'],
+    motif: '소니 사이버샷 DSC-T10 (2006)',
     story: '언니 화장대 위에 있던 핑크 슬림 디카. 플래시가 터지면 볼이 발그레하게 나왔다.',
     body: { hi: '#f8dde5', base: '#e7b5c3', lo: '#c58c9d', ink: '#55283a', soft: '#522e38', accent: '#8a1f45' },
-    p: { exposure: .25, contrast: 1.1, sat: 1.08, gain: [1.03, .94, 1.07], highTint: [.03, -.01, .035], shadowTint: [0, -.01, .03], sharpen: .6, chroma: .05, grain: .03, bloom: .18, ca: .004, vignette: .1, clip: .35, ccd: .4, iso: 100, css: 'brightness(1.12) contrast(1.1) saturate(1.12) hue-rotate(-8deg)' } },
+    p: { exposure: .18, contrast: 1.1, sat: 1.18, gain: [1.03, .94, 1.07], highTint: [.03, -.01, .035], shadowTint: [0, -.01, .03], sharpen: .6, chroma: .05, grain: .03, bloom: .18, ca: .004, vignette: .1, clip: .35, ccd: .4, iso: 100, css: 'brightness(1.1) contrast(1.1) saturate(1.18) hue-rotate(-8deg)' } },
   { id: 'f31', code: 'F-31', model: 'F-31 NIGHT', ko: '밤의 디카', mood: '밤 골목의 까만 디카', year: 2006, mp: '6.3', sensor: 'HR CCD', lens: ['8.0mm', 'f/2.8'],
+    motif: '후지필름 파인픽스 F31fd (2006)',
     story: '플래시 없이도 밤 골목이 담기던 까만 디카. 초록빛이 유난히 깊었다.',
     body: { hi: '#4b4c51', base: '#2b2c30', lo: '#17181b', ink: '#ecebe7', soft: '#bdbbb5', accent: '#ffcf7a' },
-    p: { exposure: -.1, contrast: 1.2, sat: .95, gain: [.9, 1, 1], shadowTint: [-.035, .045, .04], highTint: [-.01, .01, 0], black: [0, .02, .025], sharpen: .35, grain: .04, chroma: .02, bloom: .3, bloomR: .01, vignette: .2, ccd: .55, iso: 800, css: 'contrast(1.12) hue-rotate(8deg) saturate(1.05)' } },
+    p: { exposure: -.1, contrast: 1.1, sat: 1, gain: [.9, 1, 1], shadowTint: [-.02, .025, .02], highTint: [-.01, .01, 0], black: [0, .02, .025], sharpen: .25, nr: .25, grain: .04, chroma: .02, bloom: .3, bloomR: .01, vignette: .2, ccd: .55, iso: 800, css: 'contrast(1.08) hue-rotate(6deg)' } },
   { id: 'aqua', code: 'AQUA', model: 'AQUA-720', ko: '방수 디카', mood: '그해 여름 바다', year: 2006, mp: '7.1', sensor: 'CCD', lens: ['6.7mm', 'f/3.5'],
+    motif: '올림푸스 뮤 720 SW (2006)',
     story: '그해 여름 계곡이랑 바다에 데려간 방수 디카. 물빛이 유난히 시원하게 찍혔다.',
     body: { hi: '#e2f2f6', base: '#a3d2de', lo: '#6aa6b8', ink: '#163e4a', soft: '#223e46', accent: '#0b5870' },
-    p: { exposure: .14, contrast: 1.18, sat: 1.25, gain: [.88, 1, 1.12], highTint: [-.02, .03, .05], shadowTint: [-.02, .02, .04], sharpen: .55, grain: .03, chroma: .04, bloom: .14, ca: .004, vignette: .16, clip: .3, ccd: .35, iso: 100, css: 'contrast(1.18) saturate(1.2) hue-rotate(-6deg) brightness(1.08)' } },
+    p: { exposure: .1, contrast: 1.1, sat: 1.12, gain: [.9, 1, 1.1], highTint: [-.02, .03, .05], shadowTint: [-.02, .02, .04], sharpen: .3, grain: .05, chroma: .07, bloom: .14, ca: .004, vignette: .16, clip: .3, ccd: .35, iso: 100, css: 'contrast(1.1) saturate(1.12) hue-rotate(-6deg) brightness(1.06)' } },
+  { id: 'wide28', code: 'W-28', model: 'W-28 WIDE', ko: '광각 슬림', mood: '수학여행 단체사진 한 장', year: 2006, mp: '6.0', sensor: 'CCD', lens: ['4.6mm', 'f/2.8'],
+    motif: '파나소닉 루믹스 DMC-FX01 (2006)',
+    story: '단체사진도 한 장에 다 들어가던 넓은 화각. 진한 색과 살짝 뭉개진 머리카락.',
+    body: { hi: '#93a9d1', base: '#5a74a6', lo: '#34497a', ink: '#f7f9fe', soft: '#e6ecf7', accent: '#ffd27a' },
+    p: { exposure: .06, contrast: 1.16, sat: 1.24, gain: [.99, 1, 1.03], highTint: [-.005, .005, .015], nr: .55, chromaRes: 700, sharpen: .2, grain: .015, chroma: .05, vignette: .1, ca: .003, clip: .3, ccd: .4, iso: 200, css: 'contrast(1.15) saturate(1.25)' } },
+  { id: 'touch2m', code: 'TC-200', model: 'TC-200 TOUCH', ko: '풀터치폰', mood: '버스 창가의 풀터치폰', year: 2008, mp: '2.0', sensor: 'CMOS', lens: ['FIXED', ''],
+    motif: '삼성 애니콜 햅틱 SCH-W420 (2008)',
+    story: '화면을 톡 눌러 찍던 200만 화소 폰카. 노르스름하고 살짝 뿌연, 그 시절 등굣길.',
+    body: { hi: '#ebe3f7', base: '#bfaee0', lo: '#8a74b8', ink: '#24183a', soft: '#18102c', accent: '#5a2fa8' },
+    p: { lowres: 1200, chromaRes: 420, block: .3, exposure: .12, contrast: 1, sat: .84, gain: [1.05, 1.02, .88], black: [.035, .035, .03], highTint: [.02, .015, -.02], bloom: .3, bloomR: .02, bloomTint: [1, .95, .85], sharpen: .45, grain: .07, chroma: .1, vignette: .28, clip: .5, ccd: 0, iso: 200, css: 'brightness(1.08) saturate(.85) sepia(.15) contrast(.98)' } },
+  { id: 'toy8', code: 'TOY-8', model: 'TOY-8', ko: '장난감 8mm', mood: '8mm 필름 같은 장난감 디카', year: 2009, mp: '2.0', sensor: 'CMOS', lens: ['4.5mm', 'f/2.8'],
+    motif: '슈퍼헤즈 디지털 하리네즈미 (2009)',
+    story: '손가락만 한 장난감 카메라. 흐릿하고 진한 색이 옛날 홈비디오 한 장면 같았다.',
+    body: { hi: '#fff1b8', base: '#f2cf55', lo: '#c9a02a', ink: '#352805', soft: '#2e2304', accent: '#a8261e' },
+    p: { lowres: 960, chromaRes: 300, exposure: .08, contrast: 1.3, sat: 1.4, gain: [1.07, .98, .86], black: [.03, .015, 0], shadowTint: [-.01, 0, .025], highTint: [.04, .02, -.04], sharpen: -.55, bloom: .35, bloomR: .014, bloomTint: [1, .85, .7], grain: .1, chroma: .09, vignette: .5, clip: .4, ccd: 0, iso: 400, css: 'contrast(1.3) saturate(1.5) sepia(.25) blur(.8px)' } },
 ];
 const camById = id => CAMERAS.find(c => c.id === id) || CAMERAS.find(c => c.id === DEFAULTS.cam);
 if (!CAMERAS.some(c => c.id === S.cam)) S.cam = DEFAULTS.cam;
@@ -644,6 +707,53 @@ function camIcon(c, sfx = '') {
         + lens(48, 36, 16, '#3a3b41') + `<circle cx="48" cy="36" r="17.5" fill="none" stroke="rgba(255,255,255,.18)" stroke-width=".8"/>`
         + flash(68, 19, 14, 7) + label(12, 24, 'F31', b.soft, 5);
       break;
+    case 'px128': // cartridge with a ball-shaped camera head
+      g = body(30, 30, 36, 28, 4) + `<rect x="35" y="38" width="26" height="15" rx="2" fill="rgba(0,0,0,.14)"/>` + label(38, 49, 'PX', b.ink, 6)
+        + `<rect x="44" y="24" width="8" height="8" fill="url(#${id})" ${edge}/>`
+        + `<circle cx="48" cy="18" r="14" fill="url(#${id})" ${edge}/>` + shine(40, 9, 10) + lens(48, 18, 6.5, '#2d3a18');
+      break;
+    case 'disk': // chunky floppy-drive box with a big zoom lens block
+      g = body(6, 14, 84, 42, 6) + shine(12, 16, 36) + `<rect x="50" y="11" width="38" height="40" rx="7" fill="rgba(0,0,0,.28)" stroke="rgba(255,255,255,.18)" stroke-width=".8"/>`
+        + lens(69, 31, 15, '#3a3f47') + flash(12, 20, 18, 8) + label(12, 50, '1.44', b.accent, 5.2) + `<path d="M6 44h40" stroke="rgba(0,0,0,.35)" stroke-width="1.6"/>`;
+      break;
+    case 'swivel': // lens block and grip block on a pivot
+      g = `<rect x="14" y="7" width="22" height="7" rx="2.5" fill="url(#${id})" ${edge}/>` + body(8, 12, 40, 46, 8) + lens(28, 38, 15, '#2a2724')
+        + `<rect x="50" y="18" width="38" height="34" rx="6" fill="url(#${id})" ${edge}/>` + `<rect x="78" y="22" width="6" height="26" rx="3" fill="${b.accent}"/>`
+        + `<path d="M48.5 20v30" stroke="rgba(0,0,0,.45)" stroke-width="1.4"/>` + shine(54, 20, 20) + label(54, 47, 'SW', b.ink, 5);
+      break;
+    case 'nightir': // big-lens bridge body with two IR lamps
+      g = `<rect x="52" y="18" width="36" height="34" rx="6" fill="url(#${id})" ${edge}/>` + body(6, 9, 48, 50, 12) + lens(30, 35, 19, '#202523')
+        + dot(20, 14, 1.8, '#4a0d10') + dot(40, 14, 1.8, '#4a0d10') + `<rect x="28" y="11.5" width="5" height="4" rx="1" fill="#141816"/>`
+        + `<path d="M53 22v26" stroke="rgba(0,0,0,.5)" stroke-width="1.2"/>` + dot(80, 24, 2, b.accent) + label(60, 46, 'IR', b.ink, 5.5);
+      break;
+    case 'webcam': // glossy ball camera on a clip foot
+      g = `<rect x="35" y="52" width="26" height="7" rx="3.5" fill="url(#${id})" ${edge}/>` + `<rect x="45" y="44" width="6" height="10" fill="url(#${id})"/>`
+        + `<circle cx="48" cy="28" r="22" fill="url(#${id})" ${edge}/>` + `<ellipse cx="48" cy="28" rx="22" ry="6" fill="none" stroke="rgba(0,0,0,.12)" stroke-width="1"/>`
+        + `<ellipse cx="40" cy="15" rx="8" ry="4" fill="#fff" opacity=".45"/>` + lens(48, 30, 9.5, '#23170e') + dot(63, 20, 1.8, b.accent);
+      break;
+    case 'kenox': // boxy silver body, dark grip strip, lens ring with a red hairline
+      g = body(8, 14, 80, 42, 7) + `<rect x="8" y="14" width="13" height="42" rx="6" fill="#3a3f46" opacity=".85"/>` + shine(26, 16, 56)
+        + lens(44, 36, 15) + `<circle cx="44" cy="36" r="12.6" fill="none" stroke="${b.accent}" stroke-width=".7"/>`
+        + `<rect x="60" y="18" width="9" height="6" rx="1.5" fill="#1b1e24"/>` + flash(72, 18, 12, 6) + label(62, 51, 'K-400', b.ink, 4.6);
+      break;
+    case 'snap28': // flat matte slab, small flush lens, almost no lettering
+      g = body(6, 17, 84, 32, 4) + `<rect x="6" y="17" width="15" height="32" rx="4" fill="rgba(255,255,255,.07)"/>` + `<path d="M10 18h76" stroke="rgba(255,255,255,.16)" stroke-width=".8"/>`
+        + lens(60, 33, 8.5, '#0d0d0c') + `<rect x="72" y="20" width="10" height="4" rx="1" fill="#1d1c1a" stroke="rgba(255,255,255,.2)" stroke-width=".6"/>` + label(26, 45, 'SN-28', b.soft, 4.2);
+      break;
+    case 'wide28': // slim slab, lens in the top-right corner with a thin ring
+      g = body(6, 16, 84, 34, 10) + shine(12, 18, 50) + lens(73, 28, 9, '#d8dde6')
+        + `<circle cx="73" cy="28" r="10.5" fill="none" stroke="rgba(255,255,255,.55)" stroke-width=".8"/>` + flash(12, 21, 15, 5) + dot(31, 23.5, 1.4, b.accent) + label(12, 43, 'W-28', b.ink, 5.2);
+      break;
+    case 'touch2m': // full-touch phone, camera side, held sideways
+      g = `<rect x="8" y="15" width="80" height="34" rx="9" fill="url(#${id})" stroke="#d9dde5" stroke-width="1.6"/>` + shine(16, 18, 52)
+        + `<path d="M22 46l18-28" stroke="rgba(255,255,255,.3)" stroke-width="5" stroke-linecap="round"/>` + lens(76, 25, 4.2, '#c9ccd3')
+        + `<rect x="14" y="30" width="2.4" height="9" rx="1.2" fill="rgba(0,0,0,.35)"/>` + label(56, 44, 'TC', b.ink, 5);
+      break;
+    case 'toy8': // palm-size 110-style toy body
+      g = body(8, 20, 80, 30, 13) + `<rect x="66" y="20" width="22" height="30" rx="12" fill="rgba(0,0,0,.08)"/>` + shine(16, 23, 40)
+        + lens(36, 35, 8.5) + `<rect x="70" y="24" width="8" height="6" rx="1.5" fill="#20190a"/>` + dot(54, 27, 2.6, b.accent)
+        + `<path d="M12 44h52" stroke="rgba(0,0,0,.12)" stroke-width="1"/>` + label(48, 45, 'TOY-8', b.ink, 4.6);
+      break;
     case 'aqua':
       g = body(8, 12, 80, 44, 13) + `<rect x="55" y="16" width="27" height="27" rx="7" fill="rgba(255,255,255,.4)" stroke="rgba(0,0,0,.25)" stroke-width=".8"/>`
         + lens(68.5, 29.5, 9.5) + flash(17, 18, 15, 7)
@@ -670,7 +780,9 @@ uniform float u_mirror,u_time,u_amount,u_flash,u_aspect;
 uniform float u_exposure,u_contrast,u_sat,u_grain,u_chroma,u_vignette,u_bloom,u_bloomR,u_ca,u_sharpen,u_mono;
 uniform vec3 u_gain,u_black,u_shadowTint,u_highTint,u_bloomTint;
 uniform float u_lowres,u_pixelate,u_poster,u_scan,u_fringe,u_clip,u_block,u_dither;
-uniform vec3 u_tint,u_pal0,u_pal1,u_pal2,u_pal3;
+uniform vec3 u_tint,u_pal0,u_pal1,u_pal2,u_pal3,u_monoW;
+uniform float u_nr;
+uniform mat3 u_mat;
 uniform vec2 u_chromaGrid;
 uniform float u_lightAmt,u_smearAmt,u_flareAmt,u_dustAmt,u_leakAmt;
 uniform vec2 u_seed,u_leakPos;
@@ -709,9 +821,16 @@ void main(){
     float fl=1.-smoothstep(.03,.16,length(c-bm));
     c=mix(c,bm+(c-bm)*.3,u_block*fl);
   }
+  if(u_nr>0.){
+    vec2 q=px*max(1.,u_res.x/900.)*1.5;
+    vec3 m=(src(uv+vec2(q.x,0.))+src(uv-vec2(q.x,0.))+src(uv+vec2(0.,q.y))+src(uv-vec2(0.,q.y))
+      +src(uv+q)+src(uv-q)+src(uv+vec2(q.x,-q.y))+src(uv+vec2(-q.x,q.y)))*.125;
+    c=mix(c,m,u_nr*(1.-smoothstep(.03,.12,length(c-m))));
+  }
   if(u_sharpen!=0.){
     vec3 b=(src(uv+vec2(px.x,0.))+src(uv-vec2(px.x,0.))+src(uv+vec2(0.,px.y))+src(uv-vec2(0.,px.y)))*.25;
-    c+=(c-b)*u_sharpen;
+    // sharpen on luminance like a camera does (sharpening colour would amplify the CA shift into rainbow halos); soften in colour
+    c+=u_sharpen>0.?vec3(dot(c-b,W))*u_sharpen:(c-b)*u_sharpen;
   }
   if(u_fringe>0.){
     vec2 q=px*2.5;
@@ -731,14 +850,15 @@ void main(){
   c*=exp2(u_exposure);
   if(u_flash>0.){c*=1.+u_flash*(.45-r*r*1.1);c*=mix(vec3(1.),vec3(1.05,1.,.93),u_flash);}
   c*=u_gain;
+  c=u_mat*c;
   if(u_clip>0.) c=mix(c,vec3(1.),smoothstep(.7,.97,dot(c,W))*u_clip);
   c=(c-.5)*u_contrast+.5;
   float l=dot(c,W);
   c=mix(vec3(l),c,u_sat);
-  if(u_mono>.5) c=vec3(l);
+  if(u_mono>.5) c=vec3(dot(c,u_monoW));
+  c*=u_tint;
   float lc=clamp(l,0.,1.);
   c+=u_shadowTint*(1.-lc)*(1.-lc)+u_highTint*lc*lc;
-  c*=u_tint;
   c=u_black+c*(1.-u_black);
   c*=1.-u_vignette*smoothstep(.3,1.15,r);
   if(u_lightAmt>0.){
@@ -866,8 +986,10 @@ class Lens {
     f1('u_mirror', o.mirror ? 1 : 0); f1('u_time', o.time || 0); f1('u_amount', o.amount ?? 1);
     f1('u_flash', o.flash || 0); f1('u_aspect', w / h);
     ['contrast', 'sat', 'grain', 'chroma', 'vignette', 'bloom', 'bloomR', 'ca', 'sharpen', 'mono',
-      'lowres', 'pixelate', 'poster', 'scan', 'fringe', 'clip', 'block'].forEach(k => f1('u_' + k, P[k]));
-    f1('u_dither', P.palette ? 1 : 0); f3('u_tint', P.tint);
+      'lowres', 'pixelate', 'poster', 'scan', 'fringe', 'clip', 'block', 'nr'].forEach(k => f1('u_' + k, P[k]));
+    f1('u_dither', P.palette ? 1 : 0); f3('u_tint', P.tint); f3('u_monoW', P.monoW);
+    const M = P.mat || [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+    if (U.u_mat) gl.uniformMatrix3fv(U.u_mat, false, [M[0][0], M[1][0], M[2][0], M[0][1], M[1][1], M[2][1], M[0][2], M[1][2], M[2][2]]);
     const pal = P.palette || [[0, 0, 0], [.33, .33, .33], [.67, .67, .67], [1, 1, 1]];
     pal.forEach((col, i) => f3('u_pal' + i, col));
     f1('u_exposure', P.exposure + (o.ev || 0));
@@ -1121,7 +1243,7 @@ function drawInfoText(ctx, L, meta, col) {
   ctx.textAlign = 'left';
   ctx.fillStyle = c.fg; const left1 = fitText(ctx, meta.caption || `${meta.cam.model} · ${meta.cam.mp}M`, maxLeft, fBig, 600, UI_FONT); ctx.fillText(left1, lx, y1);
   const e = meta.exif;
-  ctx.fillStyle = c.sub; const left2 = fitText(ctx, `${e.focal}  ${e.fnum}  ${e.shutter}  ${e.iso}`, maxLeft, fSmall, 400, UI_FONT); ctx.fillText(left2, lx, y2);
+  ctx.fillStyle = c.sub; const left2 = fitText(ctx, [e.focal, e.fnum, e.shutter, e.iso].filter(Boolean).join('  '), maxLeft, fSmall, 400, UI_FONT); ctx.fillText(left2, lx, y2);
   ctx.restore();
 }
 
@@ -2096,11 +2218,12 @@ function buildCamGrid() {
   for (const c of CAMERAS) {
     const b = document.createElement('button');
     b.className = 'cam-card'; b.dataset.v = c.id;
-    b.innerHTML = '<span class="cam-shot"><img alt=""></span><span class="cam-name"></span><strong></strong><span class="spec"></span><small></small>';
+    b.innerHTML = '<span class="cam-shot"><img alt=""></span><span class="cam-name"></span><strong></strong><span class="spec"></span><span class="motif"></span><small></small>';
     $('.cam-name', b).innerHTML = camIcon(c, '-s') + '<b></b>';
     $('.cam-name b', b).textContent = c.model;
     $('strong', b).textContent = c.mood;
     $('.spec', b).textContent = `${c.year} · ${c.mp}M ${c.sensor} · ${c.ko}`;
+    $('.motif', b).textContent = '모티프 · ' + c.motif;
     $('small', b).textContent = c.story;
     b.addEventListener('click', () => {
       if (pickResolve) { const r = pickResolve; pickResolve = null; closeSheet($('#camSheet')); r(c.id); return; }

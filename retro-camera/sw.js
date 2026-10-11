@@ -1,6 +1,6 @@
 // 앱 셸은 캐시해 두고 백그라운드에서 갱신(stale-while-revalidate) — 오프라인에서도 열린다.
-const CACHE = 'geuhae-v2';
-const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png', './apple-touch-icon.png',
+const CACHE = 'geuhae-v3';
+const SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png',
   './fonts/fonts.css', './fonts/IBMPlexSansKR-Regular.woff2', './fonts/IBMPlexSansKR-Medium.woff2', './fonts/IBMPlexSansKR-SemiBold.woff2',
   './fonts/NanumPenScript-Regular.woff2', './fonts/Silkscreen-Regular.woff2', './fonts/Silkscreen-Bold.woff2'];
 

@@ -1,7 +1,7 @@
 {
   "name": "그해여름",
   "short_name": "그해여름",
-  "description": "2000년대 디지털 카메라 10대의 색감으로 찍고, 사진 하단에 날짜와 정보를 남기는 감성 카메라",
+  "description": "1998–2009년 카메라 20대의 색감으로 찍고, 사진에 날짜와 그 시절 화면 정보를 남기는 감성 카메라",
   "lang": "ko",
   "start_url": "./",
   "scope": "./",
@@ -26,7 +26,7 @@
       "type": "image/png"
     },
     {
-      "src": "icon-512.png",
+      "src": "icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
