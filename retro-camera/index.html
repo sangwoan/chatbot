@@ -75,10 +75,13 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
 
 /* status row: camera chip + quick toggles */
 .status{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:8px 10px 6px 12px}
-.chip{flex:none;display:inline-flex;align-items:center;gap:7px;height:44px;padding:0 12px 0 11px;border:0;border-radius:22px;color:var(--ink);
+.camkey{position:relative;flex:none;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:66px;height:48px;padding:2px 9px 4px;border:0;border-radius:14px;color:var(--ink);
   background:rgba(0,0,0,var(--chip-a,.07));box-shadow:inset 0 1px 2px rgba(0,0,0,.2),0 1px 0 rgba(255,255,255,.4)}
-.chip b{font:700 12px/1 var(--font-osd);letter-spacing:.06em;white-space:nowrap}
-.chip::after{content:"";border:4px solid transparent;border-top:5px solid currentColor;border-bottom:0;margin-top:2px}
+.camkey svg{display:block;width:42px;height:28px;pointer-events:none}
+.camkey b{display:flex;align-items:center;gap:3px;font:700 9px/1 var(--font-osd);letter-spacing:.04em;white-space:nowrap}
+.camkey b::after{content:"";border:3px solid transparent;border-top:4px solid currentColor;border-bottom:0;margin-top:1px}
+.camkey .led{position:absolute;left:7px;top:6px;width:6px;height:6px}
+.camkey:active{transform:translateY(1px)}
 .led{flex:none;width:8px;height:8px;border-radius:50%;background:var(--led);box-shadow:0 0 6px var(--led)}
 .led.busy{background:#ff4a3a;box-shadow:0 0 6px #ff4a3a;animation:blink .35s steps(2,end) infinite}
 .led.timer{background:#ffa733;box-shadow:0 0 6px #ffa733;animation:blink .9s steps(2,end) infinite}
@@ -91,7 +94,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
 .key span{font:600 10.5px/1 var(--font-ui);letter-spacing:-.02em;white-space:nowrap}
 .key.on{color:var(--key-on);box-shadow:inset 0 1px 0 #fff,inset 0 0 0 1.5px rgba(196,86,15,.55),0 1px 2px rgba(0,0,0,.28)}
 .key:active{transform:translateY(1px);box-shadow:inset 0 1px 3px rgba(0,0,0,.3)}
-@media (max-width:400px){.chip{gap:5px;padding-inline:9px}.chip b{letter-spacing:.03em}.keys{gap:3px}}
+@media (max-width:400px){.camkey{padding-inline:7px}.keys{gap:3px}}
 @media (max-width:384px){.keys{gap:2px}.status{gap:4px}}
 @media (max-width:374px){.key{width:44px}.status{padding-inline:8px}}
 
@@ -240,6 +243,14 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
 
 /* camera sheet (above the viewer when picking a camera to re-develop with) */
 .sheet.over{z-index:35}
+/* all cameras at a glance: body + one-word mood */
+.camlist{min-height:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:12px 12px 20px;overflow:auto;overscroll-behavior:contain}
+.camcell{display:grid;justify-items:center;align-content:start;gap:3px;min-width:0;padding:8px 2px 9px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:var(--menu-fg)}
+.camcell svg{display:block;width:100%;max-width:72px;height:auto;aspect-ratio:3/2;pointer-events:none}
+.camcell b{font:600 13.5px/1.25 var(--font-ui);text-align:center}
+.camcell small{font:400 9px/1.2 var(--font-osd);letter-spacing:.03em;color:var(--menu-sub);white-space:nowrap}
+.camcell[aria-checked="true"]{border-color:var(--amber);background:rgba(240,138,36,.14);box-shadow:inset 0 0 0 1px var(--amber)}
+@media (max-width:340px){.camlist{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .lede{margin:0;padding:12px 16px 2px;font:400 14px/1.6 var(--font-ui);color:var(--menu-sub)}
 .cams{min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:10px 16px 24px;overflow:auto;overscroll-behavior:contain}
 .cam-card{display:grid;gap:6px;align-content:start;text-align:left;padding:8px 8px 11px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:var(--menu-fg);min-width:0}
@@ -302,7 +313,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
 <body>
 <div class="cam" id="cam">
   <header class="status">
-    <button class="chip" id="btnCam" aria-haspopup="dialog" aria-label="카메라 고르기"><span class="led" id="led"></span><b id="chipCode">AQUA</b></button>
+    <button class="camkey" id="btnCam" aria-haspopup="dialog" aria-label="카메라 고르기"><span id="chipIcon"></span><span class="led" id="led"></span><b id="chipCode">AQUA</b></button>
     <div class="keys">
       <button class="key" id="btnFlash" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z"/></svg><span id="lblFlash">플래시</span></button>
       <button class="key" id="btnTimer" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 2M9.5 2.5h5"/></svg><span id="lblTimer">타이머</span></button>
@@ -432,6 +443,13 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
   </div>
 </div>
 
+<div class="sheet" id="camListSheet" hidden role="dialog" aria-modal="true" aria-labelledby="camListTitle">
+  <div class="panel">
+    <div class="panel-head"><h2 id="camListTitle">CAMERA</h2><div class="acts"><button class="pbtn" id="btnCamPreview">색감 미리보기</button><button class="pbtn amber" data-close>닫기</button></div></div>
+    <div class="camlist" id="camList" role="radiogroup" aria-label="카메라 고르기"></div>
+  </div>
+</div>
+
 <div class="sheet" id="camSheet" hidden role="dialog" aria-modal="true" aria-labelledby="camTitle">
   <div class="panel">
     <div class="panel-head"><h2 id="camTitle">CAMERA</h2><div class="acts"><button class="pbtn amber" data-close>닫기</button></div></div>
@@ -537,102 +555,102 @@ const BASE = { exposure: 0, contrast: 1, sat: 1, gain: [1, 1, 1], black: [0, 0, 
   lowres: 0, pixelate: 0, chromaRes: 0, smear: false, poster: 0, scan: 0, fringe: 0, clip: 0, ccd: .35, iso: 100, css: 'none',
   tint: [1, 1, 1], block: 0, palette: null, nr: 0, monoW: [.299, .587, .114], mat: null };
 const CAMERAS = [
-  { id: 'px128', code: 'PX-128', model: 'PX-128 BIT', ko: '게임기 카메라', mood: '초록 화면 속 네 가지 색', year: 1998, mp: '0.01', sensor: 'CMOS', lens: ['FIXED', ''],
+  { id: 'px128', code: 'PX-128', model: 'PX-128 BIT', ko: '게임기 카메라', vibe: '도트', mood: '초록 화면 속 네 가지 색', year: 1998, mp: '0.01', sensor: 'CMOS', lens: ['FIXED', ''],
     motif: '닌텐도 게임보이 카메라 (1998)',
     story: '건전지 넣은 게임기에 꽂아 찍던 사진. 점점이 박힌 무늬로 얼굴이 그려지고, 화면은 늘 연둣빛이었다.',
     body: { hi: '#e3edc0', base: '#b4c77e', lo: '#7d9447', ink: '#1f2b0c', soft: '#16200a', accent: '#304d0c' },
     p: { lowres: 128, pixelate: 1, mono: 1, exposure: .1, contrast: 1.25, sharpen: .9, palette: [[.059, .22, .059], [.188, .384, .188], [.545, .675, .059], [.608, .737, .059]], ccd: 0, iso: 100, css: 'grayscale(1) contrast(1.6) sepia(.6) hue-rotate(40deg) saturate(1.4)' } },
-  { id: 'disk', code: 'DK-144', model: 'DK-144 DISK', ko: '디스켓 디카', mood: '아빠 서재의 디스켓 디카', year: 1999, mp: '0.3', sensor: 'CCD', lens: ['4.2mm', 'f/1.8'],
+  { id: 'disk', code: 'DK-144', model: 'DK-144 DISK', ko: '디스켓 디카', vibe: '로파이', mood: '아빠 서재의 디스켓 디카', year: 1999, mp: '0.3', sensor: 'CCD', lens: ['4.2mm', 'f/1.8'],
     motif: '소니 마비카 MVC-FD73 (1999)',
     story: '디스켓 한 장에 서른 장. 찰칵, 그리고 지-잉 하고 디스크 돌아가던 소리까지 사진에 남았다.',
     body: { hi: '#7d8899', base: '#4d5868', lo: '#2c3442', ink: '#eef1f6', soft: '#c9d0dc', accent: '#ffd27a' },
     p: { lowres: 640, pixelate: .25, chromaRes: 200, block: .6, exposure: .05, contrast: 1.28, sat: 1.12, gain: [1.02, 1, .96], black: [.02, .02, .03], fringe: 1.1, ca: .012, clip: .5, sharpen: .35, bloom: .22, bloomR: .012, grain: .05, chroma: .08, vignette: .18, ccd: .85, iso: 100, css: 'contrast(1.25) saturate(1.1) blur(.4px)' } },
-  { id: 'digi130', code: 'DIGI130', model: 'DIGI 130', ko: '첫 디카', mood: '교실 뒤 첫 디카', year: 2001, mp: '1.3', sensor: 'CCD', lens: ['5.5mm', 'f/2.8'],
+  { id: 'digi130', code: 'DIGI130', model: 'DIGI 130', ko: '첫 디카', vibe: '자글자글', mood: '교실 뒤 첫 디카', year: 2001, mp: '1.3', sensor: 'CCD', lens: ['5.5mm', 'f/2.8'],
     motif: '삼성 디지맥스 130 (2001)',
     story: '반 친구가 처음 들고 온 신기한 카메라. 노이즈가 자글자글해도 다 같이 몰려들어 찍었다.',
     body: { hi: '#e6e6e2', base: '#bdbdb8', lo: '#8f8f8a', ink: '#31312e', soft: '#30302e', accent: '#2b4f8a' },
     p: { lowres: 1000, pixelate: .15, chromaRes: 240, poster: 32, block: .25, exposure: .1, contrast: 1.22, sat: 1.2, gain: [1.08, .94, 1.06], clip: .4, chroma: .16, grain: .06, sharpen: .3, vignette: .22, ccd: .3, iso: 100, css: 'contrast(1.15) saturate(1.2) brightness(1.1)' } },
-  { id: 'swivel', code: 'SW-33', model: 'SW-33 SWIVEL', ko: '회전 바디', mood: '렌즈가 돌아가는 회색 디카', year: 2001, mp: '3.3', sensor: 'CCD', lens: ['8.0mm', 'f/2.6'],
+  { id: 'swivel', code: 'SW-33', model: 'SW-33 SWIVEL', ko: '회전 바디', vibe: '쿨톤', mood: '렌즈가 돌아가는 회색 디카', year: 2001, mp: '3.3', sensor: 'CCD', lens: ['8.0mm', 'f/2.6'],
     motif: '니콘 쿨픽스 995 (2001)',
     story: '몸통을 꺾어 발밑의 꽃도, 머리 위 간판도 찍었다. 차갑고 또렷한 색, 파란 꽃은 보랏빛으로.',
     body: { hi: '#8a847d', base: '#5c5751', lo: '#3a3632', ink: '#f3efe9', soft: '#d6cfc5', accent: '#ff8a70' },
     p: { exposure: 0, contrast: 1.15, sat: 1.08, gain: [.95, .98, 1.08], mat: [[1, -.04, .1], [-.02, 1.03, -.01], [0, -.03, 1.03]], shadowTint: [.015, -.02, .03], highTint: [0, -.01, .02], fringe: .4, ca: .003, clip: .4, sharpen: .35, grain: .035, chroma: .04, vignette: .12, ccd: .45, iso: 100, css: 'contrast(1.14) saturate(1.06) hue-rotate(6deg)' } },
-  { id: 'q2100', code: 'Q-2100', model: 'Q-2100', ko: '아빠 디카', mood: '거실 서랍 속 아빠 디카', year: 2002, mp: '2.0', sensor: 'CCD', lens: ['5.8mm', 'f/2.8'],
+  { id: 'q2100', code: 'Q-2100', model: 'Q-2100', ko: '아빠 디카', vibe: '추억', mood: '거실 서랍 속 아빠 디카', year: 2002, mp: '2.0', sensor: 'CCD', lens: ['5.8mm', 'f/2.8'],
     motif: '니콘 쿨픽스 2000 (2002)',
     story: '아빠가 거실 서랍에 넣어 두던 첫 디카. 2백만 화소, 나뭇가지 끝엔 보라색 번짐.',
     body: { hi: '#9a9ea5', base: '#6b6f76', lo: '#46494e', ink: '#f2f2f0', soft: '#d7dade', accent: '#ffd27a' },
     p: { lowres: 1600, chromaRes: 420, exposure: 0, contrast: 1.1, sat: 1, gain: [.98, 1, 1], black: [.03, .03, .02], fringe: .6, ca: .008, sharpen: -.12, vignette: .35, grain: .05, chroma: .06, clip: .25, ccd: .45, iso: 100, css: 'saturate(1) contrast(1.08) sepia(.05)' } },
-  { id: 'nightir', code: 'IR-02', model: 'IR-02 OWL', ko: '야간 적외선', mood: '캠핑 밤의 초록 야간모드', year: 2002, mp: '5.0', sensor: 'CCD', lens: ['9.7mm', 'f/2.0'],
+  { id: 'nightir', code: 'IR-02', model: 'IR-02 OWL', ko: '야간 적외선', vibe: '야간모드', mood: '캠핑 밤의 초록 야간모드', year: 2002, mp: '5.0', sensor: 'CCD', lens: ['9.7mm', 'f/2.0'],
     motif: '소니 사이버샷 DSC-F717 나이트샷 (2002)',
     story: '불 꺼진 텐트 안에서 야간 모드를 켜면, 친구 얼굴이 초록빛 흑백으로 떠올랐다.',
     body: { hi: '#5f6863', base: '#3b433f', lo: '#222826', ink: '#e8f0ea', soft: '#bfd0c4', accent: '#7dff9a' },
     p: { mono: 1, monoW: [.5, .4, .1], tint: [.55, 1, .5], highTint: [.12, .02, .12], black: [0, .02, .005], exposure: .15, contrast: 1.2, vignette: .6, bloom: .4, bloomR: .016, bloomTint: [.6, 1, .6], grain: .14, chroma: 0, sharpen: .15, clip: .3, ccd: .6, iso: 800, css: 'grayscale(1) sepia(1) hue-rotate(50deg) saturate(2.2) brightness(1.05) contrast(1.2)' } },
-  { id: 'dv03', code: 'DV-03', model: 'DV-03 TAPE', ko: '캠코더 한 장', mood: '운동회 날 캠코더', year: 2003, mp: '0.7', sensor: 'CCD', lens: ['3.3mm', 'f/1.7'],
+  { id: 'dv03', code: 'DV-03', model: 'DV-03 TAPE', ko: '캠코더 한 장', vibe: '홈비디오', mood: '운동회 날 캠코더', year: 2003, mp: '0.7', sensor: 'CCD', lens: ['3.3mm', 'f/1.7'],
     motif: '소니 DCR-TRV22 캠코더 (2003)',
     story: '운동회 날 아빠가 들고 온 캠코더. 테이프에서 뽑아낸 한 장에 번지는 빛과 가로줄.',
     body: { hi: '#4f5a76', base: '#2f3850', lo: '#1a2033', ink: '#e9edf6', soft: '#bcc5d9', accent: '#8fd0ff' },
     p: { lowres: 640, chromaRes: 180, smear: true, scan: .26, exposure: .12, contrast: .95, sat: 1.15, gain: [1.06, .97, .98], bloom: .45, bloomR: .012, bloomTint: [1, .8, .75], black: [.05, .04, .05], sharpen: .25, grain: .04, chroma: .05, vignette: .15, ccd: .7, iso: 400, css: 'saturate(1.15) contrast(1.05) blur(.6px)' } },
-  { id: 'webcam', code: 'WC-30', model: 'WC-30 USB', ko: 'PC캠', mood: '모니터 위 PC캠 셀카', year: 2003, mp: '0.3', sensor: 'CMOS', lens: ['FIXED', ''],
+  { id: 'webcam', code: 'WC-30', model: 'WC-30 USB', ko: 'PC캠', vibe: '뽀샤시', mood: '모니터 위 PC캠 셀카', year: 2003, mp: '0.3', sensor: 'CMOS', lens: ['FIXED', ''],
     motif: '로지텍 퀵캠 계열 30만 화소 PC캠 (2003)',
     story: '모니터 위 동그란 PC캠 앞에서 얼짱 각도로 고개 기울이고 찰칵. 방 불빛에 얼굴만 뽀얗게 떴다.',
     body: { hi: '#ffe4c8', base: '#f5b27a', lo: '#cf7a3e', ink: '#3d1d06', soft: '#3d1f0a', accent: '#1d4fa8' },
     p: { lowres: 352, pixelate: .3, chromaRes: 140, block: .35, exposure: .22, contrast: .9, sat: .85, gain: [1.08, .98, .88], black: [.05, .04, .05], clip: .5, sharpen: -.35, bloom: .3, bloomR: .014, bloomTint: [1, .9, .85], grain: .12, chroma: .14, vignette: .32, ccd: 0, iso: 400, css: 'brightness(1.12) contrast(.9) saturate(.85) sepia(.12) blur(.5px)' } },
-  { id: 'kenox', code: 'K-400', model: 'K-400 SILVER', ko: '국산 은색 디카', mood: '졸업식 날 삼촌의 은색 디카', year: 2003, mp: '4.0', sensor: 'CCD', lens: ['7.7mm', 'f/2.7'],
+  { id: 'kenox', code: 'K-400', model: 'K-400 SILVER', ko: '국산 은색 디카', vibe: '또렷함', mood: '졸업식 날 삼촌의 은색 디카', year: 2003, mp: '4.0', sensor: 'CCD', lens: ['7.7mm', 'f/2.7'],
     motif: '삼성 케녹스 V4 (2003)',
     story: '꽃다발 들고 교문 앞에서 찍던 국산 디카. 담백한 색, 칼같이 또렷한 렌즈.',
     body: { hi: '#eceef1', base: '#c3c7cd', lo: '#8c929a', ink: '#1e2228', soft: '#1f242b', accent: '#a5222b' },
     p: { exposure: .04, contrast: 1.08, sat: .9, gain: [1.02, 1.01, .95], highTint: [.01, .012, -.02], black: [.015, .015, .015], sharpen: .7, fringe: .2, ca: 0, grain: .03, chroma: .035, bloom: .06, vignette: .1, clip: .22, ccd: .4, iso: 100, css: 'saturate(.9) contrast(1.08)' } },
-  { id: 'c7', code: 'C-7', model: 'C-7 EASY', ko: '골드 이지', mood: '사진관의 노란 햇살', year: 2004, mp: '4.0', sensor: 'CCD', lens: ['5.6mm', 'f/2.7'],
+  { id: 'c7', code: 'C-7', model: 'C-7 EASY', ko: '골드 이지', vibe: '햇살', mood: '사진관의 노란 햇살', year: 2004, mp: '4.0', sensor: 'CCD', lens: ['5.6mm', 'f/2.7'],
     motif: '코닥 이지쉐어 CX7430 (2004)',
     story: '가족사진은 다 이걸로 찍었다. 사진관에 인화 맡기면 노란 햇살 색으로 나오던 카메라.',
     body: { hi: '#f4e8c8', base: '#d8bf8a', lo: '#a88e5b', ink: '#403119', soft: '#3b311c', accent: '#7a4406' },
     p: { exposure: .08, contrast: 1.2, sat: 1.28, gain: [1.07, 1.02, .86], highTint: [.035, .025, -.02], black: [.01, .01, 0], sharpen: .4, block: .15, grain: .03, chroma: .03, bloom: .16, vignette: .22, clip: .3, ccd: .35, iso: 200, css: 'sepia(.2) saturate(1.3) contrast(1.15)' } },
-  { id: 'vga', code: 'VGA', model: 'VGA FOLDER', ko: '폴더폰 카메라', mood: '미니홈피 폴더폰', year: 2004, mp: '0.3', sensor: 'CMOS', lens: ['3.2mm', 'f/2.8'],
+  { id: 'vga', code: 'VGA', model: 'VGA FOLDER', ko: '폴더폰 카메라', vibe: '미니홈피', mood: '미니홈피 폴더폰', year: 2004, mp: '0.3', sensor: 'CMOS', lens: ['3.2mm', 'f/2.8'],
     motif: '삼성 애니콜 SPH-X9750 (2004)',
     story: '폴더를 열고 찰칵. 30만 화소 폰카로 찍어 미니홈피에 올리던 그 사진.',
     body: { hi: '#a63d4e', base: '#7d2534', lo: '#511521', ink: '#f8ecef', soft: '#e3c1c8', accent: '#ffd27a' },
     p: { lowres: 640, pixelate: .6, chromaRes: 150, poster: 40, block: .5, exposure: .1, contrast: 1.2, sat: .9, gain: [1, 1.06, .88], vignette: .45, chroma: .1, grain: .06, sharpen: .4, clip: .3, ccd: 0, iso: 100, css: 'contrast(1.2) saturate(.9) sepia(.15) hue-rotate(10deg)' } },
-  { id: 'ixa55', code: 'IXA55', model: 'IXA 55', ko: '은색 똑딱이', mood: '여행 가방 속 은빛', year: 2005, mp: '5.0', sensor: 'CCD', lens: ['5.8mm', 'f/2.8'],
+  { id: 'ixa55', code: 'IXA55', model: 'IXA 55', ko: '은색 똑딱이', vibe: '따뜻함', mood: '여행 가방 속 은빛', year: 2005, mp: '5.0', sensor: 'CCD', lens: ['5.8mm', 'f/2.8'],
     motif: '캐논 익서스 55 (2005)',
     story: '여행 가방 앞주머니엔 늘 이 은색 디카. 사람 얼굴이 따뜻하고 예쁘게 나왔다.',
     body: { hi: '#eeeae1', base: '#cfc9bd', lo: '#9e988b', ink: '#3b3832', soft: '#3b3832', accent: '#2f4e7a' },
     p: { exposure: .12, contrast: 1.08, sat: 1.12, gain: [1.06, 1, .92], highTint: [.02, .01, -.01], black: [.02, .015, .01], sharpen: .1, fringe: .35, grain: .025, chroma: .02, bloom: .12, vignette: .12, clip: .2, ccd: .35, iso: 100, css: 'saturate(1.12) contrast(1.08) sepia(.08) brightness(1.05)' } },
-  { id: 'exs5', code: 'EX-S5', model: 'EX-S5 CARD', ko: '카드 디카', mood: '지갑 속 파스텔', year: 2005, mp: '5.0', sensor: 'CCD', lens: ['6.2mm', 'f/2.7'],
+  { id: 'exs5', code: 'EX-S5', model: 'EX-S5 CARD', ko: '카드 디카', vibe: '파스텔', mood: '지갑 속 파스텔', year: 2005, mp: '5.0', sensor: 'CCD', lens: ['6.2mm', 'f/2.7'],
     motif: '카시오 엑슬림 카드 EX-S500 (2005)',
     story: '지갑만큼 얇아서 매일 들고 다녔다. 하늘은 하얗게 날아가고 색은 파스텔처럼.',
     body: { hi: '#f7f9fc', base: '#dde3ea', lo: '#aeb8c4', ink: '#363e4c', soft: '#454c5a', accent: '#3b5ba8' },
     p: { exposure: .22, contrast: .92, sat: .92, gain: [1, .99, 1.05], black: [.05, .05, .07], highTint: [.02, .01, .03], clip: .5, sharpen: 0, grain: .05, chroma: .05, bloom: .25, vignette: .06, ccd: .35, iso: 100, css: 'brightness(1.12) contrast(.92) saturate(.92)' } },
-  { id: 'snap28', code: 'SN-28', model: 'SN-28 MONO', ko: '흑백 스냅', mood: '골목 산책 흑백 스냅', year: 2005, mp: '8.1', sensor: 'CCD', lens: ['5.9mm', 'f/2.4'],
+  { id: 'snap28', code: 'SN-28', model: 'SN-28 MONO', ko: '흑백 스냅', vibe: '흑백', mood: '골목 산책 흑백 스냅', year: 2005, mp: '8.1', sensor: 'CCD', lens: ['5.9mm', 'f/2.4'],
     motif: '리코 GR 디지털 (2005)',
     story: '주머니에서 꺼내 바로 누르던 28mm 흑백. 거친 입자가 골목의 공기까지 담았다.',
     body: { hi: '#47433f', base: '#2a2725', lo: '#141312', ink: '#efebe4', soft: '#c4beb4', accent: '#ffb35c' },
     p: { mono: 1, monoW: [.36, .53, .11], exposure: -.05, contrast: 1.42, sharpen: .5, grain: .13, chroma: 0, vignette: .28, clip: .25, bloom: .05, ccd: .35, iso: 1600, css: 'grayscale(1) contrast(1.45) brightness(.97)' } },
-  { id: 't77', code: 'T-77', model: 'T-77 SLIM', ko: '핑크 슬림', mood: '언니 화장대의 핑크', year: 2006, mp: '7.2', sensor: 'CCD', lens: ['6.3mm', 'f/3.5'],
+  { id: 't77', code: 'T-77', model: 'T-77 SLIM', ko: '핑크 슬림', vibe: '발그레', mood: '언니 화장대의 핑크', year: 2006, mp: '7.2', sensor: 'CCD', lens: ['6.3mm', 'f/3.5'],
     motif: '소니 사이버샷 DSC-T10 (2006)',
     story: '언니 화장대 위에 있던 핑크 슬림 디카. 플래시가 터지면 볼이 발그레하게 나왔다.',
     body: { hi: '#f8dde5', base: '#e7b5c3', lo: '#c58c9d', ink: '#55283a', soft: '#522e38', accent: '#8a1f45' },
     p: { exposure: .18, contrast: 1.1, sat: 1.18, gain: [1.03, .94, 1.07], highTint: [.03, -.01, .035], shadowTint: [0, -.01, .03], sharpen: .6, chroma: .05, grain: .03, bloom: .18, ca: .002, vignette: .1, clip: .35, ccd: .4, iso: 100, css: 'brightness(1.1) contrast(1.1) saturate(1.18) hue-rotate(-8deg)' } },
-  { id: 'f31', code: 'F-31', model: 'F-31 NIGHT', ko: '밤의 디카', mood: '밤 골목의 까만 디카', year: 2006, mp: '6.3', sensor: 'HR CCD', lens: ['8.0mm', 'f/2.8'],
+  { id: 'f31', code: 'F-31', model: 'F-31 NIGHT', ko: '밤의 디카', vibe: '밤골목', mood: '밤 골목의 까만 디카', year: 2006, mp: '6.3', sensor: 'HR CCD', lens: ['8.0mm', 'f/2.8'],
     motif: '후지필름 파인픽스 F31fd (2006)',
     story: '플래시 없이도 밤 골목이 담기던 까만 디카. 초록빛이 유난히 깊었다.',
     body: { hi: '#4b4c51', base: '#2b2c30', lo: '#17181b', ink: '#ecebe7', soft: '#bdbbb5', accent: '#ffcf7a' },
     p: { exposure: -.1, contrast: 1.1, sat: 1, gain: [.9, 1, 1], shadowTint: [-.02, .025, .02], highTint: [-.01, .01, 0], black: [0, .02, .025], sharpen: .25, nr: .25, grain: .04, chroma: .02, bloom: .3, bloomR: .01, vignette: .2, ccd: .55, iso: 800, css: 'contrast(1.08) hue-rotate(6deg)' } },
-  { id: 'aqua', code: 'AQUA', model: 'AQUA-720', ko: '방수 디카', mood: '그해 여름 바다', year: 2006, mp: '7.1', sensor: 'CCD', lens: ['6.7mm', 'f/3.5'],
+  { id: 'aqua', code: 'AQUA', model: 'AQUA-720', ko: '방수 디카', vibe: '청량', mood: '그해 여름 바다', year: 2006, mp: '7.1', sensor: 'CCD', lens: ['6.7mm', 'f/3.5'],
     motif: '올림푸스 뮤 720 SW (2006)',
     story: '그해 여름 계곡이랑 바다에 데려간 방수 디카. 물빛이 유난히 시원하게 찍혔다.',
     body: { hi: '#e2f2f6', base: '#a3d2de', lo: '#6aa6b8', ink: '#163e4a', soft: '#223e46', accent: '#0b5870' },
     p: { exposure: .1, contrast: 1.1, sat: 1.12, gain: [.9, 1, 1.1], highTint: [-.02, .03, .05], shadowTint: [-.02, .02, .04], sharpen: .3, grain: .05, chroma: .07, bloom: .14, ca: .003, vignette: .16, clip: .3, ccd: .35, iso: 100, css: 'contrast(1.1) saturate(1.12) hue-rotate(-6deg) brightness(1.06)' } },
-  { id: 'wide28', code: 'W-28', model: 'W-28 WIDE', ko: '광각 슬림', mood: '수학여행 단체사진 한 장', year: 2006, mp: '6.0', sensor: 'CCD', lens: ['4.6mm', 'f/2.8'],
+  { id: 'wide28', code: 'W-28', model: 'W-28 WIDE', ko: '광각 슬림', vibe: '진한색', mood: '수학여행 단체사진 한 장', year: 2006, mp: '6.0', sensor: 'CCD', lens: ['4.6mm', 'f/2.8'],
     motif: '파나소닉 루믹스 DMC-FX01 (2006)',
     story: '단체사진도 한 장에 다 들어가던 넓은 화각. 진한 색과 살짝 뭉개진 머리카락.',
     body: { hi: '#93a9d1', base: '#5a74a6', lo: '#34497a', ink: '#f7f9fe', soft: '#e6ecf7', accent: '#ffd27a' },
     p: { exposure: .06, contrast: 1.16, sat: 1.24, gain: [.99, 1, 1.03], highTint: [-.005, .005, .015], nr: .55, chromaRes: 700, sharpen: .2, grain: .015, chroma: .05, vignette: .1, ca: 0, clip: .3, ccd: .4, iso: 200, css: 'contrast(1.15) saturate(1.25)' } },
-  { id: 'touch2m', code: 'TC-200', model: 'TC-200 TOUCH', ko: '풀터치폰', mood: '버스 창가의 풀터치폰', year: 2008, mp: '2.0', sensor: 'CMOS', lens: ['FIXED', ''],
+  { id: 'touch2m', code: 'TC-200', model: 'TC-200 TOUCH', ko: '풀터치폰', vibe: '노르스름', mood: '버스 창가의 풀터치폰', year: 2008, mp: '2.0', sensor: 'CMOS', lens: ['FIXED', ''],
     motif: '삼성 애니콜 햅틱 SCH-W420 (2008)',
     story: '화면을 톡 눌러 찍던 200만 화소 폰카. 노르스름하고 살짝 뿌연, 그 시절 등굣길.',
     body: { hi: '#ebe3f7', base: '#bfaee0', lo: '#8a74b8', ink: '#24183a', soft: '#18102c', accent: '#5a2fa8' },
     p: { lowres: 1200, chromaRes: 420, block: .3, exposure: .12, contrast: 1, sat: .84, gain: [1.05, 1.02, .88], black: [.035, .035, .03], highTint: [.02, .015, -.02], bloom: .3, bloomR: .02, bloomTint: [1, .95, .85], sharpen: .45, grain: .07, chroma: .1, vignette: .28, clip: .5, ccd: 0, iso: 200, css: 'brightness(1.08) saturate(.85) sepia(.15) contrast(.98)' } },
-  { id: 'toy8', code: 'TOY-8', model: 'TOY-8', ko: '장난감 8mm', mood: '8mm 필름 같은 장난감 디카', year: 2009, mp: '2.0', sensor: 'CMOS', lens: ['4.5mm', 'f/2.8'],
+  { id: 'toy8', code: 'TOY-8', model: 'TOY-8', ko: '장난감 8mm', vibe: '필름감', mood: '8mm 필름 같은 장난감 디카', year: 2009, mp: '2.0', sensor: 'CMOS', lens: ['4.5mm', 'f/2.8'],
     motif: '슈퍼헤즈 디지털 하리네즈미 (2009)',
     story: '손가락만 한 장난감 카메라. 흐릿하고 진한 색이 옛날 홈비디오 한 장면 같았다.',
     body: { hi: '#fff1b8', base: '#f2cf55', lo: '#c9a02a', ink: '#352805', soft: '#2e2304', accent: '#a8261e' },
@@ -2219,6 +2237,32 @@ function stepCam(dir) {
   haptic('tick');
 }
 
+/* ───────── camera list: every body at a glance, tap to switch ───────── */
+function buildCamList() {
+  const list = $('#camList');
+  for (const c of CAMERAS) {
+    const b = document.createElement('button');
+    b.className = 'camcell'; b.dataset.v = c.id; b.setAttribute('role', 'radio');
+    b.setAttribute('aria-label', `${c.vibe} — ${c.model}, ${c.year}, ${c.mood}`);
+    b.innerHTML = camIcon(c, '-l') + '<b></b><small></small>';
+    $('b', b).textContent = c.vibe; $('small', b).textContent = `${c.code} · ${String(c.year).slice(2)}`;
+    b.addEventListener('click', () => {
+      haptic('tick');
+      if (S.cam !== c.id) { selectCam(c.id); centerCar(true); }
+      closeSheet($('#camListSheet'));
+    });
+    list.appendChild(b);
+  }
+}
+function openCamList() {
+  $('#camListTitle').textContent = `CAMERA · ${CAMERAS.length}`;
+  syncCamList();
+  openSheet('#camListSheet');
+  const cur = $(`#camList [data-v="${S.cam}"]`);
+  if (cur) { cur.scrollIntoView({ block: 'nearest' }); cur.focus(); }
+}
+function syncCamList() { $$('#camList .camcell').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === S.cam))); }
+
 /* ───────── camera sheet: browse, or pick one to re-develop with ───────── */
 let pickResolve = null, thumbJob = 0;
 function buildCamGrid() {
@@ -2383,6 +2427,9 @@ function syncUI() {
   $('#btnDate').setAttribute('aria-label', `날짜 스탬프 ${$('#lblDate').textContent}`);
   applyBody(cam);
   $('#chipCode').textContent = cam.code;
+  if ($('#chipIcon').dataset.v !== cam.id) { $('#chipIcon').innerHTML = camIcon(cam, '-chip'); $('#chipIcon').dataset.v = cam.id; }
+  $('#btnCam').setAttribute('aria-label', `카메라 고르기, 지금 ${cam.model}`);
+  syncCamList();
   $('#plateModel').textContent = `${cam.model} · ${cam.mp}M ${cam.sensor}`;
   $('#capTitle').textContent = cam.mood;
   $('#capSub').textContent = `${cam.model} · ${cam.year}`;
@@ -2528,7 +2575,8 @@ function wire() {
   }
   $('#btnMoreDate').addEventListener('click', () => { closePops(); openSheet('#menuSheet'); setTimeout(() => $('#ourDay').scrollIntoView({ block: 'start' }), 60); });
   $('#btnMenu').addEventListener('click', () => { haptic('tick'); openSheet('#menuSheet'); });
-  $('#btnCam').addEventListener('click', () => { haptic('tick'); openCamSheet(); });
+  $('#btnCam').addEventListener('click', () => { haptic('tick'); openCamList(); });
+  $('#btnCamPreview').addEventListener('click', () => { closeSheet($('#camListSheet')); openCamSheet(); });
   $('#btnGallery').addEventListener('click', openGallery);
   $('#permPrimary').addEventListener('click', e => permAction(e.currentTarget.dataset.act));
   $('#permSecondary').addEventListener('click', () => $('#fileImport').click());
@@ -2602,7 +2650,7 @@ function wire() {
 }
 
 async function boot() {
-  buildCarousel(); buildCamGrid(); bindSettings(); syncUI(); wire();
+  buildCarousel(); buildCamGrid(); buildCamList(); bindSettings(); syncUI(); wire();
   sampleSrc = makeSample();
   lens = makeLens(glc);
   relayout();

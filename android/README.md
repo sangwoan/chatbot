@@ -61,7 +61,7 @@ android/
 
 ```bash
 ./android/build-apk.sh
-# → android/build/geuhae-yeoreum-1.2.0.apk
+# → android/build/geuhae-yeoreum-1.2.1.apk
 ```
 
 필요한 것은 bash, curl, python3, zip, JDK 17 이상(`javac`, `java`, `keytool`)뿐입니다. 빌드 도구는 처음 한 번 내려받고 SHA-256으로 검증합니다.
@@ -86,7 +86,7 @@ v1 서명은 쓰지 않습니다. minSdk가 24라 v2만으로 충분하고, apks
 
 | 변수 | 기본값 |
 |---|---|
-| `VERSION_CODE` / `VERSION_NAME` | `3` / `1.2.0` |
+| `VERSION_CODE` / `VERSION_NAME` | `4` / `1.2.1` |
 | `KEYSTORE` / `STOREPASS` / `KEY_ALIAS` | `keystore/sideload.p12` / `geuhae-sideload` / `geuhae` |
 | `TOOLS_DIR` | `android/.tools` |
 
