@@ -463,10 +463,10 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
   <button class="onb-skip" id="onbSkip">건너뛰기</button>
   <div class="onb-track" id="onbTrack">
     <section class="onb-card">
-      <span class="eyebrow">2001 — 2006</span>
-      <h1>그 시절 카메라 <span id="onbCount">10</span>대,<br>모두 무료로.</h1>
+      <span class="eyebrow" id="onbYears">1998 — 2009</span>
+      <h1>그 시절 카메라 <span id="onbCount">20</span>대,<br>모두 무료로.</h1>
       <div class="marquee"><div id="onbMarquee"></div></div>
-      <p>교실 뒤 첫 디카부터 그해 여름 바다에 데려간 방수 디카까지. 카메라마다 색감, 화질, 노이즈가 달라요.</p>
+      <p>게임기에 꽂던 카메라와 디스켓 디카부터 폴더폰, 그해 여름 바다에 데려간 방수 디카까지. 카메라마다 색감, 화질, 노이즈가 달라요.</p>
     </section>
     <section class="onb-card">
       <span class="eyebrow">DATE STAMP</span>
@@ -1281,8 +1281,8 @@ function drawBackground(ctx, L) {
 }
 /* the LCD's on-screen display (mode, flags, size, shots left, battery), drawn the same way on screen and on the photo */
 const OSD_INK = '#eef2e8', OSD_FONT = '"Silkscreen","IBM Plex Sans KR",ui-monospace,monospace';
-function osdFor(cam, cfg, flags, count, bat) {
-  return { code: cam.code, size: cam.mp + 'M' + (cfg.aspect === '1:1' ? ' 1:1' : ''), flags: flags || [], count: clamp(Math.round(count), 0, 9999), bat: bat ?? 3 };
+function osdFor(cam, square, flags, count, bat) {
+  return { code: cam.code, size: cam.mp + 'M' + (square ? ' 1:1' : ''), flags: flags || [], count: clamp(Math.round(count), 0, 9999), bat: bat ?? 3 };
 }
 function drawOsd(ctx, L, o) {
   const m = Math.min(L.iw, L.ih), fs = m * .032, pad = m * .024, u = fs / 11, gap = fs * .64;
@@ -1535,8 +1535,9 @@ function relayout() {
   needsStatic = true;
 }
 const previewMeta = () => Object.assign(buildMeta(S, currentCam(), new Date(), null, liveLum, live && S.facing === 'user'),
-  { osd: osdFor(currentCam(), S, previewFlags(), shotsLeft(), batLevel) });
-const shotsLeft = () => 9999 - photos.length - jobs.length;
+  { osd: osdFor(currentCam(), S.aspect === '1:1', previewFlags(), shotsLeft(), batLevel) });
+// queued shots count as taken; a job stops counting the moment its record joins photos (see storePhoto)
+const shotsLeft = () => 9999 - photos.length - jobs.filter(j => !j.stored).length;
 function drawOverlay() {
   if (!view.L) return;
   const ctx = deco.getContext('2d');
@@ -1666,14 +1667,14 @@ function scaledCopy(canvas, maxSide) {
 async function develop(origin, j) {
   const lum = measureLum(origin);
   const meta = buildMeta(j.cfg, j.cam, j.date, j.exif, lum, j.front);
-  meta.osd = osdFor(j.cam, j.cfg, j.osdFlags, j.osdCount ?? shotsLeft(), j.bat ?? batLevel);
+  meta.osd = osdFor(j.cam, origin.width === origin.height, j.osdFlags, j.osdCount ?? shotsLeft(), j.bat ?? batLevel);
   const lights = j.lightMode !== 'off' ? detectLights(origin, origin.width, origin.height, null, false) : [];
   await ensureFonts(meta.caption);
   await nextFrame();
   const out = compose(origin, meta, { cfg: j.cfg, cam: j.cam, flash: j.flash, ev: j.ev, light: lightUniforms(j.cam, j.lightMode, j.seed, lights) });
   await nextFrame();
   const orig = await toBlob(scaledCopy(origin, 2048), 'image/jpeg', .9);
-  const rec = await storePhoto(out, meta, { orig, ometa: { taken: j.date.getTime(), exif: j.exif || null, front: !!j.front, ev: j.ev || 0, flash: j.flash || 0, light: j.lightMode, seed: j.seed, osdFlags: j.osdFlags || [] } }, j.date);
+  const rec = await storePhoto(out, meta, { orig, job: j, ometa: { taken: j.date.getTime(), exif: j.exif || null, front: !!j.front, ev: j.ev || 0, flash: j.flash || 0, light: j.lightMode, seed: j.seed, osdFlags: j.osdFlags || [] } }, j.date);
   if (NATIVE && j.cfg.autoSave && !storageRefused) await saveToGallery(rec, true);
   return rec;
 }
@@ -1692,7 +1693,7 @@ async function runJobs() {
   }
   syncAlbum(); // newest stored photo, or empty if the last develop failed
 }
-function syncWorking() { $('#btnGallery').classList.toggle('working', jobs.length + busyOther > 0); setLed(); }
+function syncWorking() { $('#btnGallery').classList.toggle('working', jobs.length + busyOther > 0); setLed(); drawOverlay(); }
 function countdown(n) {
   return new Promise(res => {
     const el = $('#countdown'); let left = n;
@@ -1861,7 +1862,8 @@ async function importOne(file, source) {
   const ex = readExif(await file.arrayBuffer()) || {};
   const c = await decodeToCanvas(file, qualityLong());
   const base = ex.date || (source === 'camera' ? new Date() : new Date(file.lastModified || Date.now()));
-  return develop(c, { cfg: { ...S }, cam: currentCam(), date: base, exif: ex, front: false, flash: 0, ev: 0, lightMode: S.light, seed: lightSeed });
+  return develop(c, { cfg: { ...S }, cam: currentCam(), date: base, exif: ex, front: false, flash: 0, ev: 0, lightMode: S.light, seed: lightSeed,
+    osdFlags: shotFlags().filter(f => f.startsWith('LIGHT')) });
 }
 async function importFiles(files, source) {
   files = [...files]; if (!files.length) return;
@@ -1957,6 +1959,7 @@ async function storePhoto(canvas, meta, extra, real) {
     id: `${Date.now()}-${no}`, no, created: Date.now(), taken: d.getTime(), blob, thumb, cam: meta.cam.id, saved: '',
     name: `SUMMER_${meta.cam.code.replace(/[^A-Za-z0-9]/g, '')}_${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}_${pad4(no)}.jpg`
   }, extra || {});
+  if (rec.job) { rec.job.stored = true; delete rec.job; }
   photos.unshift(rec);
   try { await DB.put(storable(rec)); } catch { toast('이 브라우저에선 앨범이 남지 않아요. 마음에 들면 바로 저장해 주세요', 4000); }
   syncAlbum();
@@ -2489,6 +2492,7 @@ window.geuhaeShutter = () => { if (!overlayOpen() && !popOpen()) shoot(); };
 function openOnboarding() {
   const onb = $('#onb'), track = $('#onbTrack'), dots = $$('#onbDots i');
   $('#onbCount').textContent = CAMERAS.length;
+  $('#onbYears').textContent = `${CAMERAS[0].year} — ${CAMERAS[CAMERAS.length - 1].year}`;
   $('#onbMarquee').style.animationDuration = (CAMERAS.length * 2.6) + 's'; // same drift speed whatever the count
   $('#onbMarquee').innerHTML = [...CAMERAS, ...CAMERAS].map((c, i) => camIcon(c, '-o' + i)).join('');
   onb.hidden = false;

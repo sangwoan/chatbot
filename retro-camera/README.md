@@ -145,7 +145,7 @@ Netlify · Vercel · Cloudflare Pages에 `retro-camera` 폴더만 올려도 됩�
 
 | 파일 | 역할 |
 |---|---|
-| `index.html` | 앱 전체 (UI · 카메라 10종 셰이더 · 스탬프 · 앨범 · 저장) |
+| `index.html` | 앱 전체 (UI · 카메라 20종 셰이더 · 스탬프 · 앨범 · 저장) |
 | `manifest.webmanifest`, `icon*.png`, `icon.svg` | 홈 화면 설치용 |
 | `sw.js` | 오프라인 캐시 (웹 전용) |
 | `fonts/` | 오프라인 글꼴 (IBM Plex Sans KR, Nanum Pen Script, Silkscreen; SIL OFL) |
