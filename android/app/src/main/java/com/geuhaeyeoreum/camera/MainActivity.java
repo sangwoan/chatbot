@@ -9,7 +9,9 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.SigningInfo;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -57,6 +59,7 @@ import android.widget.FrameLayout;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -65,6 +68,9 @@ import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.security.PublicKey;
+import java.security.cert.CertificateFactory;
+import org.json.JSONObject;
 
 /**
  * Hosts the web camera (assets/www) in a full-screen WebView.
@@ -75,6 +81,18 @@ public class MainActivity extends Activity {
     private static final String TAG = "Geuhae";
     static final String HOST = "appassets.androidplatform.net";
     static final String START_URL = "https://" + HOST + "/assets/index.html";
+    /** Where web updates are published (android/update in the app's public repository); the newest valid one wins. */
+    static final String[] UPDATE_BASES = {
+            "https://raw.githubusercontent.com/sangwoan/chatbot/main/android/update/",
+            "https://raw.githubusercontent.com/sangwoan/chatbot/claude/retro-camera-app-design-67gfwt/android/update/",
+    };
+    /** Pages for a newer APK may only be opened on these prefixes. */
+    static final String[] UPDATE_PAGES = {
+            "https://raw.githubusercontent.com/sangwoan/chatbot/",
+            "https://github.com/sangwoan/chatbot/",
+    };
+    /** Checked at every launch, and again on returning to the app after this long. */
+    private static final long UPDATE_EVERY_MS = 15L * 60 * 1000;
     static final String ALBUM_DIR = "그해여름";
 
     private static final int REQ_CAMERA_FOR_PAGE = 1;
@@ -105,6 +123,22 @@ public class MainActivity extends Activity {
     private volatile String pageHost = HOST; // seeded: page scripts can call the bridge before onPageStarted arrives
     /** Set by the page while the live viewfinder is on screen: volume keys fire the shutter. */
     private volatile boolean volumeShutter = false;
+    /** Web updates (null if the signing key could not be read). */
+    private Updater updater;
+    /** The page called bootOk() after its last load; justApplied: that load is the first of a new update. */
+    private boolean bootOk = false, justApplied = false, checkedThisLaunch = false;
+    private final Runnable bootWatch = new Runnable() {
+        @Override
+        public void run() {
+            // an update whose page never finished booting: drop it and go back to the page inside the APK
+            if (!bootOk && updater != null && updater.active() != null && web != null) {
+                Log.w(TAG, "update " + updater.active().version + " did not start; rolling back");
+                updater.markBadActive();
+                justApplied = false;
+                web.loadUrl(START_URL);
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -119,7 +153,95 @@ public class MainActivity extends Activity {
         setContentView(root);
         setupWindow();
         setupWebView();
-        web.loadUrl(START_URL);
+        updater = makeUpdater();
+        justApplied = updater != null && updater.prepare();
+        web.loadUrl(START_URL); // onResume, which follows, checks for updates
+    }
+
+    // ───────── web updates
+    private Updater makeUpdater() {
+        try {
+            PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
+            int bundled = 0;
+            try (InputStream in = getAssets().open("www/bundle.json")) {
+                java.io.ByteArrayOutputStream b = new java.io.ByteArrayOutputStream();
+                byte[] buf = new byte[1024];
+                int n;
+                while ((n = in.read(buf)) > 0) b.write(buf, 0, n);
+                bundled = new JSONObject(b.toString("UTF-8")).getInt("build");
+            }
+            return new Updater(new File(getFilesDir(), "ota"), UPDATE_BASES, signerKey(), getPackageName(), pi.versionCode, bundled);
+        } catch (Exception e) {
+            Log.w(TAG, "updates off", e);
+            return null;
+        }
+    }
+
+    /** The public key of the certificate this APK is signed with; updates must be signed by the same key. */
+    @SuppressWarnings("deprecation")
+    private PublicKey signerKey() throws Exception {
+        android.content.pm.Signature[] sigs;
+        if (Build.VERSION.SDK_INT >= 28) {
+            SigningInfo si = getPackageManager().getPackageInfo(getPackageName(), PackageManager.GET_SIGNING_CERTIFICATES).signingInfo;
+            sigs = si.hasMultipleSigners() ? si.getApkContentsSigners() : si.getSigningCertificateHistory();
+            if (!si.hasMultipleSigners()) sigs = new android.content.pm.Signature[]{sigs[sigs.length - 1]}; // newest in the rotation history
+        } else {
+            sigs = getPackageManager().getPackageInfo(getPackageName(), PackageManager.GET_SIGNATURES).signatures;
+        }
+        if (sigs == null || sigs.length != 1) throw new IllegalStateException("expected one signer");
+        return CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(sigs[0].toByteArray())).getPublicKey();
+    }
+
+    private void checkForUpdate(final boolean manual) {
+        if (updater == null) {
+            if (manual) js("window.geuhaeOnUpdate&&window.geuhaeOnUpdate('error','','',true)");
+            return;
+        }
+        long now = System.currentTimeMillis();
+        if (!manual && checkedThisLaunch && now - prefs().getLong("updateCheckedAt", 0) < UPDATE_EVERY_MS) return;
+        checkedThisLaunch = true;
+        prefs().edit().putLong("updateCheckedAt", now).apply();
+        updater.check(new Updater.Listener() {
+            @Override
+            public void onResult(String state, UpdateBundle b, String apkUrl, String error) {
+                if (error != null) Log.w(TAG, "update check: " + error);
+                if (!manual && ("none".equals(state) || "error".equals(state))) return;
+                String v = b == null ? "" : b.version;
+                js("window.geuhaeOnUpdate&&window.geuhaeOnUpdate(" + jsStr(state) + "," + jsStr(v) + "," + jsStr(apkUrl == null ? "" : apkUrl) + "," + manual + ")");
+                // apply straight away unless a shot is developing or a sheet is open (the page then asks again when it is idle)
+                if ("ready".equals(state)) ui.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        applyUpdateIfIdle();
+                    }
+                });
+            }
+        });
+    }
+
+    /** A staged update is applied as soon as nothing is in progress on the page (no developing shot, no open sheet). */
+    private void applyUpdateIfIdle() {
+        if (updater == null || web == null || !updater.stagedNewer()) return;
+        web.evaluateJavascript("(function(){try{return !!(window.geuhaeCanReload&&window.geuhaeCanReload())}catch(e){return false}})()", new ValueCallback<String>() {
+            @Override
+            public void onReceiveValue(String v) {
+                if (!"true".equals(v) || web == null || updater == null) return;
+                if (updater.prepare()) {
+                    justApplied = true;
+                    web.loadUrl(START_URL);
+                }
+            }
+        });
+    }
+
+    private static String jsStr(String s) {
+        StringBuilder b = new StringBuilder("'");
+        for (char c : s.toCharArray()) {
+            if (c == '\\' || c == '\'') b.append('\\').append(c);
+            else if (c < 0x20 || c == 0x2028 || c == 0x2029 || c == '<') b.append(String.format("\\u%04x", (int) c));
+            else b.append(c);
+        }
+        return b.append('\'').toString();
     }
 
     // ───────── window: edge-to-edge with our own insets so system bars show the camera body colour
@@ -221,7 +343,8 @@ public class MainActivity extends Activity {
             if (rel.isEmpty() || rel.endsWith("/")) rel = rel + "index.html";
             if (rel.contains("..")) return notFound();
             try {
-                InputStream in = getAssets().open("www/" + rel);
+                File ota = updater == null ? null : updater.fileFor(rel);
+                InputStream in = ota != null ? new FileInputStream(ota) : getAssets().open("www/" + rel);
                 String mime = mimeOf(rel);
                 WebResourceResponse r = new WebResourceResponse(mime, mime.startsWith("text/") || mime.endsWith("javascript") || mime.endsWith("json") || mime.endsWith("svg+xml") ? "utf-8" : null, in);
                 Map<String, String> h = new HashMap<>();
@@ -247,6 +370,17 @@ public class MainActivity extends Activity {
         @Override
         public void onPageStarted(WebView view, String url, Bitmap favicon) {
             pageHost = hostOf(url);
+            bootOk = false;
+            ui.removeCallbacks(bootWatch);
+        }
+
+        @Override
+        public void onPageFinished(WebView view, String url) {
+            // a page from an update has a few seconds to report a good start, or the update is rolled back
+            if (updater != null && updater.active() != null && !bootOk) {
+                ui.removeCallbacks(bootWatch);
+                ui.postDelayed(bootWatch, 12000);
+            }
         }
 
         @Override
@@ -525,6 +659,8 @@ public class MainActivity extends Activity {
         if (web != null) {
             web.onResume();
             web.evaluateJavascript("window.geuhaeOnResume&&window.geuhaeOnResume()", null);
+            applyUpdateIfIdle();
+            checkForUpdate(false);
         }
     }
 
@@ -620,6 +756,83 @@ public class MainActivity extends Activity {
     private final class Bridge {
         private boolean trusted() {
             return HOST.equals(pageHost);
+        }
+
+        /** The page finished booting; an update that loaded this far is good. */
+        @JavascriptInterface
+        public void bootOk() {
+            if (!trusted()) return;
+            ui.post(new Runnable() {
+                @Override
+                public void run() {
+                    bootOk = true;
+                    ui.removeCallbacks(bootWatch);
+                    if (justApplied && updater != null && updater.active() != null) {
+                        justApplied = false;
+                        js("window.geuhaeOnUpdate&&window.geuhaeOnUpdate('applied'," + jsStr(updater.active().version) + ",'',false)");
+                    }
+                }
+            });
+        }
+
+        /** {"app": versionName, "code": versionCode, "build": web build in use, "web": its label}. */
+        @JavascriptInterface
+        public String updateInfo() {
+            try {
+                PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
+                JSONObject o = new JSONObject();
+                o.put("app", pi.versionName);
+                o.put("code", pi.versionCode);
+                UpdateBundle a = updater == null ? null : updater.active();
+                o.put("build", updater == null ? 0 : updater.currentBuild());
+                o.put("web", a == null ? "" : a.version);
+                return o.toString();
+            } catch (Exception e) {
+                return "{}";
+            }
+        }
+
+        /** The page became idle with an update waiting. */
+        @JavascriptInterface
+        public void applyUpdate() {
+            if (!trusted()) return;
+            ui.post(new Runnable() {
+                @Override
+                public void run() {
+                    applyUpdateIfIdle();
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void checkUpdate() {
+            if (!trusted()) return;
+            ui.post(new Runnable() {
+                @Override
+                public void run() {
+                    checkForUpdate(true);
+                }
+            });
+        }
+
+        /** Opens the download page of a newer APK in the browser; only the app's own repository is allowed. */
+        @JavascriptInterface
+        public boolean openUpdatePage(String url) {
+            if (!trusted() || url == null) return false;
+            boolean ok = false;
+            for (String p : UPDATE_PAGES) if (url.startsWith(p) && !url.contains("..")) ok = true;
+            if (!ok) return false;
+            final Uri u = Uri.parse(url);
+            ui.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        startActivity(new Intent(Intent.ACTION_VIEW, u));
+                    } catch (ActivityNotFoundException ignored) {
+                    }
+                }
+            });
+            return true;
         }
 
         @JavascriptInterface

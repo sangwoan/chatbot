@@ -36,12 +36,19 @@
 android/
 ├── app/src/main/
 │   ├── AndroidManifest.xml
-│   ├── java/com/geuhaeyeoreum/camera/MainActivity.java   ← WebView 셸 전체 (AndroidX 없이 프레임워크 API만)
-│   └── res/                                               ← 앱 이름, 테마, 아이콘(적응형 포함)
+│   ├── java/com/geuhaeyeoreum/camera/
+│   │   ├── MainActivity.java   ← WebView 셸 전체 (AndroidX 없이 프레임워크 API만)
+│   │   ├── Updater.java        ← 웹 업데이트 확인·내려받기·적용·되돌리기
+│   │   └── UpdateBundle.java   ← 업데이트 목록(manifest) 서명 검증
+│   └── res/                    ← 앱 이름, 테마, 아이콘(적응형 포함)
 ├── tools/
 │   ├── Sign.java        ← apksig로 v2 서명 + 검증
+│   ├── SignUpdate.java  ← 웹 업데이트 목록 서명 (APK와 같은 키)
+│   ├── web-assets.sh    ← APK와 업데이트가 함께 쓰는 웹 파일 준비 (CSP, 빌드 번호)
 │   └── zipalign.py      ← 압축 안 된 항목 4바이트 정렬
-└── build-apk.sh         ← SDK 없이 APK 빌드
+├── update/              ← 공개된 웹 업데이트 (앱이 여기서 받아 감)
+├── build-apk.sh         ← SDK 없이 APK 빌드
+└── publish-update.sh    ← 웹 업데이트 서명해서 update/에 쓰기
 ```
 
 `MainActivity`가 하는 일은 다음과 같습니다.
@@ -53,7 +60,57 @@ android/
 - **사진 고르기:** Android 13 이상은 시스템 사진 선택기, 그 아래 버전은 문서 선택기를 씁니다.
 - **뒤로가기:** 페이지에 먼저 물어봅니다(`geuhaeOnBack`). 열린 창이 있으면 그것만 닫습니다. 첫 화면에서 누르면 앱을 끝내지 않고 홈 버튼처럼 뒤로 보냅니다. 그래서 현상 중인 사진이 사라지지 않습니다.
 - **생명주기:** 백그라운드로 가면 카메라를 끄고, 돌아오면 다시 켭니다. WebView 렌더러가 죽으면 화면을 다시 만듭니다.
+- **자동 업데이트:** 아래 '자동 업데이트' 참고. 업데이트된 파일이 있으면 그 파일을, 없으면 APK 안의 파일을 보여 줍니다.
 - **기타:** 볼륨키 셔터, 햅틱(시스템 햅틱 설정을 따름), 카메라 바디 색에 맞춘 상태바·내비게이션바 색, 화면 켜짐 유지.
+
+## 자동 업데이트 (1.3.0부터)
+
+1.3.0부터는 화면, 카메라, 필터 같은 웹 부분을 앱이 스스로 업데이트합니다. APK를 다시 받을 필요가 없습니다.
+
+1. 앱을 열 때마다(그리고 15분 넘게 나갔다 돌아올 때마다) 아래 주소에서 `manifest.json`과 `manifest.sig`를 확인합니다.
+   - `https://raw.githubusercontent.com/sangwoan/chatbot/main/android/update/`
+   - `https://raw.githubusercontent.com/sangwoan/chatbot/claude/retro-camera-app-design-67gfwt/android/update/`
+
+   두 곳 중 빌드 번호가 높은 쪽을 씁니다.
+2. 다음을 모두 통과해야 받아들입니다.
+   - `manifest.sig`가 **APK를 서명한 바로 그 키로 만든 서명**이어야 합니다(SHA256withRSA). 앱은 자기 서명 인증서의 공개 키로 확인합니다.
+   - 패키지 이름이 일치해야 합니다.
+   - 빌드 번호가 지금 것보다 커야 합니다.
+   - 파일마다 크기와 SHA-256이 맞아야 합니다.
+3. 받은 파일은 앱 전용 저장소(`files/ota`)에 둡니다.
+   - 촬영·현상 중이 아니고 창이 열려 있지 않으면 바로 적용하고 화면을 다시 불러옵니다.
+   - 바쁘면 끝나는 즉시 적용합니다.
+   - 페이지 주소(출처)는 그대로라서 앱 안 앨범과 설정이 유지됩니다.
+4. 새 화면이 12초 안에 정상 시작 신호(`bootOk`)를 보내지 않으면 그 업데이트를 버리고 APK 안의 화면으로 되돌아갑니다. 같은 빌드는 다시 받지 않습니다.
+5. 안드로이드 코드가 바뀌어야 하는 업데이트(`minNative`가 앱 버전 코드보다 큼)는 받지 않습니다. 메뉴 › 앱에 '받기' 버튼을 띄워 새 APK를 내려받게 합니다.
+
+권한은 늘지 않습니다(카메라·인터넷·진동·Android 9 이하 저장공간). 다른 앱을 설치하는 권한(`REQUEST_INSTALL_PACKAGES`)은 쓰지 않습니다.
+
+### 업데이트 올리기
+
+```bash
+./android/publish-update.sh            # retro-camera/index.html을 다음 빌드 번호로 서명해 android/update/에 씀
+git add android/update && git commit -m "web update" && git push
+```
+
+- 빌드 번호 규칙: APK에 들어 있는 웹 빌드는 `버전코드 × 100`입니다(1.3.0 = 500). 웹 업데이트는 그보다 커야 합니다(501, 502…).
+- 안드로이드 코드도 바꿨다면 다음처럼 올립니다. 그러면 예전 앱은 웹 업데이트 대신 APK 받기 안내를 보여 줍니다.
+  1. `VERSION_CODE`를 올려 APK를 빌드합니다.
+  2. `APK=android/build/…apk MIN_NATIVE=<새 버전코드> ./android/publish-update.sh`를 실행합니다.
+
+### 서명 키가 꼭 필요합니다
+
+APK 서명과 업데이트 서명이 같은 키(`keystore/sideload.p12`)입니다. 키가 없으면 두 가지가 모두 불가능합니다.
+- 설치된 앱 위에 덮어 설치하기
+- 설치된 앱이 받아들이는 업데이트 만들기
+
+그래서 `build-apk.sh`는 키가 없으면 멈춥니다. 새 키로 처음부터 다시 시작하려면 `NEW_KEY=1`을 붙여 실행합니다.
+
+새 작업 환경에서 키를 쓰는 방법은 두 가지입니다.
+- 파일을 `android/keystore/sideload.p12`에 둡니다.
+- 환경 변수 `GEUHAE_KEYSTORE_B64`에 p12 파일의 base64를 넣습니다. 스크립트가 알아서 복원합니다.
+
+키 파일은 공개 저장소에 올리지 않습니다(`.gitignore`). 키가 새면 남이 이 앱의 업데이트를 만들 수 있으니 따로 안전하게 보관하세요.
 
 ## 빌드
 
@@ -61,7 +118,7 @@ android/
 
 ```bash
 ./android/build-apk.sh
-# → android/build/geuhae-yeoreum-1.2.1.apk
+# → android/build/geuhae-yeoreum-1.3.0.apk
 ```
 
 필요한 것은 bash, curl, python3, zip, JDK 17 이상(`javac`, `java`, `keytool`)뿐입니다. 빌드 도구는 처음 한 번 내려받고 SHA-256으로 검증합니다.
@@ -86,13 +143,17 @@ v1 서명은 쓰지 않습니다. minSdk가 24라 v2만으로 충분하고, apks
 
 | 변수 | 기본값 |
 |---|---|
-| `VERSION_CODE` / `VERSION_NAME` | `4` / `1.2.1` |
+| `VERSION_CODE` / `VERSION_NAME` | `5` / `1.3.0` |
+| `WEB_BUILD` | `VERSION_CODE × 100` (APK에 들어가는 웹 빌드 번호) |
+| `GEUHAE_KEYSTORE_B64` | 비어 있음. 서명 키 파일의 base64. 키 파일이 없을 때 복원합니다 |
+| `NEW_KEY` | `0`. `1`이면 키가 없을 때 새로 만듭니다(기존 앱 위에 덮어 설치할 수 없게 됨) |
 | `KEYSTORE` / `STOREPASS` / `KEY_ALIAS` | `keystore/sideload.p12` / `geuhae-sideload` / `geuhae` |
 | `TOOLS_DIR` | `android/.tools` |
 
 ### 서명 키 — 꼭 보관하세요
 
-- 키 파일이 없으면 빌드 스크립트가 `keystore/sideload.p12`를 새로 만듭니다.
+- 키 파일이 없으면 빌드 스크립트는 멈춥니다. 처음부터 새 키로 시작할 때만 `NEW_KEY=1`로 `keystore/sideload.p12`를 새로 만듭니다.
+- 같은 키로 웹 업데이트도 서명합니다(위 '자동 업데이트' 참고).
 - **같은 키로 서명해야 설치된 앱 위에 업데이트할 수 있습니다.** 키가 바뀌면 기존 앱을 지우고 다시 설치해야 하고, 그러면 앱 안 앨범(IndexedDB)도 지워집니다. 휴대폰 갤러리에 저장된 사진은 남습니다.
 - 이 저장소는 공개 저장소라 키 파일은 `.gitignore`로 커밋하지 않습니다. 따로 안전한 곳에 보관했다가, 다음 빌드 전에 `android/keystore/sideload.p12`에 다시 넣어 주세요.
 

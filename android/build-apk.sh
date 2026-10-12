@@ -9,14 +9,15 @@
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
-WEB="$HERE/../retro-camera"
 SRC="$HERE/app/src/main"
 OUT="$HERE/build"
 TOOLS="${TOOLS_DIR:-$HERE/.tools}"
 MIN_SDK=24
 TARGET_SDK=35
-VERSION_CODE="${VERSION_CODE:-4}"
-VERSION_NAME="${VERSION_NAME:-1.2.1}"
+VERSION_CODE="${VERSION_CODE:-5}"
+VERSION_NAME="${VERSION_NAME:-1.3.0}"
+# Web build bundled in the APK; web updates (publish-update.sh) must use a higher number.
+WEB_BUILD="${WEB_BUILD:-$((VERSION_CODE * 100))}"
 KEYSTORE="${KEYSTORE:-$HERE/keystore/sideload.p12}"
 STOREPASS="${STOREPASS:-geuhae-sideload}"
 ALIAS="${KEY_ALIAS:-geuhae}"
@@ -50,6 +51,16 @@ if [ ! -x "$AAPT2" ]; then
 fi
 ANDROID_JAR="$TOOLS/android-35.jar"
 
+# The signing key can come from the environment (base64 of the .p12), so a fresh machine signs with the same key.
+if [ ! -f "$KEYSTORE" ] && [ -n "${GEUHAE_KEYSTORE_B64:-}" ]; then
+  mkdir -p "$(dirname "$KEYSTORE")" && printf '%s' "$GEUHAE_KEYSTORE_B64" | base64 -d > "$KEYSTORE"
+fi
+# A different key cannot update the installed app (nor sign web updates it accepts): only create one on purpose.
+if [ ! -f "$KEYSTORE" ] && [ "${NEW_KEY:-0}" != "1" ]; then
+  echo "signing key not found: $KEYSTORE" >&2
+  echo "  restore your sideload.p12 there (or set GEUHAE_KEYSTORE_B64), or run with NEW_KEY=1 to start over with a new key" >&2
+  exit 1
+fi
 if [ ! -f "$KEYSTORE" ]; then
   echo "▸ new signing key: $KEYSTORE"
   mkdir -p "$(dirname "$KEYSTORE")"
@@ -60,22 +71,8 @@ fi
 rm -rf "$OUT"
 mkdir -p "$OUT/assets/www" "$OUT/classes" "$OUT/dex" "$OUT/signer"
 
-echo "▸ web assets"
-cp "$WEB/index.html" "$WEB/icon.svg" "$OUT/assets/www/"
-cp -R "$WEB/fonts" "$OUT/assets/www/fonts"
-# The APK is offline-first: drop the Google Fonts stylesheet, the bundled fonts/fonts.css covers it.
-python3 - "$OUT/assets/www/index.html" <<'PY'
-import re, sys
-p = sys.argv[1]
-s = open(p, encoding='utf-8').read()
-s = re.sub(r'\n?<link[^>]+fonts\.(googleapis|gstatic)\.com[^>]*>', '', s)
-# Nothing in the APK talks to the network: lock the page to its own origin.
-csp = ("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
-       "img-src 'self' blob: data:; media-src 'self' blob: mediastream:; font-src 'self' data:; "
-       "connect-src 'self' blob: data:; worker-src 'none'; frame-src 'none'; object-src 'none'")
-s = s.replace('<!-- @page -->', '<meta http-equiv="Content-Security-Policy" content="' + csp + '">\n<!-- @page -->', 1)
-open(p, 'w', encoding='utf-8').write(s)
-PY
+echo "▸ web assets (web build $WEB_BUILD)"
+"$HERE/tools/web-assets.sh" "$OUT/assets/www" "$WEB_BUILD"
 
 echo "▸ resources (aapt2)"
 "$AAPT2" compile --dir "$SRC/res" -o "$OUT/res.zip"

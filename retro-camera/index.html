@@ -439,6 +439,12 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
         <div class="row"><label for="optHaptics">진동</label><input type="checkbox" class="switch" id="optHaptics" data-key="haptics"></div>
         <p class="hint" id="menuHint">화소가 낮은 카메라(VGA 폴더폰, 첫 디카)는 저장 크기와 상관없이 그 시절 화질로 찍혀요. 정보바의 셔터 속도·ISO는 화면 밝기로 계산한 표기예요.</p>
       </section>
+      <section class="group" data-native>
+        <h3>APP · 앱</h3>
+        <div class="row" id="updateApkRow" hidden><span class="lbl" id="updateApkText">새 앱 버전이 나왔어요</span><button class="pbtn amber" id="btnUpdateApk">받기</button></div>
+        <div class="row"><span class="lbl" id="appVersion">버전</span><button class="pbtn" id="btnCheckUpdate">업데이트 확인</button></div>
+        <p class="hint">앱을 열 때마다 새 버전을 확인해서, 있으면 바로 받아 적용해요. 찍은 사진은 그대로 남아요. 앱 자체를 새로 깔아야 하는 드문 경우에만 위에 '받기'가 나타나요.</p>
+      </section>
     </div>
   </div>
 </div>
@@ -1711,7 +1717,7 @@ async function runJobs() {
   }
   syncAlbum(); // newest stored photo, or empty if the last develop failed
 }
-function syncWorking() { $('#btnGallery').classList.toggle('working', jobs.length + busyOther > 0); setLed(); drawOverlay(); }
+function syncWorking() { $('#btnGallery').classList.toggle('working', jobs.length + busyOther > 0); setLed(); drawOverlay(); if (updatePending) setTimeout(maybeApplyUpdate, 300); }
 function countdown(n) {
   return new Promise(res => {
     const el = $('#countdown'); let left = n;
@@ -2066,7 +2072,7 @@ function syncViewer() {
   $('#viewerNote').textContent = NATIVE ? (rec.saved ? '✓ 휴대폰 갤러리에 저장됨' : '아직 앱 안에만 있어요') : '앱 안 앨범에 보관 중';
   $('#btnSaveNow').hidden = !NATIVE || !!rec.saved;
 }
-function closeViewer() { $('#viewer').hidden = true; viewing = null; disarmDelete(); syncVolumeKey(); syncBars(); if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+function closeViewer() { $('#viewer').hidden = true; viewing = null; disarmDelete(); syncVolumeKey(); syncBars(); if (updatePending) setTimeout(maybeApplyUpdate, 300); if (lastFocus && lastFocus.focus) lastFocus.focus(); }
 function stepViewer(dir) {
   const i = photos.indexOf(viewing), n = photos[i + dir];
   if (!n) { haptic('reject'); return; }
@@ -2104,6 +2110,7 @@ function closeSheet(s) {
   if (s.id === 'camSheet') { s.classList.remove('over'); if (pickResolve) { pickResolve(null); pickResolve = null; } }
   syncVolumeKey(); syncBars(); needsStatic = true; relayout();
   if (lastFocus && lastFocus.focus) lastFocus.focus();
+  if (updatePending) setTimeout(maybeApplyUpdate, 300);
 }
 function openGallery() { renderGrid(); openSheet('#gallerySheet'); }
 function renderGrid() {
@@ -2534,6 +2541,30 @@ window.geuhaeOnPermission = (what, granted) => {
   else if (!live) { showPerm('native-' + (native('cameraPermission') || 'denied')); relayout(); }
 };
 window.geuhaeShutter = () => { if (!overlayOpen() && !popOpen()) shoot(); };
+/* web updates (Android): the shell downloads signed updates and reloads into them once the page says it is idle */
+window.geuhaeCanReload = () => !jobs.length && !busyOther && !shooting && !cdCancel && !overlayOpen() && !popOpen();
+let apkUpdateUrl = '', updatePending = false;
+function maybeApplyUpdate() { if (updatePending && window.geuhaeCanReload()) native('applyUpdate'); }
+function syncAppInfo() {
+  if (!NATIVE) return;
+  let info = {}; try { info = JSON.parse(native('updateInfo') || '{}'); } catch {}
+  $('#appVersion').textContent = `버전 ${info.app || ''}${info.web ? ' · 업데이트 ' + info.web : ''}`;
+  $('#updateApkRow').hidden = !apkUpdateUrl;
+}
+window.geuhaeOnUpdate = (state, version, url, manual) => {
+  if (state === 'ready') {
+    updatePending = true;
+    if (!window.geuhaeCanReload()) toast(`새 버전(${version})을 받았어요. 하던 걸 마치면 바로 바뀌어요`, 3200);
+  } else if (state === 'applied') toast(`새 버전(${version})으로 바뀌었어요`, 2600);
+  else if (state === 'native') {
+    apkUpdateUrl = url || '';
+    $('#updateApkText').textContent = `새 앱 버전 ${version}이 나왔어요`;
+    toast(apkUpdateUrl ? '앱을 새로 깔아야 하는 업데이트가 있어요. 메뉴 › 앱에서 받을 수 있어요' : '앱 새 버전이 나왔어요', 3600);
+  }
+  else if (manual && state === 'none') toast('지금이 최신 버전이에요');
+  else if (manual) toast('업데이트를 확인하지 못했어요. 인터넷 연결을 확인해 주세요', 3200);
+  syncAppInfo();
+};
 
 /* ───────── first run ───────── */
 function openOnboarding() {
@@ -2574,7 +2605,9 @@ function wire() {
     wrap.addEventListener('click', e => { if (downOnWrap && e.target === wrap) closePops(); downOnWrap = false; });
   }
   $('#btnMoreDate').addEventListener('click', () => { closePops(); openSheet('#menuSheet'); setTimeout(() => $('#ourDay').scrollIntoView({ block: 'start' }), 60); });
-  $('#btnMenu').addEventListener('click', () => { haptic('tick'); openSheet('#menuSheet'); });
+  $('#btnMenu').addEventListener('click', () => { haptic('tick'); syncAppInfo(); openSheet('#menuSheet'); });
+  $('#btnCheckUpdate').addEventListener('click', () => { haptic('tick'); toast('업데이트를 확인하는 중…', 1500); native('checkUpdate'); });
+  $('#btnUpdateApk').addEventListener('click', () => { if (apkUpdateUrl) native('openUpdatePage', apkUpdateUrl); });
   $('#btnCam').addEventListener('click', () => { haptic('tick'); openCamList(); });
   $('#btnCamPreview').addEventListener('click', () => { closeSheet($('#camListSheet')); openCamSheet(); });
   $('#btnGallery').addEventListener('click', openGallery);
@@ -2661,6 +2694,7 @@ async function boot() {
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawOverlay);
   if (S.geo) updateGeo();
   if (!S.onboarded) openOnboarding(); else startCameraSafe();
+  native('bootOk'); // the Android shell rolls a web update back if this never arrives
   if (!NATIVE && 'serviceWorker' in navigator && window.self === window.top && /^https:|^http:\/\/(localhost|127\.)/.test(location.href)) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
