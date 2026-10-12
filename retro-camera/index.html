@@ -235,6 +235,12 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
 .field[type="text"]{flex:1 1 180px}
 .range{accent-color:var(--amber);width:min(190px,52vw);height:32px}
 .hint{margin:10px 0 0;font:400 13px/1.6 var(--font-ui);color:var(--menu-sub)}
+.checks{list-style:none;margin:6px 0 0;padding:0}
+.checks li{display:grid;grid-template-columns:10px 1fr;gap:2px 12px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.07);font:400 14px/1.5 var(--font-ui)}
+.checks li::before{content:"";grid-row:span 2;width:10px;height:10px;margin-top:6px;border-radius:50%;background:var(--menu-sub)}
+.checks li.ok::before{background:#5fd38d}.checks li.warn::before{background:#ffb547}.checks li.bad::before{background:#ff6b5b}
+.checks b{font-weight:600}
+.checks small{grid-column:2;color:var(--menu-sub);font-size:13px;overflow-wrap:anywhere}
 .grid{min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:12px 16px 24px;overflow:auto;align-content:start}
 .grid button{aspect-ratio:3/4;border:0;padding:0;border-radius:6px;background:#0a1426 center/contain no-repeat;position:relative}
 .grid button span{position:absolute;left:5px;top:5px;padding:3px 4px;background:rgba(0,0,0,.55);border-radius:3px;font:400 9px/1 var(--font-osd);color:#fff}
@@ -438,12 +444,26 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
         <div class="row"><label for="optHaptics">진동</label><input type="checkbox" class="switch" id="optHaptics" data-key="haptics"></div>
         <p class="hint" id="menuHint">화소가 낮은 카메라(VGA 폴더폰, 첫 디카)는 저장 크기와 상관없이 그 시절 화질로 찍혀요. 정보바의 셔터 속도·ISO는 화면 밝기로 계산한 표기예요.</p>
       </section>
+      <section class="group">
+        <h3>CHECK · 점검</h3>
+        <div class="row"><span class="lbl">이 폰에서 잘 돌아가는지 보기</span><button class="pbtn" id="btnCheck">점검하기</button></div>
+      </section>
       <section class="group" data-native>
         <h3>APP · 앱</h3>
         <div class="row" id="updateApkRow" hidden><span class="lbl" id="updateApkText">새 앱 버전이 나왔어요</span><button class="pbtn amber" id="btnUpdateApk">받기</button></div>
         <div class="row"><span class="lbl" id="appVersion">버전</span><button class="pbtn" id="btnCheckUpdate">업데이트 확인</button></div>
         <p class="hint">앱을 열 때마다 새 버전을 확인해서, 있으면 바로 받아 적용해요. 찍은 사진은 그대로 남아요. 앱 자체를 새로 깔아야 하는 드문 경우에만 위에 '받기'가 나타나요.</p>
       </section>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="checkSheet" hidden role="dialog" aria-modal="true" aria-labelledby="checkTitle">
+  <div class="panel">
+    <div class="panel-head"><h2 id="checkTitle">CHECK</h2><div class="acts"><button class="pbtn" id="btnCopyCheck" disabled>결과 복사</button><button class="pbtn amber" data-close>닫기</button></div></div>
+    <div class="panel-body">
+      <ul class="checks" id="checkList" aria-live="polite"></ul>
+      <p class="hint">결과는 이 폰에만 있어요. 이상한 점이 있으면 '결과 복사'를 눌러 대화창에 붙여 넣어 주세요. 사진이나 위치 같은 개인 정보는 들어가지 않아요.</p>
     </div>
   </div>
 </div>
@@ -529,6 +549,18 @@ const PEN_FONT = '"Nanum Pen Script","Gaegu",cursive';
 const NB = window.GeuhaeNative;
 const NATIVE = (() => { try { return !!(NB && NB.isNative && NB.isNative()); } catch { return false; } })();
 const native = (fn, ...args) => { if (!NATIVE || typeof NB[fn] !== 'function') return undefined; try { return NB[fn](...args); } catch (e) { console.warn('bridge', fn, e); return undefined; } };
+/* ───────── problem log: the last few errors on this phone, shown in 메뉴 › 점검 (never sent anywhere) ───────── */
+const ERR_KEY = 'geuhae.errors.v1';
+function logIssue(kind, msg) {
+  try {
+    const list = JSON.parse(localStorage.getItem(ERR_KEY) || '[]'), m = String(msg).slice(0, 240), last = list[list.length - 1];
+    if (last && last.m === m && Date.now() - last.t < 60000) { last.n = (last.n || 1) + 1; last.t = Date.now(); }
+    else list.push({ t: Date.now(), k: kind, m });
+    localStorage.setItem(ERR_KEY, JSON.stringify(list.slice(-20)));
+  } catch {}
+}
+window.addEventListener('error', e => { if (e.message) logIssue('error', `${e.message} (${String(e.filename || '').split('/').pop()}:${e.lineno || 0})`); });
+window.addEventListener('unhandledrejection', e => { const r = e.reason; logIssue('promise', r && (r.message || r.name) || String(r)); });
 const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
 /* ───────── settings (per-viewer, browser storage) ───────── */
@@ -1050,7 +1082,7 @@ class Lens2D {
     x.restore();
   }
 }
-const makeLens = canvas => { try { return new Lens(canvas); } catch (e) { console.warn('WebGL off:', e); return new Lens2D(canvas); } };
+const makeLens = canvas => { try { return new Lens(canvas); } catch (e) { console.warn('WebGL off:', e); logIssue('webgl', e && e.message); return new Lens2D(canvas); } };
 
 /* ───────── composition geometry ───────── */
 function layoutFor(tpl, iw, ih) {
@@ -1583,13 +1615,23 @@ function renderPreview(t) {
   });
 }
 let sampleUploaded = false;
+/* preview pace for 메뉴 › 점검: smoothed frame interval and the main-thread cost of one frame */
+const pace = { last: 0, dt: 0, cost: 0 };
+function frameStat(t0) {
+  const now = performance.now(), gap = now - pace.last;
+  if (pace.last && gap < 400) pace.dt = pace.dt ? pace.dt * .9 + gap * .1 : gap;
+  pace.cost = pace.cost ? pace.cost * .9 + (now - t0) * .1 : now - t0;
+  pace.last = now;
+}
 function loop(t) {
   requestAnimationFrame(loop);
   if (!lens || document.hidden || overlayOpen()) return;
   if (live && video.readyState >= 2 && video.videoWidth) {
     if (video.videoWidth !== lastVW || video.videoHeight !== lastVH) { lastVW = video.videoWidth; lastVH = video.videoHeight; relayout(); }
+    const t0 = performance.now();
     lens.upload(video); sampleUploaded = false;
     renderPreview(t);
+    frameStat(t0);
   } else if (needsStatic && sampleSrc) {
     if (!sampleUploaded) { lens.upload(sampleSrc); sampleUploaded = true; }
     renderPreview(t); needsStatic = false;
@@ -2579,6 +2621,76 @@ window.geuhaeOnUpdate = (state, version, url, manual) => {
   syncAppInfo();
 };
 
+/* ───────── 메뉴 › 점검: how the app runs on this phone, as a list the user can copy into a chat ───────── */
+let checkReport = '';
+const fmtMB = b => b >= 1e9 ? (b / 1e9).toFixed(1) + 'GB' : Math.round(b / 1e6) + 'MB';
+async function runCheck() {
+  const list = $('#checkList'), copy = $('#btnCopyCheck');
+  copy.disabled = true; list.innerHTML = '<li><b>점검하는 중…</b></li>';
+  const items = [], add = (state, label, value) => items.push({ state, label, value: String(value) });
+  const ua = navigator.userAgent, an = /Android ([\d.]+)/.exec(ua), ch = /Chrome\/(\d+)/.exec(ua);
+  add('info', '기기', `${an ? 'Android ' + an[1] : navigator.platform}${ch ? ' · 웹뷰 ' + ch[1] : ''} · 화면 ${screen.width}×${screen.height} ×${Math.round(devicePixelRatio * 100) / 100}`);
+  if (NATIVE) {
+    let info = {}; try { info = JSON.parse(native('updateInfo') || '{}'); } catch {}
+    add('info', '앱', `${info.app || '?'} · 화면 ${info.web || '기본'} (빌드 ${info.build || '?'})${updatePending ? ' · 새 버전 대기 중' : ''}`);
+  }
+  const gl = lens && lens.gl;
+  if (!gl) add('bad', '그래픽', '가속을 못 써서 간단한 효과로 대신하고 있어요');
+  else if (gl.isContextLost()) add('bad', '그래픽', '그래픽이 잠깐 끊겼어요. 앱을 다시 열어 주세요');
+  else {
+    const dbg = gl.getExtension('WEBGL_debug_renderer_info'), hp = gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT);
+    const gpu = String(dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)).replace(/^ANGLE \((.*)\)$/, '$1');
+    const high = hp && hp.precision > 0;
+    add(high ? 'ok' : 'warn', '그래픽', `${gpu} · ${high ? '고정밀' : '보통 정밀도(노이즈가 거칠 수 있어요)'} · 최대 ${lens.max}px`);
+  }
+  if (live && track) {
+    const st = track.getSettings ? track.getSettings() : {};
+    add('ok', '카메라', `${S.facing === 'user' ? '앞' : '뒤'} · ${st.width || '?'}×${st.height || '?'} · ${Math.round(st.frameRate || 0) || '?'}fps`);
+    if (pace.dt) {
+      const fps = Math.round(1000 / pace.dt);
+      add(fps >= 24 ? 'ok' : fps >= 15 ? 'warn' : 'bad', '미리보기', `${fps}fps · 한 장면 처리 ${pace.cost.toFixed(1)}ms`);
+    }
+  } else add('warn', '카메라', NATIVE ? `꺼져 있어요 (권한: ${native('cameraPermission') || '?'})` : '꺼져 있어요');
+  try {
+    if (!capLens) capLens = makeLens(document.createElement('canvas'));
+    const long = Math.min(qualityLong(), capLens.max), w = long, h = Math.round(long * 3 / 4), t0 = performance.now();
+    capLens.upload(sampleSrc || makeSample());
+    capLens.render(w, h, camParams(currentCam()), { mirror: false, zoom: 1, time: 1.3, amount: 1, flash: 0 });
+    const g = capLens.gl; if (g) g.readPixels(0, 0, 1, 1, g.RGBA, g.UNSIGNED_BYTE, new Uint8Array(4));
+    const ms = Math.round(performance.now() - t0);
+    add(ms < 1500 ? 'ok' : ms < 4000 ? 'warn' : 'bad', '현상 속도', `${S.quality} 한 장 ${ms}ms`);
+  } catch (e) { add('bad', '현상 속도', '시험 현상에 실패했어요: ' + (e && e.message)); logIssue('check', e && e.message); }
+  try {
+    const est = navigator.storage && navigator.storage.estimate ? await navigator.storage.estimate() : null;
+    const kept = navigator.storage && navigator.storage.persisted ? await navigator.storage.persisted() : null;
+    const tight = est && est.quota && est.usage / est.quota > .85;
+    add(tight ? 'warn' : 'ok', '앨범', `사진 ${photos.length}장${est ? ` · ${fmtMB(est.usage || 0)} 사용 / 여유 ${fmtMB(Math.max(0, (est.quota || 0) - (est.usage || 0)))}` : ''}${kept === false && !NATIVE ? ' · 브라우저가 지울 수 있음' : ''}`);
+  } catch { add('warn', '앨범', `사진 ${photos.length}장 · 용량은 확인하지 못했어요`); }
+  let errs = []; try { errs = JSON.parse(localStorage.getItem(ERR_KEY) || '[]'); } catch {}
+  const day = Date.now() - 864e5, recent = errs.filter(e => e.t > day);
+  add(recent.length ? 'warn' : 'ok', '최근 오류', recent.length ? `하루 동안 ${recent.length}건` : '없음');
+  const two = n => String(n).padStart(2, '0'), when = t => { const d = new Date(t); return `${d.getMonth() + 1}/${d.getDate()} ${two(d.getHours())}:${two(d.getMinutes())}`; };
+  for (const e of errs.slice(-5).reverse()) add('info', when(e.t), `${e.k}: ${e.m}${e.n > 1 ? ` (×${e.n})` : ''}`);
+  list.innerHTML = '';
+  for (const it of items) {
+    const li = document.createElement('li'); li.className = it.state;
+    const b = document.createElement('b'), sm = document.createElement('small');
+    b.textContent = it.label; sm.textContent = it.value; li.append(b, sm); list.append(li);
+  }
+  checkReport = `[그해여름 점검 ${new Date().toISOString().slice(0, 16)} · ${currentCam().code}]\n` +
+    items.map(it => `${{ ok: '✓', warn: '!', bad: '✕', info: '·' }[it.state]} ${it.label}: ${it.value}`).join('\n');
+  copy.disabled = false;
+}
+async function copyCheck() {
+  let ok = false;
+  try { await navigator.clipboard.writeText(checkReport); ok = true; } catch {}
+  if (!ok) {
+    const ta = document.createElement('textarea'); ta.value = checkReport; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.append(ta); ta.select(); try { ok = document.execCommand('copy'); } catch {} ta.remove();
+  }
+  toast(ok ? '점검 결과를 복사했어요. 대화창에 붙여 넣어 주세요' : '복사하지 못했어요. 화면을 캡처해 주세요', 3000);
+}
+
 /* ───────── first run ───────── */
 function openOnboarding() {
   const onb = $('#onb'), track = $('#onbTrack'), dots = $$('#onbDots i');
@@ -2619,6 +2731,8 @@ function wire() {
   }
   $('#btnMoreDate').addEventListener('click', () => { closePops(); openSheet('#menuSheet'); setTimeout(() => $('#ourDay').scrollIntoView({ block: 'start' }), 60); });
   $('#btnMenu').addEventListener('click', () => { haptic('tick'); syncAppInfo(); openSheet('#menuSheet'); });
+  $('#btnCheck').addEventListener('click', () => { closeSheet($('#menuSheet')); openSheet('#checkSheet'); runCheck(); });
+  $('#btnCopyCheck').addEventListener('click', copyCheck);
   $('#btnCheckUpdate').addEventListener('click', () => { haptic('tick'); toast('업데이트를 확인하는 중…', 1500); native('checkUpdate'); });
   $('#btnUpdateApk').addEventListener('click', () => { if (apkUpdateUrl) native('openUpdatePage', apkUpdateUrl); });
   $('#btnCam').addEventListener('click', () => { haptic('tick'); openCamList(); });
