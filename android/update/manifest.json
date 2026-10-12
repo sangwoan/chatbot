@@ -1,0 +1,46 @@
+{
+ "package": "com.geuhaeyeoreum.camera",
+ "build": 500,
+ "version": "1.3.0",
+ "minNative": 5,
+ "files": {
+  "fonts/IBMPlexSansKR-Medium.woff2": {
+   "sha256": "34ebfde8e354d0b8204798df5541f2a785c05532525e3872b55dd5152590122b",
+   "size": 570044
+  },
+  "fonts/IBMPlexSansKR-Regular.woff2": {
+   "sha256": "c5d7d1f00d8ad2c37eeb5b94dbc7c62eadb36b0885726e3ec9f89230cfe7da4e",
+   "size": 525144
+  },
+  "fonts/IBMPlexSansKR-SemiBold.woff2": {
+   "sha256": "a6ce4b497c7474e07eb0b27a1f6157739acffbf6086aeb0e70ca3069769f2379",
+   "size": 565964
+  },
+  "fonts/NanumPenScript-Regular.woff2": {
+   "sha256": "442790e9283ce6a4036e38afa948e12b439ad5fc75626c5f86a827e178b99e74",
+   "size": 593684
+  },
+  "fonts/Silkscreen-Bold.woff2": {
+   "sha256": "e0c0c95f3ca379d3db0ccb62c085c3df48e06124ad35731a16635af5beb8529f",
+   "size": 6684
+  },
+  "fonts/Silkscreen-Regular.woff2": {
+   "sha256": "fce0a304886e938b4eabc94efa1fc49b09dcfa71d3addd8ea63bd53e5fc29ad5",
+   "size": 7464
+  },
+  "fonts/fonts.css": {
+   "sha256": "96525e4a81c053e0c50dc69f29d97fbf18c3bc1f1185a162b6ce3316d8a87691",
+   "size": 1125
+  },
+  "icon.svg": {
+   "sha256": "ba0feb3f34b0049d2f3f862dc9a3353874b4dbec022dfda0b3957b19e7bbed96",
+   "size": 876
+  },
+  "index.html": {
+   "sha256": "d43ff74dc841c8e89a6f522895452102fd2c5da989125ecd87d39b8b1ec1f650",
+   "size": 179867
+  }
+ },
+ "date": "2026-10-12T08:52Z",
+ "notes": "첫 자동 업데이트 채널"
+}

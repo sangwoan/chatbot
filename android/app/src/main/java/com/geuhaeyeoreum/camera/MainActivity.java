@@ -81,18 +81,22 @@ public class MainActivity extends Activity {
     private static final String TAG = "Geuhae";
     static final String HOST = "appassets.androidplatform.net";
     static final String START_URL = "https://" + HOST + "/assets/index.html";
-    /** Where web updates are published (android/update in the app's public repository); the newest valid one wins. */
-    static final String[] UPDATE_BASES = {
-            "https://raw.githubusercontent.com/sangwoan/chatbot/main/android/update/",
-            "https://raw.githubusercontent.com/sangwoan/chatbot/claude/retro-camera-app-design-67gfwt/android/update/",
-    };
+    /**
+     * Where web updates are published: android/update in the app's public repository, on these branches
+     * (main is the long-term channel). Each branch is read at its exact head commit; the newest valid build wins.
+     */
+    static final String UPDATE_RAW = "https://raw.githubusercontent.com/sangwoan/chatbot/{ref}/android/update/";
+    static final String UPDATE_API = "https://api.github.com/repos/sangwoan/chatbot/commits/";
+    static final String[] UPDATE_BRANCHES = {"main", "claude/retro-camera-app-design-67gfwt"};
     /** Pages for a newer APK may only be opened on these prefixes. */
     static final String[] UPDATE_PAGES = {
             "https://raw.githubusercontent.com/sangwoan/chatbot/",
             "https://github.com/sangwoan/chatbot/",
     };
-    /** Checked at every launch, and again on returning to the app after this long. */
-    private static final long UPDATE_EVERY_MS = 15L * 60 * 1000;
+    /** Checked at every launch, and again on returning to the app once this much time has passed. */
+    private static final long UPDATE_EVERY_MS = 60L * 1000;
+    /** An update that fails to boot this many times in a row is dropped (see noteAttempt). */
+    private static final int UPDATE_MAX_TRIES = 2;
     static final String ALBUM_DIR = "그해여름";
 
     private static final int REQ_CAMERA_FOR_PAGE = 1;
@@ -126,17 +130,34 @@ public class MainActivity extends Activity {
     /** Web updates (null if the signing key could not be read). */
     private Updater updater;
     /** The page called bootOk() after its last load; justApplied: that load is the first of a new update. */
-    private boolean bootOk = false, justApplied = false, checkedThisLaunch = false;
+    private boolean bootOk = false, justApplied = false;
+    /** Activity is in the foreground; the renderer is being torn down after a crash. */
+    private boolean resumed = false, crashing = false;
+    private long lastCheckAt = 0, resultAt = 0;
+    /** The last update result, replayed to a page that was still booting when it arrived. */
+    private String lastState, lastVersion = "", lastApk = "";
     private final Runnable bootWatch = new Runnable() {
         @Override
         public void run() {
             // an update whose page never finished booting: drop it and go back to the page inside the APK
-            if (!bootOk && updater != null && updater.active() != null && web != null) {
-                Log.w(TAG, "update " + updater.active().version + " did not start; rolling back");
-                updater.markBadActive();
-                justApplied = false;
-                web.loadUrl(START_URL);
+            if (bootOk || updater == null || updater.active() == null || web == null) return;
+            Log.w(TAG, "update " + updater.active().version + " did not start; rolling back");
+            updater.markBadActive();
+            clearAttempt();
+            justApplied = false;
+            // a renderer stuck in a loop cannot take a new navigation: end it, and the rebuilt activity loads the APK's page
+            if (Build.VERSION.SDK_INT >= 29) {
+                android.webkit.WebViewRenderProcess p = web.getWebViewRenderProcess();
+                if (p != null && p.terminate()) return;
             }
+            web.loadUrl(START_URL);
+        }
+    };
+    /** The update's page has stayed up for a while: it is good, forget the failed-start counter. */
+    private final Runnable attemptOk = new Runnable() {
+        @Override
+        public void run() {
+            if (bootOk) clearAttempt();
         }
     };
 
@@ -155,7 +176,38 @@ public class MainActivity extends Activity {
         setupWebView();
         updater = makeUpdater();
         justApplied = updater != null && updater.prepare();
-        web.loadUrl(START_URL); // onResume, which follows, checks for updates
+        if (updater != null && updater.active() != null) {
+            SharedPreferences p = prefs();
+            if (p.getInt("otaTryBuild", -1) == updater.active().build && p.getInt("otaTries", 0) >= UPDATE_MAX_TRIES) {
+                Log.w(TAG, "update " + updater.active().version + " keeps failing to start; dropping it");
+                updater.markBadActive();
+                clearAttempt();
+                justApplied = false;
+            }
+        }
+        loadPage(); // onResume, which follows, checks for updates
+    }
+
+    /** Loads the page; one from an update must boot (bootOk) within 20 s, and every attempt is counted until it does. */
+    private void loadPage() {
+        bootOk = false;
+        ui.removeCallbacks(bootWatch);
+        ui.removeCallbacks(attemptOk);
+        if (updater != null && updater.active() != null) {
+            noteAttempt(updater.active().build);
+            ui.postDelayed(bootWatch, 20000);
+        }
+        web.loadUrl(START_URL);
+    }
+
+    private void noteAttempt(int build) {
+        SharedPreferences p = prefs();
+        int tries = p.getInt("otaTryBuild", -1) == build ? p.getInt("otaTries", 0) + 1 : 1;
+        p.edit().putInt("otaTryBuild", build).putInt("otaTries", tries).commit();
+    }
+
+    private void clearAttempt() {
+        prefs().edit().remove("otaTryBuild").remove("otaTries").apply();
     }
 
     // ───────── web updates
@@ -170,7 +222,17 @@ public class MainActivity extends Activity {
                 while ((n = in.read(buf)) > 0) b.write(buf, 0, n);
                 bundled = new JSONObject(b.toString("UTF-8")).getInt("build");
             }
-            return new Updater(new File(getFilesDir(), "ota"), UPDATE_BASES, signerKey(), getPackageName(), pi.versionCode, bundled);
+            Updater.Channel[] ch = new Updater.Channel[UPDATE_BRANCHES.length];
+            for (int i = 0; i < ch.length; i++) ch[i] = new Updater.Channel(UPDATE_RAW, UPDATE_BRANCHES[i], UPDATE_API + UPDATE_BRANCHES[i]);
+            Updater.Local apkFiles = new Updater.Local() {
+                @Override
+                public byte[] read(String rel, long limit) throws IOException {
+                    try (InputStream in = getAssets().open("www/" + rel)) {
+                        return Updater.readAll(in, limit);
+                    }
+                }
+            };
+            return new Updater(new File(getFilesDir(), "ota"), ch, signerKey(), getPackageName(), pi.versionCode, bundled, apkFiles);
         } catch (Exception e) {
             Log.w(TAG, "updates off", e);
             return null;
@@ -197,38 +259,52 @@ public class MainActivity extends Activity {
             if (manual) js("window.geuhaeOnUpdate&&window.geuhaeOnUpdate('error','','',true)");
             return;
         }
-        long now = System.currentTimeMillis();
-        if (!manual && checkedThisLaunch && now - prefs().getLong("updateCheckedAt", 0) < UPDATE_EVERY_MS) return;
-        checkedThisLaunch = true;
-        prefs().edit().putLong("updateCheckedAt", now).apply();
+        long now = SystemClock.elapsedRealtime();
+        if (!manual && lastCheckAt != 0 && now - lastCheckAt < UPDATE_EVERY_MS) return;
+        lastCheckAt = now;
         updater.check(new Updater.Listener() {
             @Override
-            public void onResult(String state, UpdateBundle b, String apkUrl, String error) {
+            public void onResult(final String state, final UpdateBundle b, final String apkUrl, final String error) {
                 if (error != null) Log.w(TAG, "update check: " + error);
-                if (!manual && ("none".equals(state) || "error".equals(state))) return;
-                String v = b == null ? "" : b.version;
-                js("window.geuhaeOnUpdate&&window.geuhaeOnUpdate(" + jsStr(state) + "," + jsStr(v) + "," + jsStr(apkUrl == null ? "" : apkUrl) + "," + manual + ")");
-                // apply straight away unless a shot is developing or a sheet is open (the page then asks again when it is idle)
-                if ("ready".equals(state)) ui.post(new Runnable() {
+                ui.post(new Runnable() {
                     @Override
                     public void run() {
-                        applyUpdateIfIdle();
+                        if ("error".equals(state)) lastCheckAt = 0; // try again on the next resume
+                        if ("ready".equals(state) || "native".equals(state)) {
+                            lastState = state;
+                            lastVersion = b == null ? "" : b.version;
+                            lastApk = apkUrl == null ? "" : apkUrl;
+                        }
+                        if (!manual && ("none".equals(state) || "error".equals(state))) return;
+                        js("window.geuhaeOnUpdate&&window.geuhaeOnUpdate(" + jsStr(state) + "," + jsStr(b == null ? "" : b.version) + ","
+                                + jsStr(apkUrl == null ? "" : apkUrl) + "," + manual + ")");
+                        // apply straight away unless the page is busy (it then asks again once it is idle)
+                        if ("ready".equals(state)) applyUpdateIfIdle();
                     }
                 });
             }
         });
     }
 
-    /** A staged update is applied as soon as nothing is in progress on the page (no developing shot, no open sheet). */
+    /**
+     * A staged update is applied as soon as nothing is in progress: the app is in the foreground, no picker,
+     * permission dialog or fresh result is pending, and the page itself says it is idle (no developing shot,
+     * no open sheet). geuhaeCanReload also locks the shutter for a moment, so nothing starts in between.
+     */
+    private boolean shellIdle() {
+        return resumed && !asking && pendingFiles == null && pendingMedia == null && SystemClock.uptimeMillis() - resultAt > 3000;
+    }
+
     private void applyUpdateIfIdle() {
-        if (updater == null || web == null || !updater.stagedNewer()) return;
+        if (updater == null || web == null || !shellIdle() || !updater.stagedNewer()) return;
         web.evaluateJavascript("(function(){try{return !!(window.geuhaeCanReload&&window.geuhaeCanReload())}catch(e){return false}})()", new ValueCallback<String>() {
             @Override
             public void onReceiveValue(String v) {
-                if (!"true".equals(v) || web == null || updater == null) return;
+                if (!"true".equals(v) || web == null || updater == null || !shellIdle()) return;
                 if (updater.prepare()) {
                     justApplied = true;
-                    web.loadUrl(START_URL);
+                    lastState = null;
+                    loadPage();
                 }
             }
         });
@@ -371,7 +447,6 @@ public class MainActivity extends Activity {
         public void onPageStarted(WebView view, String url, Bitmap favicon) {
             pageHost = hostOf(url);
             bootOk = false;
-            ui.removeCallbacks(bootWatch);
         }
 
         @Override
@@ -386,6 +461,10 @@ public class MainActivity extends Activity {
         @Override
         public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
             // the renderer crashed or was killed for memory: rebuild instead of letting the app die
+            crashing = true;
+            // a crash counts against an update (noteAttempt); a memory kill in the background does not
+            boolean crashed = Build.VERSION.SDK_INT >= 26 ? detail.didCrash() : resumed;
+            if (!crashed && updater != null && updater.active() != null) clearAttempt();
             if (web == view) {
                 root.removeView(web);
                 web.destroy();
@@ -524,6 +603,7 @@ public class MainActivity extends Activity {
 
     @Override
     public void onRequestPermissionsResult(int req, String[] perms, int[] results) {
+        resultAt = SystemClock.uptimeMillis();
         ui.post(new Runnable() {
             @Override
             public void run() {
@@ -581,6 +661,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onActivityResult(int req, int res, Intent data) {
+        resultAt = SystemClock.uptimeMillis();
         if (req != REQ_FILES) {
             super.onActivityResult(req, res, data);
             return;
@@ -646,6 +727,7 @@ public class MainActivity extends Activity {
     // ───────── lifecycle: release the camera while in the background
     @Override
     protected void onPause() {
+        resumed = false;
         if (web != null) {
             web.evaluateJavascript("window.geuhaeOnPause&&window.geuhaeOnPause()", null);
             web.onPause();
@@ -656,6 +738,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        resumed = true;
         if (web != null) {
             web.onResume();
             web.evaluateJavascript("window.geuhaeOnResume&&window.geuhaeOnResume()", null);
@@ -668,11 +751,17 @@ public class MainActivity extends Activity {
     protected void onStart() {
         super.onStart();
         if (web != null) web.resumeTimers();
+        if (!bootOk && updater != null && updater.active() != null) {
+            ui.removeCallbacks(bootWatch);
+            ui.postDelayed(bootWatch, 20000);
+        }
     }
 
     @Override
     protected void onStop() {
         if (web != null) web.pauseTimers();
+        ui.removeCallbacks(bootWatch); // timers are paused in the background: do not judge an update by that
+        if (bootOk && !crashing) clearAttempt(); // it started fine and the user just left
         super.onStop();
     }
 
@@ -767,9 +856,19 @@ public class MainActivity extends Activity {
                 public void run() {
                     bootOk = true;
                     ui.removeCallbacks(bootWatch);
+                    ui.removeCallbacks(attemptOk);
+                    ui.postDelayed(attemptOk, 8000);
                     if (justApplied && updater != null && updater.active() != null) {
                         justApplied = false;
                         js("window.geuhaeOnUpdate&&window.geuhaeOnUpdate('applied'," + jsStr(updater.active().version) + ",'',false)");
+                    }
+                    // a result that arrived while this page was still booting
+                    if ("native".equals(lastState))
+                        js("window.geuhaeOnUpdate&&window.geuhaeOnUpdate('native'," + jsStr(lastVersion) + "," + jsStr(lastApk) + ",false)");
+                    UpdateBundle waiting = updater == null ? null : updater.stagedUpdate();
+                    if (waiting != null) {
+                        js("window.geuhaeOnUpdate&&window.geuhaeOnUpdate('ready'," + jsStr(waiting.version) + ",'',false)");
+                        applyUpdateIfIdle();
                     }
                 }
             });
@@ -792,16 +891,17 @@ public class MainActivity extends Activity {
             }
         }
 
-        /** The page became idle with an update waiting. */
+        /** The page became idle with an update waiting. Returns false when nothing is waiting any more. */
         @JavascriptInterface
-        public void applyUpdate() {
-            if (!trusted()) return;
+        public boolean applyUpdate() {
+            if (!trusted() || updater == null || !updater.stagedNewer()) return false;
             ui.post(new Runnable() {
                 @Override
                 public void run() {
                     applyUpdateIfIdle();
                 }
             });
+            return true;
         }
 
         @JavascriptInterface

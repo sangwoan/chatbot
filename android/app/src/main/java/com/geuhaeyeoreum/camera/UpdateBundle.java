@@ -19,8 +19,8 @@ import java.util.regex.Pattern;
 final class UpdateBundle {
     static final long MAX_FILE = 8L << 20;
     static final Charset UTF8 = Charset.forName("UTF-8");
-    /** Lower-case relative paths, no "..", at most four segments (e.g. "index.html", "fonts/a.woff2"). */
-    private static final Pattern SAFE = Pattern.compile("[a-z0-9][a-z0-9._-]{0,63}(/[a-z0-9][a-z0-9._-]{0,63}){0,3}");
+    /** Relative paths of up to four segments, each starting with a letter or digit, so ".." can never appear as a segment. */
+    private static final Pattern SAFE = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]{0,63}(/[A-Za-z0-9][A-Za-z0-9._-]{0,63}){0,3}");
     private static final Pattern SHA = Pattern.compile("[0-9a-f]{64}");
 
     static final class Entry {

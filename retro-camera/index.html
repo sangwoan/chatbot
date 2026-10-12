@@ -1415,7 +1415,7 @@ let busyOther = 0;
 let toastT = 0;
 function toast(msg, ms = 2600) {
   const t = $('#toast'); t.textContent = msg; t.classList.add('show');
-  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), ms);
+  clearTimeout(toastT); toastT = setTimeout(() => { t.classList.remove('show'); if (updatePending) setTimeout(maybeApplyUpdate, 300); }, ms);
 }
 function setLed() { $('#led').className = 'led' + (cdCancel ? ' timer' : jobs.length + busyOther ? ' busy' : ''); }
 let actx = null;
@@ -1738,7 +1738,7 @@ function afLock(on) { const af = $('#af'); clearTimeout(afT); af.classList.toggl
 function blink() { const b = $('#blink'); b.classList.remove('on'); void b.offsetWidth; b.classList.add('on'); }
 let halfPressed = false;
 function halfPress() {
-  if (!live || shooting || cdCancel) return;
+  if (!live || shooting || cdCancel || Date.now() < reloadLock) return;
   halfPressed = true; afLock(true); beep(2900, .04); beep(2900, .04, .085); haptic('tick');
   $('#shutter').classList.add('half');
 }
@@ -1753,6 +1753,7 @@ function offlineShutter() {
 }
 let pendingShots = 0;
 async function shoot() {
+  if (Date.now() < reloadLock) return; // the page is about to reload into an update
   audio();
   if (cdCancel) { cdCancel(); toast('타이머를 취소했어요'); return; }
   if (!live) { releaseHalf(); offlineShutter(); return; }
@@ -2511,6 +2512,7 @@ window.geuhaeOnBack = () => {
 };
 window.geuhaeOnPause = () => { resumeCamera = live || opening() || resumeCamera; stopCamera(); };
 window.geuhaeOnResume = () => {
+  pickerBack();
   // storage turned on in Settings while we were away (runs before any posted dialog answer, so a fresh refusal still wins)
   if (storageRefused && native('canSaveToGallery')) storageRefused = false;
   const perm = native('cameraPermission') || 'denied';
@@ -2530,8 +2532,9 @@ window.geuhaeOnPermission = (what, granted) => {
     const waiting = pendingSaves.splice(0);
     if (!granted) { toast('저장 권한이 없어 앱 앨범에만 보관해요', 3200); return; }
     (async () => {
-      let n = 0;
-      for (const r of waiting) if (photos.includes(r) && await saveToGallery(r, true)) n++;
+      let n = 0; savingQueued = true;
+      try { for (const r of waiting) if (photos.includes(r) && await saveToGallery(r, true)) n++; }
+      finally { savingQueued = false; }
       if (n) toast(n > 1 ? `사진 ${n}장을 휴대폰 갤러리에 저장했어요` : '휴대폰 갤러리에 저장했어요');
     })();
     return;
@@ -2542,9 +2545,19 @@ window.geuhaeOnPermission = (what, granted) => {
 };
 window.geuhaeShutter = () => { if (!overlayOpen() && !popOpen()) shoot(); };
 /* web updates (Android): the shell downloads signed updates and reloads into them once the page says it is idle */
-window.geuhaeCanReload = () => !jobs.length && !busyOther && !shooting && !cdCancel && !overlayOpen() && !popOpen();
-let apkUpdateUrl = '', updatePending = false;
-function maybeApplyUpdate() { if (updatePending && window.geuhaeCanReload()) native('applyUpdate'); }
+let apkUpdateUrl = '', updatePending = false, reloadLock = 0, savingQueued = false, picking = false, pickT = 0;
+/* back from a picker that may close without telling us: give its files a moment to arrive, then stop waiting */
+function pickerBack() { if (picking) { clearTimeout(pickT); pickT = setTimeout(() => { picking = false; }, 3000); } }
+/* nothing in flight and nobody in the middle of something: no photo developing or waiting to be saved, no open sheet, picker or message */
+const idle = () => !jobs.length && !busyOther && !shooting && !cdCancel && !halfPressed && !pendingShots && !opening()
+  && !overlayOpen() && !popOpen() && !document.hidden && !storageAsking && !pendingSaves.length && !savingQueued && !picking;
+/* the shell asks right before it reloads; saying yes also holds the shutter until the page is gone */
+window.geuhaeCanReload = () => {
+  if (!idle() || $('#toast').classList.contains('show')) return false;
+  reloadLock = Date.now() + 4000; return true;
+};
+/* only a hint: the shell checks its own state and then asks geuhaeCanReload, which is what locks the shutter */
+function maybeApplyUpdate() { if (updatePending && idle() && !$('#toast').classList.contains('show') && native('applyUpdate') === false) updatePending = false; }
 function syncAppInfo() {
   if (!NATIVE) return;
   let info = {}; try { info = JSON.parse(native('updateInfo') || '{}'); } catch {}
@@ -2554,7 +2567,8 @@ function syncAppInfo() {
 window.geuhaeOnUpdate = (state, version, url, manual) => {
   if (state === 'ready') {
     updatePending = true;
-    if (!window.geuhaeCanReload()) toast(`새 버전(${version})을 받았어요. 하던 걸 마치면 바로 바뀌어요`, 3200);
+    if (!idle()) toast(`새 버전(${version})을 받았어요. 하던 걸 마치면 바로 바뀌어요`, 3200);
+    else setTimeout(maybeApplyUpdate, 300);
   } else if (state === 'applied') toast(`새 버전(${version})으로 바뀌었어요`, 2600);
   else if (state === 'native') {
     apkUpdateUrl = url || '';
@@ -2620,8 +2634,14 @@ function wire() {
     try { await startCamera(); } catch (e) { if (e && e.superseded) return; S.facing = prev; persist(); toast('다른 카메라를 찾지 못했어요'); await startCameraSafe(); }
     relayout();
   });
-  $('#fileImport').addEventListener('change', e => { importFiles(e.target.files, 'album'); e.target.value = ''; });
-  $('#fileCapture').addEventListener('change', e => { importFiles(e.target.files, 'camera'); e.target.value = ''; });
+  $('#fileImport').addEventListener('change', e => { picking = false; importFiles(e.target.files, 'album'); e.target.value = ''; });
+  $('#fileCapture').addEventListener('change', e => { picking = false; importFiles(e.target.files, 'camera'); e.target.value = ''; });
+  /* a file picker is open from the click until it hands back files or is dismissed */
+  for (const id of ['#fileImport', '#fileCapture']) {
+    $(id).addEventListener('click', () => { picking = true; clearTimeout(pickT); pickT = setTimeout(() => { picking = false; }, 120000); });
+    $(id).addEventListener('cancel', () => { picking = false; });
+  }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) pickerBack(); });
   $('#btnGalleryImport').addEventListener('click', () => $('#fileImport').click());
   $('#btnEmptyImport').addEventListener('click', () => $('#fileImport').click());
   $('#btnSave').addEventListener('click', () => viewing && saveToDevice(viewing));
@@ -2663,6 +2683,7 @@ function wire() {
     else if (resumeCamera) { resumeCamera = false; startCameraSafe(); }
   });
   setInterval(() => {
+    if (updatePending) maybeApplyUpdate();
     if (document.hidden || overlayOpen()) return;
     if (live && video.videoWidth && S.stamp === 'info') liveLum = measureLum(video);
     if (sigOf(previewMeta()) !== lastSig) drawOverlay();

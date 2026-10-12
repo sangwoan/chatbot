@@ -67,21 +67,22 @@ android/
 
 1.3.0부터는 화면, 카메라, 필터 같은 웹 부분을 앱이 스스로 업데이트합니다. APK를 다시 받을 필요가 없습니다.
 
-1. 앱을 열 때마다(그리고 15분 넘게 나갔다 돌아올 때마다) 아래 주소에서 `manifest.json`과 `manifest.sig`를 확인합니다.
+1. 앱을 열거나 다시 돌아올 때마다(1분에 한 번까지) 아래 두 채널에서 `manifest.json`과 `manifest.sig`를 확인합니다. 먼저 GitHub API로 브랜치의 최신 커밋을 알아내 그 커밋의 파일을 받으므로, CDN 캐시 때문에 옛 파일이나 섞인 파일을 받지 않습니다(API가 안 되면 브랜치 주소로 받음).
    - `https://raw.githubusercontent.com/sangwoan/chatbot/main/android/update/`
    - `https://raw.githubusercontent.com/sangwoan/chatbot/claude/retro-camera-app-design-67gfwt/android/update/`
 
-   두 곳 중 빌드 번호가 높은 쪽을 씁니다.
+   두 곳 중 빌드 번호가 높은 쪽을 씁니다. 오래 쓸 채널은 `main`입니다.
 2. 다음을 모두 통과해야 받아들입니다.
    - `manifest.sig`가 **APK를 서명한 바로 그 키로 만든 서명**이어야 합니다(SHA256withRSA). 앱은 자기 서명 인증서의 공개 키로 확인합니다.
    - 패키지 이름이 일치해야 합니다.
    - 빌드 번호가 지금 것보다 커야 합니다.
    - 파일마다 크기와 SHA-256이 맞아야 합니다.
 3. 받은 파일은 앱 전용 저장소(`files/ota`)에 둡니다.
-   - 촬영·현상 중이 아니고 창이 열려 있지 않으면 바로 적용하고 화면을 다시 불러옵니다.
-   - 바쁘면 끝나는 즉시 적용합니다.
+   - 아무 일도 진행 중이 아니면 바로 적용하고 화면을 다시 불러옵니다. 촬영·현상·저장 중이거나, 창·사진 선택기·권한 창·안내 메시지가 떠 있으면 기다립니다.
+   - 기다리던 일이 끝나는 즉시 적용합니다. 적용 직전에는 셔터를 잠깐 막아 그 사이에 찍은 사진이 사라지지 않게 합니다.
+   - APK나 지금 쓰는 업데이트와 똑같은 파일(SHA-256 기준)은 내려받지 않고 복사합니다. 보통은 `index.html` 하나만 받습니다.
    - 페이지 주소(출처)는 그대로라서 앱 안 앨범과 설정이 유지됩니다.
-4. 새 화면이 12초 안에 정상 시작 신호(`bootOk`)를 보내지 않으면 그 업데이트를 버리고 APK 안의 화면으로 되돌아갑니다. 같은 빌드는 다시 받지 않습니다.
+4. 새 화면이 정상 시작 신호(`bootOk`)를 보내지 않거나(불러오기 시작 후 20초) 시작하다 두 번 죽으면 그 업데이트를 버리고 APK 안의 화면으로 되돌아갑니다. 같은 빌드는 다시 받지 않습니다.
 5. 안드로이드 코드가 바뀌어야 하는 업데이트(`minNative`가 앱 버전 코드보다 큼)는 받지 않습니다. 메뉴 › 앱에 '받기' 버튼을 띄워 새 APK를 내려받게 합니다.
 
 권한은 늘지 않습니다(카메라·인터넷·진동·Android 9 이하 저장공간). 다른 앱을 설치하는 권한(`REQUEST_INSTALL_PACKAGES`)은 쓰지 않습니다.
@@ -89,11 +90,13 @@ android/
 ### 업데이트 올리기
 
 ```bash
-./android/publish-update.sh            # retro-camera/index.html을 다음 빌드 번호로 서명해 android/update/에 씀
+./android/publish-update.sh            # 웹 파일(index.html, icon.svg, fonts/)을 다음 빌드 번호로 서명해 android/update/에 씀
 git add android/update && git commit -m "web update" && git push
 ```
 
-- 빌드 번호 규칙: APK에 들어 있는 웹 빌드는 `버전코드 × 100`입니다(1.3.0 = 500). 웹 업데이트는 그보다 커야 합니다(501, 502…).
+- 채널 브랜치(`main` 또는 `claude/retro-camera-app-design-67gfwt`)에서만 실행됩니다. 스크립트가 두 채널의 최신 빌드 번호를 가져와 그보다 큰 번호를 씁니다.
+- 빌드 번호 규칙: APK에 들어 있는 웹 빌드는 `버전코드 × 100`입니다(1.3.0 = 500). 웹 업데이트는 그보다 커야 합니다(501, 502…). 버전코드는 `build-apk.sh`에서 읽습니다.
+- `minNative`와 APK 안내는 이전 업데이트 것을 이어받습니다. 낮추려면 `MIN_NATIVE=…`를 직접 줍니다.
 - 안드로이드 코드도 바꿨다면 다음처럼 올립니다. 그러면 예전 앱은 웹 업데이트 대신 APK 받기 안내를 보여 줍니다.
   1. `VERSION_CODE`를 올려 APK를 빌드합니다.
   2. `APK=android/build/…apk MIN_NATIVE=<새 버전코드> ./android/publish-update.sh`를 실행합니다.
@@ -164,6 +167,8 @@ v1 서명은 쓰지 않습니다. minSdk가 24라 v2만으로 충분하고, apks
 - `ApkVerifier`의 v2 서명 검증
 - 압축 안 된 항목 정렬, `aapt2 dump badging`
 - APK에 들어가는 바로 그 `index.html`(CSP 적용본)을 Chromium에서 가짜 카메라로 돌린 촬영·현상·앨범·다시 현상·뒤로가기 시나리오
+- 업데이트 코드(`Updater`, `UpdateBundle`)를 JVM에서 로컬 서버로 돌린 시나리오: 정상 적용, 재실행, 파일 변조, manifest 위조, 다른 키, 새 APK가 필요한 업데이트, 롤백, APK 파일 재사용, 동시 확인, 커밋 고정 채널
+- 페이지 쪽 적용 시점: 바쁠 때·창/선택기/안내 메시지가 열려 있을 때 기다리는지, 적용 직전 셔터 잠금
 
 **못 한 것**
 - 실제 기기나 에뮬레이터에서의 실행. 이 환경에서는 안드로이드 시스템 이미지를 받을 수 없습니다.
