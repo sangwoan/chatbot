@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#a3d2de">
-<meta name="description" content="1998–2009년 카메라 20대의 색감으로 찍고, 사진에 날짜와 그 시절 화면 정보를 남기는 감성 카메라">
+<meta name="description" content="1998–2009년 카메라 21대의 색감으로 찍고, 사진에 날짜와 그 시절 화면 정보를 남기는 감성 카메라">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -590,7 +590,7 @@ let R = S;
 const BASE = { exposure: 0, contrast: 1, sat: 1, gain: [1, 1, 1], black: [0, 0, 0], shadowTint: [0, 0, 0], highTint: [0, 0, 0],
   grain: 0, chroma: 0, vignette: 0, bloom: 0, bloomR: .008, bloomTint: [1, 1, 1], ca: 0, sharpen: 0, mono: 0,
   lowres: 0, pixelate: 0, chromaRes: 0, smear: false, poster: 0, scan: 0, fringe: 0, clip: 0, ccd: .35, iso: 100, css: 'none',
-  tint: [1, 1, 1], block: 0, palette: null, nr: 0, monoW: [.299, .587, .114], mat: null };
+  tint: [1, 1, 1], block: 0, palette: null, nr: 0, monoW: [.299, .587, .114], mat: null, clarity: 0, grad: 0, star: 0, deep: 0 };
 const CAMERAS = [
   { id: 'px128', code: 'PX-128', model: 'PX-128 BIT', ko: '게임기 카메라', vibe: '도트', mood: '초록 화면 속 네 가지 색', year: 1998, mp: '0.01', sensor: 'CMOS', lens: ['FIXED', ''],
     motif: '닌텐도 게임보이 카메라 (1998)',
@@ -692,6 +692,13 @@ const CAMERAS = [
     story: '손가락만 한 장난감 카메라. 흐릿하고 진한 색이 옛날 홈비디오 한 장면 같았다.',
     body: { hi: '#fff1b8', base: '#f2cf55', lo: '#c9a02a', ink: '#352805', soft: '#2e2304', accent: '#a8261e' },
     p: { lowres: 960, chromaRes: 300, exposure: .08, contrast: 1.3, sat: 1.4, gain: [1.07, .98, .86], black: [.03, .015, 0], shadowTint: [-.01, 0, .025], highTint: [.04, .02, -.04], sharpen: -.55, bloom: .35, bloomR: .014, bloomTint: [1, .85, .7], grain: .1, chroma: .09, vignette: .5, clip: .4, ccd: 0, iso: 400, css: 'contrast(1.3) saturate(1.5) sepia(.25) blur(.8px)' } },
+  { id: 'vivid', code: 'F-200', model: 'F-200 VIVID', ko: '슬라이드 모드', vibe: '짙푸름', mood: '해 지기 전 짙푸른 바닷가', year: 2009, mp: '12', sensor: 'EXR CCD', lens: ['6.4mm', 'f/3.3'],
+    motif: '후지필름 파인픽스 F200EXR 벨비아 모드 (2009)',
+    story: '해를 마주 보고 찍어도 하늘이 진하게 남던 디카. 구름은 또렷하고 바다는 짙게, 해 둘레로 빛줄기가 번졌다.',
+    body: { hi: '#6f8fc4', base: '#34528a', lo: '#1c315c', ink: '#f2f5fb', soft: '#dfe6f3', accent: '#ffb347' },
+    p: { exposure: -.5, contrast: 1.22, sat: 1.3, deep: .55, gain: [.95, .99, 1.07], black: [.05, .045, .055], shadowTint: [.02, .006, -.012], highTint: [-.015, -.005, .02],
+      mat: [[1.06, -.04, -.02], [.1, 1, -.1], [-.06, -.04, 1.1]], clarity: .75, grad: .32, star: 1, sharpen: .25, grain: .03, chroma: .03, vignette: .5,
+      bloom: .18, bloomR: .02, bloomTint: [.9, .93, 1], clip: .2, ccd: 0, iso: 100, css: 'brightness(.82) contrast(1.3) saturate(1.4) hue-rotate(4deg)' } },
 ];
 const camById = id => CAMERAS.find(c => c.id === id) || CAMERAS.find(c => c.id === DEFAULTS.cam);
 if (!CAMERAS.some(c => c.id === S.cam)) S.cam = DEFAULTS.cam;
@@ -756,6 +763,10 @@ function camIcon(c, sfx = '') {
       g = body(8, 12, 80, 44, 6) + `<rect x="54" y="12" width="34" height="44" rx="6" fill="rgba(255,255,255,.28)"/>`
         + `<path d="M58 16v36M61 16v36M64 16v36" stroke="rgba(0,0,0,.08)" stroke-width="1"/>`
         + lens(76, 23, 7.5) + flash(57, 20, 9, 6) + label(13, 51, 'T-77', b.ink, 5.5) + shine(12, 14, 36);
+      break;
+    case 'vivid': // slim metal compact, lens in the top corner, EXR badge
+      g = body(8, 15, 80, 40, 7) + shine(14, 17, 46) + lens(66, 31, 13, '#2d3036')
+        + `<circle cx="66" cy="31" r="14.6" fill="none" stroke="${b.accent}" stroke-width=".7"/>` + flash(16, 20, 15, 6) + label(14, 49, 'EXR', b.soft, 5.2);
       break;
     case 'f31':
       g = body(8, 14, 80, 42, 6) + `<path d="M12 16h72" stroke="rgba(255,255,255,.22)" stroke-width="1" stroke-linecap="round"/>`
@@ -836,7 +847,7 @@ uniform float u_exposure,u_contrast,u_sat,u_grain,u_chroma,u_vignette,u_bloom,u_
 uniform vec3 u_gain,u_black,u_shadowTint,u_highTint,u_bloomTint;
 uniform float u_lowres,u_pixelate,u_poster,u_scan,u_fringe,u_clip,u_block,u_dither;
 uniform vec3 u_tint,u_pal0,u_pal1,u_pal2,u_pal3,u_monoW;
-uniform float u_nr;
+uniform float u_nr,u_clarity,u_grad,u_star,u_deep;
 uniform mat3 u_mat;
 uniform vec2 u_chromaGrid;
 uniform float u_lightAmt,u_smearAmt,u_flareAmt,u_dustAmt,u_leakAmt;
@@ -889,6 +900,17 @@ void main(){
     // sharpen on luminance like a camera does (sharpening colour would amplify the CA shift into rainbow halos); soften in colour
     c+=u_sharpen>0.?vec3(dot(c-b,W))*u_sharpen:(c-b)*u_sharpen;
   }
+  if(u_clarity>0.){
+    // local contrast at a wide radius (cloud texture, "dramatic" skies); spares the brightest highlights
+    float bl=0.;
+    for(int i=0;i<8;i++){
+      float a=float(i)*.7854+.39;
+      vec2 q=vec2(cos(a)/u_aspect,sin(a))*.008;
+      bl+=dot(tap(uv+q),W)+dot(tap(uv+q*2.2),W);
+    }
+    float lc0=dot(c,W);
+    c+=vec3((lc0-bl/16.)*u_clarity*(1.-smoothstep(.72,1.,lc0)));
+  }
   if(u_fringe>0.){
     vec2 q=px*2.5;
     vec3 nb=(tap(uv+vec2(q.x,0.))+tap(uv-vec2(q.x,0.))+tap(uv+vec2(0.,q.y))+tap(uv-vec2(0.,q.y)))*.25;
@@ -904,10 +926,19 @@ void main(){
     }
     c+=acc*(.28*u_bloom)*u_bloomTint;
   }
-  c*=exp2(u_exposure);
+  // slide-mode bodies keep clipped highlights (the sun, its glow) white instead of dimming them to a flat grey disc
+  c*=mix(exp2(u_exposure),1.,u_deep>0.?smoothstep(.82,1.,max(o.r,max(o.g,o.b))):0.);
   if(u_flash>0.){c*=1.+u_flash*(.45-r*r*1.1);c*=mix(vec3(1.),vec3(1.05,1.,.93),u_flash);}
   c*=u_gain;
   c=u_mat*c;
+  if(u_deep>0.){
+    // slide film + polariser: blue sky and water deepen toward azure at the same brightness; greys, skin and foliage stay
+    float y=dot(c,W),bl=clamp((c.b-max(c.r,c.g*.85))*4.,0.,1.)*smoothstep(.06,.35,y);
+    vec3 az=vec3(.16,.36,.9);
+    c=mix(c,az*(y/dot(az,W)),bl*u_deep);
+    float hy=dot(c,W);
+    c=mix(c,vec3(hy),smoothstep(.18,.75,hy)*(1.-bl)*.9*u_deep); // clouds (not the sky) stay white-grey instead of turning yellow
+  }
   if(u_clip>0.) c=mix(c,vec3(1.),smoothstep(.7,.97,dot(c,W))*u_clip);
   c=(c-.5)*u_contrast+.5;
   float l=dot(c,W);
@@ -918,6 +949,7 @@ void main(){
   c+=u_shadowTint*(1.-lc)*(1.-lc)+u_highTint*lc*lc;
   c=u_black+c*(1.-u_black);
   c*=1.-u_vignette*smoothstep(.3,1.15,r);
+  if(u_grad>0.) c*=1.-u_grad*smoothstep(.4,1.,uv.y); // deeper sky toward the top, like a polariser
   vec3 preLight=c;
   if(u_lightAmt>0.){
     for(int i=0;i<3;i++){
@@ -936,6 +968,25 @@ void main(){
           float rad=.02+.022*fk;
           vec3 tint=k==1?vec3(.35,1.,.6):(k==2?vec3(1.,.45,.85):vec3(1.,.75,.35));
           c+=tint*(1.-smoothstep(rad*.5,rad,gd))*.11*Lt.z*u_flareAmt;
+        }
+        float sk=i==0?smoothstep(.9,1.,Lt.z)*Lt.w*u_star:0.; // only the brightest point light (Lt.w: how point-like) gets the starburst
+        if(sk>0.){
+          // the lens's own starburst: three thin rays through the light plus a wide veiling glow;
+          // a glint low in the frame (surf, a window) gets a smaller star than the sun in the sky
+          float up=.5+.5*smoothstep(.15,.45,Lt.y);
+          sk*=up;
+          vec2 q=(uv-Lt.xy)*asp;
+          for(int k=0;k<2;k++){
+            // two soft streaks, the long one running from upper left to lower right as in a phone or compact lens
+            float ang=k==0?-1.:.62;
+            float len=(k==0?.7:.32)*up;
+            vec2 dir=vec2(cos(ang),sin(ang));
+            float al=dot(q,dir),pe=dot(q,vec2(-dir.y,dir.x)),w=.004+.012*abs(al);
+            c+=vec3(1.,.95,.9)*exp(-pe*pe/(w*w))*exp(-abs(al)*2.6/len)*(k==0?.2:.11)*sk;
+          }
+          float hq=length(q);
+          c+=vec3(1.,.62,.78)*exp(-pow((hq-.045)/.018,2.))*.1*sk; // faint magenta ring
+          c+=vec3(.72,.82,1.)*exp(-hq*hq/.05)*.16*sk;            // wide bluish veil
         }
       }
     }
@@ -988,7 +1039,7 @@ const srcSize = s => ({ w: s.videoWidth || s.naturalWidth || s.width, h: s.video
 /* light effects: CCD smear + lens flare from detected lights, dust, and (random mode) a warm leak */
 const NO_LIGHT = { amt: 0, smear: 0, flare: 0, dust: 0, leak: 0, seed: [0, 0], leakPos: [0, 0], leakColor: [0, 0, 0], lights: [] };
 function lightUniforms(cam, mode, seed, lights) {
-  if (mode !== 'soft' && mode !== 'rand') return NO_LIGHT;
+  if (mode !== 'soft' && mode !== 'rand') return camParams(cam).star && lights && lights.length ? { ...NO_LIGHT, amt: 1, lights } : NO_LIGHT;
   let s = seed;
   const rnd = () => { s = (s * 16807 + 11) % 2147483647; return s / 2147483647; };
   const rand = mode === 'rand';
@@ -1046,7 +1097,7 @@ class Lens {
     f1('u_mirror', o.mirror ? 1 : 0); f1('u_time', o.time || 0); f1('u_amount', o.amount ?? 1);
     f1('u_flash', o.flash || 0); f1('u_aspect', w / h);
     ['contrast', 'sat', 'grain', 'chroma', 'vignette', 'bloom', 'bloomR', 'ca', 'sharpen', 'mono',
-      'lowres', 'pixelate', 'poster', 'scan', 'fringe', 'clip', 'block', 'nr'].forEach(k => f1('u_' + k, P[k]));
+      'lowres', 'pixelate', 'poster', 'scan', 'fringe', 'clip', 'block', 'nr', 'clarity', 'grad', 'star', 'deep'].forEach(k => f1('u_' + k, P[k]));
     f1('u_dither', P.palette ? 1 : 0); f3('u_tint', P.tint); f3('u_monoW', P.monoW);
     const M = P.mat || [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
     if (U.u_mat) gl.uniformMatrix3fv(U.u_mat, false, [M[0][0], M[1][0], M[2][0], M[0][1], M[1][1], M[2][1], M[0][2], M[1][2], M[2][2]]);
@@ -1060,7 +1111,7 @@ class Lens {
     f2('u_seed', L.seed); f2('u_leakPos', L.leakPos); f3('u_leakColor', L.leakColor);
     if (U.u_light) {
       const a = new Float32Array(12);
-      L.lights.slice(0, 3).forEach((p, i) => { a[i * 4] = p.x; a[i * 4 + 1] = p.y; a[i * 4 + 2] = p.i; a[i * 4 + 3] = 1; });
+      L.lights.slice(0, 3).forEach((p, i) => { a[i * 4] = p.x; a[i * 4 + 1] = p.y; a[i * 4 + 2] = p.i; a[i * 4 + 3] = p.pt ?? 1; });
       gl.uniform4fv(U.u_light, a);
     }
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -1675,14 +1726,20 @@ function detectLights(src, outW, outH, geo, mirror) {
       for (let i = 0; i < lum.length; i++) if (lum[i] > bv) { bv = lum[i]; bi = i; }
       if (bi < 0) break;
       const cx = bi % gw, cy = Math.floor(bi / gw);
-      out.push({ x: (cx + .5) / gw, y: 1 - (cy + .5) / gh, i: .25 + .75 * clamp((bv - .86) / .14, 0, 1) });
+      // point-likeness: a sun or lamp has a darker ring around it, a blown-out sky does not
+      let ring = 0, rn = 0;
+      for (let y = cy - 3; y <= cy + 3; y++) for (let x = cx - 3; x <= cx + 3; x++) {
+        if (x < 0 || y < 0 || x >= gw || y >= gh || Math.max(Math.abs(x - cx), Math.abs(y - cy)) !== 3) continue;
+        ring += lum[y * gw + x]; rn++;
+      }
+      out.push({ x: (cx + .5) / gw, y: 1 - (cy + .5) / gh, i: .25 + .75 * clamp((bv - .86) / .14, 0, 1), pt: rn ? clamp((bv - ring / rn) / .3, 0, 1) : 1 });
       for (let y = Math.max(0, cy - 4); y <= Math.min(gh - 1, cy + 4); y++) for (let x = Math.max(0, cx - 4); x <= Math.min(gw - 1, cx + 4); x++) lum[y * gw + x] = 0;
     }
     return out;
   } catch { return []; }
 }
 function updatePreviewLights() {
-  if (S.light === 'off') { previewLights = []; return; }
+  if (S.light === 'off' && !currentCam().p.star) { previewLights = []; return; }
   if (live && video.videoWidth) {
     const geo = zoomCrop(coverCrop(video.videoWidth, video.videoHeight, view.glW, view.glH), zoom);
     previewLights = detectLights(video, view.glW, view.glH, geo, S.facing === 'user');
@@ -1748,7 +1805,7 @@ async function develop(origin, j) {
   const lum = measureLum(origin);
   const meta = buildMeta(j.cfg, j.cam, j.date, j.exif, lum, j.front);
   meta.osd = osdFor(j.cam, origin.width === origin.height, j.osdFlags, j.osdCount ?? shotsLeft(), j.bat ?? batLevel);
-  const lights = j.lightMode !== 'off' ? detectLights(origin, origin.width, origin.height, null, false) : [];
+  const lights = j.lightMode !== 'off' || camParams(j.cam).star ? detectLights(origin, origin.width, origin.height, null, false) : [];
   await ensureFonts(meta.caption);
   await nextFrame();
   const out = compose(origin, meta, { cfg: j.cfg, cam: j.cam, flash: j.flash, ev: j.ev, light: lightUniforms(j.cam, j.lightMode, j.seed, lights) });
@@ -2844,7 +2901,7 @@ function wire() {
     if (live && video.videoWidth && S.stamp === 'info') liveLum = measureLum(video);
     if (sigOf(previewMeta()) !== lastSig) drawOverlay();
   }, 2000);
-  setInterval(() => { if (!document.hidden && !overlayOpen() && S.light !== 'off' && live) updatePreviewLights(); }, 250);
+  setInterval(() => { if (!document.hidden && !overlayOpen() && (S.light !== 'off' || currentCam().p.star) && live) updatePreviewLights(); }, 250);
   window.addEventListener('devicemotion', e => {
     const g = e.accelerationIncludingGravity; if (!g || g.x == null || g.y == null) return;
     const x = IOS ? -g.x : g.x, y = IOS ? -g.y : g.y;
