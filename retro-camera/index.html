@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko">
+<html lang="ko" class="ux-keys-bar ux-camkey ux-lcd-fit ux-caption-hero ux-shoot-row ux-sheet-head ux-selection ux-ko-headings ux-popover ux-cam-sheets ux-album-grid ux-viewer-clean">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -314,6 +314,132 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
 .flash-screen{position:fixed;inset:0;z-index:40;background:#fff;opacity:0;pointer-events:none;transition:opacity .12s}
 .flash-screen.on{opacity:1}
 #video{position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none}
+/* ════════ UX round — every block is one switchable item: remove its class from <html> to turn it off ════════ */
+/* new elements that only exist for an item stay hidden unless that item is on */
+.xbtn,.vclose,.range-ends{display:none}
+.h-en{font-style:normal}
+
+/* [ux-keys-bar] the five status keys become one physical key bar; "on" = small amber lamp + darker orange label */
+html.ux-keys-bar .keys{gap:0;border-radius:14px;background:linear-gradient(#faf8f3,#dbd6cb);
+  box-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 rgba(0,0,0,.14),0 0 0 .5px rgba(0,0,0,.14),0 1px 2px rgba(0,0,0,.25)}
+html.ux-keys-bar .keys .key{position:relative;width:48px;border-radius:0;background:none;box-shadow:none}
+html.ux-keys-bar .keys .key:first-child{border-radius:14px 0 0 14px}
+html.ux-keys-bar .keys .key:last-child{border-radius:0 14px 14px 0}
+html.ux-keys-bar .keys .key+.key::after{content:"";position:absolute;left:0;top:12px;bottom:12px;width:1px;background:rgba(0,0,0,.11);box-shadow:1px 0 0 rgba(255,255,255,.65)}
+html.ux-keys-bar .keys .key.on{color:#9a430a;box-shadow:none}
+html.ux-keys-bar .keys .key.on::before{content:"";position:absolute;top:6px;right:9px;width:5px;height:5px;border-radius:50%;background:#ff7a1a;box-shadow:0 0 4px rgba(255,122,26,.85)}
+html.ux-keys-bar .keys .key:active{transform:none;background:rgba(0,0,0,.07);box-shadow:inset 0 1px 3px rgba(0,0,0,.18)}
+@media (max-width:400px){html.ux-keys-bar .keys .key{width:46px}}
+@media (max-width:374px){html.ux-keys-bar .keys .key{width:44px}}
+
+/* [ux-camkey] camera chip in the same cream key material; camera picture + caret only (the name lives in the caption) */
+html.ux-camkey .camkey{flex-direction:row;gap:5px;min-width:0;height:48px;padding:0 11px 0 13px;border-radius:14px;color:var(--key-ink);
+  background:linear-gradient(#faf8f3,#dbd6cb);
+  box-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 rgba(0,0,0,.14),0 0 0 .5px rgba(0,0,0,.14),0 1px 2px rgba(0,0,0,.25)}
+html.ux-camkey .camkey b{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+html.ux-camkey .camkey::after{content:"";border:4px solid transparent;border-top:5px solid currentColor;border-bottom:0;margin-top:3px;opacity:.75}
+html.ux-camkey .camkey .led{left:6px;top:6px;width:5px;height:5px}
+html.ux-camkey .camkey:active{transform:none;background:linear-gradient(#ebe7df,#d3cdc1);box-shadow:inset 0 1px 3px rgba(0,0,0,.22)}
+
+/* [ux-lcd-fit] the LCD hugs the picture (no black bands above/below); spare height becomes room above the carousel and the shutter row.
+   The LCD height itself is set in relayout() only while this class is on. */
+html.ux-lcd-fit .carousel,html.ux-lcd-fit .shoot{margin-top:auto}
+
+/* [ux-caption-hero] the mood name is the hero, model · year · sensor is one quiet line; the plate keeps only the brand.
+   The longer #capSub text is written by syncUI() only while this class is on. */
+html.ux-caption-hero .plate{padding:9px 14px 0}
+html.ux-caption-hero .plate b{font:600 10px/1 var(--font-ui);letter-spacing:.4em}
+html.ux-caption-hero .plate span{display:none}
+html.ux-caption-hero .caption b{font:600 17px/1.3 var(--font-ui);letter-spacing:-.02em}
+html.ux-caption-hero .caption small{margin-top:1px;letter-spacing:.1em}
+@media (min-height:701px){html.ux-caption-hero .caption{min-height:40px}}
+
+/* [ux-shoot-row] album + flip share one 52px rounded-square shape, so the shutter is the only round control */
+html.ux-shoot-row .shoot{padding:6px 24px 14px}
+html.ux-shoot-row .thumb{width:52px;height:52px;border-radius:14px;border:0;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.88),0 0 0 .5px rgba(0,0,0,.3),0 2px 5px rgba(0,0,0,.3)}
+html.ux-shoot-row .thumb.working::after{inset:-5px;border-radius:18px}
+html.ux-shoot-row .flip{width:52px;height:52px;border-radius:14px}
+@media (max-height:620px){html.ux-shoot-row .shoot{padding:4px 24px 10px}}
+
+/* [ux-sheet-head] a round ✕ replaces the orange 닫기/완료 (both are in the DOM, CSS shows one); one quiet filled style for secondary buttons and fields; titles stay amber */
+html.ux-sheet-head .acts > .pbtn[data-close]{display:none}
+html.ux-sheet-head .panel-head{padding:22px 12px 12px 18px;border-bottom-color:rgba(255,255,255,.08)}
+html.ux-sheet-head .panel-head .acts{align-items:center}
+html.ux-sheet-head .panel .pbtn{border:0;border-radius:12px;padding:8px 14px;background:rgba(255,255,255,.09);font-weight:500}
+html.ux-sheet-head .panel .pbtn.amber{background:var(--amber);font-weight:600}
+html.ux-sheet-head .panel .pbtn:disabled{opacity:.45}
+html.ux-sheet-head .field{border-color:rgba(255,255,255,.16);border-radius:12px}
+html.ux-sheet-head .xbtn{flex:none;display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:rgba(255,255,255,.09);color:var(--menu-fg)}
+html.ux-sheet-head .xbtn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+html.ux-sheet-head .xbtn:active,html.ux-sheet-head .panel .pbtn:not(.amber):active{background:rgba(255,255,255,.16)}
+
+/* [ux-selection] one "selected" look everywhere: amber ring + light-amber text on a recessed track; solid amber stays only for switches and primary buttons */
+html.ux-selection .seg{border:0;border-radius:12px;background:rgba(0,0,0,.22);box-shadow:inset 0 1px 2px rgba(0,0,0,.3),0 0 0 1px rgba(255,255,255,.06)}
+html.ux-selection .seg button{border-radius:12px;color:#c9d3e6}
+html.ux-selection .seg button+button{border-left:0}
+html.ux-selection .seg button[aria-pressed="true"]{background:rgba(240,138,36,.1);color:#ffc98a;font-weight:600;box-shadow:inset 0 0 0 1.5px var(--amber)}
+html.ux-selection .styles button{border:0;border-radius:12px;background:rgba(255,255,255,.06)}
+html.ux-selection .styles button[aria-checked="true"]{background:rgba(240,138,36,.1);box-shadow:inset 0 0 0 1.5px var(--amber);color:#ffc98a}
+html.ux-selection .camcell[aria-checked="true"]{border-color:transparent;background:rgba(240,138,36,.1);box-shadow:inset 0 0 0 1.5px var(--amber)}
+html.ux-selection .camcell[aria-checked="true"] b{color:#ffc98a}
+html.ux-selection .cam-card[aria-pressed="true"]{border-color:transparent;background:rgba(240,138,36,.1);box-shadow:inset 0 0 0 1.5px var(--amber)}
+html.ux-selection .cam-card[aria-pressed="true"] strong{color:#ffc98a}
+html.ux-selection .swatches button[aria-pressed="true"]{border-color:transparent;box-shadow:0 0 0 2px #142443,0 0 0 4px var(--amber)}
+
+/* [ux-ko-headings] section headings in plain Korean in the UI font (the English prefix is in the DOM as .h-en and hidden); pixel font stays on sheet titles, OSD and the % value */
+html.ux-ko-headings .h-en{display:none}
+html.ux-ko-headings .group h3{margin:26px 0 2px;font:600 13px/1.3 var(--font-ui);letter-spacing:0;color:var(--menu-sub)}
+html.ux-ko-headings .group:first-child h3{margin-top:14px}
+html.ux-ko-headings .pop h4{font:600 13px/1.3 var(--font-ui);letter-spacing:0}
+html.ux-ko-headings #amountVal{font:700 12px/1.3 var(--font-osd);letter-spacing:.06em}
+
+/* [ux-popover] popovers point at the key that opened them, 8px edge + 16px padding, a calm chevron link, slider end labels instead of the 2-line note */
+html.ux-popover .pop{right:8px;width:min(360px,calc(100% - 16px));gap:12px;padding:16px;border-radius:18px}
+html.ux-popover .pop::before{content:"";position:absolute;top:-4px;left:var(--cx,calc(100% - 36px));width:12px;height:12px;margin-left:-6px;border-radius:2px;background:var(--menu-top);transform:rotate(45deg)}
+html.ux-popover .linkbtn{display:inline-flex;align-items:center;gap:8px;color:#d4dbe8;text-decoration:none}
+html.ux-popover .linkbtn::after{content:"";width:6px;height:6px;border:solid var(--menu-sub);border-width:1.5px 1.5px 0 0;transform:rotate(45deg)}
+html.ux-popover .pop-note.long{display:none}
+html.ux-popover .range-ends{display:flex;justify-content:space-between;margin:-10px 2px 0;font:400 12px/1.4 var(--font-ui);color:var(--menu-sub)}
+
+/* [ux-cam-sheets] camera list without a box around every camera (faint tiles, roomier padding); preview cards lead with the mood name, quiet model/motif lines, 2-line story */
+html.ux-cam-sheets .camlist{gap:4px 6px;padding:10px 12px 20px}
+html.ux-cam-sheets .camcell{gap:2px;padding:10px 2px}
+html.ux-cam-sheets .camcell:not([aria-checked="true"]){border-color:transparent;background:rgba(255,255,255,.035)}
+html.ux-cam-sheets .camcell:not([aria-checked="true"]):active{background:rgba(255,255,255,.09)}
+html.ux-cam-sheets .cam-card{gap:5px;padding:8px 8px 12px}
+html.ux-cam-sheets .cam-card:not([aria-pressed="true"]){border-color:transparent;background:rgba(255,255,255,.05)}
+html.ux-cam-sheets .cam-card strong{order:1;margin-top:3px}
+html.ux-cam-sheets .cam-card .cam-name{order:2}
+html.ux-cam-sheets .cam-card .spec{order:3;margin-top:-3px}
+html.ux-cam-sheets .cam-card .motif{order:4;margin-top:-3px;font:400 11.5px/1.4 var(--font-ui);color:var(--menu-sub)}
+html.ux-cam-sheets .cam-card small{order:5;margin-top:4px;-webkit-line-clamp:2}
+html.ux-cam-sheets .cam-name svg{width:24px;height:16px}
+html.ux-cam-sheets .cam-name b{font:400 9.5px/1.2 var(--font-osd);letter-spacing:.05em;color:var(--menu-sub)}
+
+/* [ux-album-grid] a tight full-width photo grid with the file number as small OSD text (thumbnails stay uncropped); no duplicate 사진 현상하기 when the album is empty */
+html.ux-album-grid .grid{gap:3px;padding:6px 6px 24px}
+html.ux-album-grid .grid button{border-radius:3px}
+html.ux-album-grid #gallerySheet:has(#galleryEmpty:not([hidden])) #btnGalleryImport{display:none}
+html.ux-album-grid .grid button span{left:6px;top:auto;bottom:6px;padding:0;background:none;font-size:8px;letter-spacing:.06em;color:rgba(255,255,255,.92);text-shadow:0 1px 2px rgba(0,0,0,.95),0 0 1px #000}
+
+/* [ux-viewer-clean] the viewer gets a visible back button; delete/re-develop become quiet icon + text, one orange 보내기 */
+html.ux-viewer-clean .viewer-top{align-items:center;gap:6px;padding:calc(6px + var(--sa-top)) 14px 2px 4px}
+html.ux-viewer-clean .viewer-top .play{margin-right:auto}
+html.ux-viewer-clean .vclose{display:grid;place-items:center;flex:none;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:none;color:var(--osd)}
+html.ux-viewer-clean .vclose svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+html.ux-viewer-clean .vclose:active{background:rgba(255,255,255,.12)}
+html.ux-viewer-clean .viewer-note{min-height:40px;font-size:12.5px;color:#9aa096}
+html.ux-viewer-clean .viewer-acts{grid-template-columns:1fr 1fr 1.3fr;gap:6px;padding:6px 12px calc(14px + var(--sa-bottom))}
+html.ux-viewer-clean .vbtn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:6px 8px;border:0;border-radius:26px;background:transparent;color:#dfe3da;font:500 14px/1.25 var(--font-ui)}
+html.ux-viewer-clean .vbtn::before{content:"";flex:none;width:18px;height:18px;background:currentColor;-webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat}
+html.ux-viewer-clean .vbtn:active{background:rgba(255,255,255,.09)}
+html.ux-viewer-clean .vbtn.amber{background:var(--amber);color:var(--amber-ink);font-weight:600}
+html.ux-viewer-clean .vbtn.armed{background:#c8321f;color:#fff;font-size:13px;line-height:1.2}
+html.ux-viewer-clean .vbtn.armed::before{display:none}
+html.ux-viewer-clean #btnDelete{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 7h16M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5'/%3E%3C/svg%3E")}
+html.ux-viewer-clean #btnRedevelop{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 12a7.5 7.5 0 0 1 13-5.1M19.5 12a7.5 7.5 0 0 1-13 5.1'/%3E%3Cpath d='M18 3v4.2h-4.2M6 21v-4.2h4.2'/%3E%3C/svg%3E")}
+html.ux-viewer-clean #btnSave{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 15V4M7.5 8.5 12 4l4.5 4.5M5 13v6h14v-6'/%3E%3C/svg%3E")}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -370,7 +496,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
 
 <div class="pop-wrap" id="datePop" hidden>
   <div class="pop" id="datePanel" role="dialog" aria-label="날짜 스탬프">
-    <h4>DATE · 날짜 스탬프</h4>
+    <h4><i class="h-en">DATE · </i>날짜 스탬프</h4>
     <div class="styles" role="radiogroup" aria-label="스탬프 모양" data-key="stamp">
       <button role="radio" data-v="film"><i class="sp film"></i><span>필름</span></button>
       <button role="radio" data-v="digi"><i class="sp digi"></i><span>디카</span></button>
@@ -387,21 +513,22 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
 
 <div class="pop-wrap" id="lookPop" hidden>
   <div class="pop" id="lookPanel" role="dialog" aria-label="빛과 색감">
-    <h4>LIGHT · 빛 효과</h4>
+    <h4><i class="h-en">LIGHT · </i>빛 효과</h4>
     <div class="seg wide" data-key="light"><button data-v="off">끔</button><button data-v="soft">약하게</button><button data-v="rand">랜덤</button></div>
     <p class="pop-note" id="lightNote"></p>
-    <h4><label for="optAmount">LOOK · 카메라 색감 강도</label> <span id="amountVal">100%</span></h4>
+    <h4><label for="optAmount"><i class="h-en">LOOK · </i>카메라 색감 강도</label> <span id="amountVal">100%</span></h4>
     <input type="range" class="range wide" id="optAmount" data-key="amount" min="0" max="100" step="5">
-    <p class="pop-note">0%는 원본 그대로, 100%는 그 시절 카메라 그대로예요. 화면에서 바로 확인하며 조절하세요.</p>
+    <p class="pop-note long">0%는 원본 그대로, 100%는 그 시절 카메라 그대로예요. 화면에서 바로 확인하며 조절하세요.</p>
+    <p class="range-ends"><span>원본</span><span>그 시절 그대로</span></p>
   </div>
 </div>
 
 <div class="sheet" id="menuSheet" hidden role="dialog" aria-modal="true" aria-labelledby="menuTitle">
   <div class="panel">
-    <div class="panel-head"><h2 id="menuTitle">MENU</h2><div class="acts"><button class="pbtn amber" data-close>완료</button></div></div>
+    <div class="panel-head"><h2 id="menuTitle">MENU</h2><div class="acts"><button class="pbtn amber" data-close>완료</button><button class="xbtn" data-close aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button></div></div>
     <div class="panel-body" id="menuBody">
       <section class="group">
-        <h3>STAMP · 날짜 스탬프</h3>
+        <h3><i class="h-en">STAMP · </i>날짜 스탬프</h3>
         <div class="row"><span class="lbl">날짜 순서</span>
           <div class="seg" data-key="dateOrder"><button data-v="ymd">년 월 일</button><button data-v="mdy">월 일 년</button><button data-v="dmy">일 월 년</button></div></div>
         <div class="row"><label for="optTime">시간도 함께 찍기</label><input type="checkbox" class="switch" id="optTime" data-key="showTime"></div>
@@ -419,14 +546,14 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
           <div class="seg" data-key="infoTheme"><button data-v="light">화이트</button><button data-v="dark">블랙</button></div></div>
       </section>
       <section class="group" id="ourDay">
-        <h3>OUR DAY · 우리의 날</h3>
+        <h3><i class="h-en">OUR DAY · </i>우리의 날</h3>
         <div class="row"><label for="optDday">D-day 함께 찍기</label><input type="checkbox" class="switch" id="optDday" data-key="ddayOn"></div>
         <div class="row"><label for="optAnniv">기념일 (그날 = D+1)</label><input type="date" class="field" id="optAnniv" data-key="anniv"></div>
         <div class="row"><label for="optCaption">한 줄 문구</label><input type="text" class="field" id="optCaption" data-key="caption" maxlength="24" placeholder="예: 우리 첫 여행"></div>
         <p class="hint">문구는 폴라·정보바·디카 스탬프에 들어가요. 필름 스탬프는 그 시절처럼 숫자만 찍어요.</p>
       </section>
       <section class="group">
-        <h3>SHOOT · 촬영</h3>
+        <h3><i class="h-en">SHOOT · </i>촬영</h3>
         <div class="row"><span class="lbl">화면 비율</span>
           <div class="seg" data-key="aspect"><button data-v="4:3">4:3</button><button data-v="1:1">1:1</button></div></div>
         <div class="row"><span class="lbl">저장 크기</span>
@@ -435,23 +562,23 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
         <div class="row" data-web><label for="optGeo">위치(좌표) 표시</label><input type="checkbox" class="switch" id="optGeo" data-key="geo"></div>
       </section>
       <section class="group">
-        <h3>AFTER · 찍은 다음</h3>
+        <h3><i class="h-en">AFTER · </i>찍은 다음</h3>
         <div class="row" data-native><label for="optAutoSave">휴대폰 갤러리에 바로 저장</label><input type="checkbox" class="switch" id="optAutoSave" data-key="autoSave"></div>
         <div class="row"><label for="optReview">찍고 바로 크게 보기</label><input type="checkbox" class="switch" id="optReview" data-key="reviewAfter"></div>
         <div class="row" data-native><label for="optVolume">음량 버튼으로 찍기</label><input type="checkbox" class="switch" id="optVolume" data-key="volumeKey"></div>
       </section>
       <section class="group">
-        <h3>FEEL · 소리와 진동</h3>
+        <h3><i class="h-en">FEEL · </i>소리와 진동</h3>
         <div class="row"><label for="optSound">셔터음</label><input type="checkbox" class="switch" id="optSound" data-key="sound"></div>
         <div class="row"><label for="optHaptics">진동</label><input type="checkbox" class="switch" id="optHaptics" data-key="haptics"></div>
         <p class="hint" id="menuHint">화소가 낮은 카메라(VGA 폴더폰, 첫 디카)는 저장 크기와 상관없이 그 시절 화질로 찍혀요. 정보바의 셔터 속도·ISO는 화면 밝기로 계산한 표기예요.</p>
       </section>
       <section class="group">
-        <h3>CHECK · 점검</h3>
+        <h3><i class="h-en">CHECK · </i>점검</h3>
         <div class="row"><span class="lbl">이 폰에서 잘 돌아가는지 보기</span><button class="pbtn" id="btnCheck">점검하기</button></div>
       </section>
       <section class="group" data-native>
-        <h3>APP · 앱</h3>
+        <h3><i class="h-en">APP · </i>앱</h3>
         <div class="row" id="updateApkRow" hidden><span class="lbl" id="updateApkText">새 앱 버전이 나왔어요</span><button class="pbtn amber" id="btnUpdateApk">받기</button></div>
         <div class="row"><span class="lbl" id="appVersion">버전</span><button class="pbtn" id="btnCheckUpdate">업데이트 확인</button></div>
         <p class="hint">앱을 열 때마다 새 버전을 확인해서, 있으면 바로 받아 적용해요. 찍은 사진은 그대로 남아요. 앱 자체를 새로 깔아야 하는 드문 경우에만 위에 '받기'가 나타나요.</p>
@@ -462,7 +589,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
 
 <div class="sheet" id="checkSheet" hidden role="dialog" aria-modal="true" aria-labelledby="checkTitle">
   <div class="panel">
-    <div class="panel-head"><h2 id="checkTitle">CHECK</h2><div class="acts"><button class="pbtn" id="btnCopyCheck" disabled>결과 복사</button><button class="pbtn amber" data-close>닫기</button></div></div>
+    <div class="panel-head"><h2 id="checkTitle">CHECK</h2><div class="acts"><button class="pbtn" id="btnCopyCheck" disabled>결과 복사</button><button class="pbtn amber" data-close>닫기</button><button class="xbtn" data-close aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button></div></div>
     <div class="panel-body">
       <ul class="checks" id="checkList" aria-live="polite"></ul>
       <p class="hint">결과는 이 폰에만 있어요. 이상한 점이 있으면 '결과 복사'를 눌러 대화창에 붙여 넣어 주세요. 사진이나 위치 같은 개인 정보는 들어가지 않아요.</p>
@@ -472,14 +599,14 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
 
 <div class="sheet" id="camListSheet" hidden role="dialog" aria-modal="true" aria-labelledby="camListTitle">
   <div class="panel">
-    <div class="panel-head"><h2 id="camListTitle">CAMERA</h2><div class="acts"><button class="pbtn" id="btnCamPreview">색감 미리보기</button><button class="pbtn amber" data-close>닫기</button></div></div>
+    <div class="panel-head"><h2 id="camListTitle">CAMERA</h2><div class="acts"><button class="pbtn" id="btnCamPreview">색감 미리보기</button><button class="pbtn amber" data-close>닫기</button><button class="xbtn" data-close aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button></div></div>
     <div class="camlist" id="camList" role="radiogroup" aria-label="카메라 고르기"></div>
   </div>
 </div>
 
 <div class="sheet" id="camSheet" hidden role="dialog" aria-modal="true" aria-labelledby="camTitle">
   <div class="panel">
-    <div class="panel-head"><h2 id="camTitle">CAMERA</h2><div class="acts"><button class="pbtn amber" data-close>닫기</button></div></div>
+    <div class="panel-head"><h2 id="camTitle">CAMERA</h2><div class="acts"><button class="pbtn amber" data-close>닫기</button><button class="xbtn" data-close aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button></div></div>
     <p class="lede" id="camLede"></p>
     <div class="cams" id="camGrid"></div>
   </div>
@@ -487,14 +614,14 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
 
 <div class="sheet" id="gallerySheet" hidden role="dialog" aria-modal="true" aria-labelledby="galleryTitle">
   <div class="panel">
-    <div class="panel-head"><h2 id="galleryTitle">ALBUM</h2><div class="acts"><button class="pbtn" id="btnGalleryImport">사진 현상하기</button><button class="pbtn amber" data-close>닫기</button></div></div>
+    <div class="panel-head"><h2 id="galleryTitle">ALBUM</h2><div class="acts"><button class="pbtn" id="btnGalleryImport">사진 현상하기</button><button class="pbtn amber" data-close>닫기</button><button class="xbtn" data-close aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button></div></div>
     <div class="grid" id="grid"></div>
     <div class="empty" id="galleryEmpty" hidden><span>아직 찍은 사진이 없어요.<br>셔터를 누르거나, 갖고 있는 사진을 그 시절 카메라로 현상해 보세요.</span><button class="pbtn amber" id="btnEmptyImport">앨범 사진 현상하기</button></div>
   </div>
 </div>
 
 <div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="사진 보기">
-  <div class="viewer-top"><span class="play" id="viewerNo">100-0001</span><span id="viewerDate"></span></div>
+  <div class="viewer-top"><button class="vclose" id="btnViewerClose" aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg></button><span class="play" id="viewerNo">100-0001</span><span id="viewerDate"></span></div>
   <div class="viewer-img" id="viewerStage"><img id="viewerImg" alt="찍은 사진"></div>
   <div class="viewer-note"><span id="viewerNote"></span><button id="btnSaveNow" hidden>갤러리에 저장</button></div>
   <div class="viewer-acts">
@@ -1636,9 +1763,13 @@ function captureDims() {
 }
 function relayout() {
   const r = lcd.getBoundingClientRect();
-  const aw = r.width - 8, ah = r.height - 8;
+  let aw = r.width - 8, ah = r.height - 8;
   if (aw <= 0 || ah <= 0) return;
   const d = captureDims(), L = layoutFor(S.stamp, d.w, d.h);
+  // [ux-lcd-fit] the LCD hugs the picture (never shorter than a 3:4 portrait frame); flex can still shrink it on short screens
+  const vf = lcd.parentElement, fit = document.documentElement.classList.contains('ux-lcd-fit');
+  const fb = fit ? `0 1 ${Math.round(aw * Math.max(L.H / L.W, 4 / 3)) + 8 + 2}px` : '';
+  if (vf.style.flex !== fb) { vf.style.flex = fb; const r2 = lcd.getBoundingClientRect(); aw = r2.width - 8; ah = r2.height - 8; }
   const k = Math.min(aw / L.W, ah / L.H), bw = Math.round(L.W * k), bh = Math.round(L.H * k);
   frame.style.width = bw + 'px'; frame.style.height = bh + 'px';
   const ir = { left: L.ix * k + 'px', top: L.iy * k + 'px', width: L.iw * k + 'px', height: L.ih * k + 'px' };
@@ -2245,7 +2376,7 @@ async function onRedevelop() {
 }
 
 /* ───────── sheets, popover, album ───────── */
-function openSheet(id) { if (cdCancel) cdCancel(); lastFocus = document.activeElement; const s = $(id); if (s.hidden) s._ret = document.activeElement; s.hidden = false; syncAwake(); const f = $('[data-close]', s); if (f) f.focus(); syncVolumeKey(); syncBars(); }
+function openSheet(id) { if (cdCancel) cdCancel(); lastFocus = document.activeElement; const s = $(id); if (s.hidden) s._ret = document.activeElement; s.hidden = false; syncAwake(); const f = $$('[data-close]', s).find(x => x.getClientRects().length); if (f) f.focus(); syncVolumeKey(); syncBars(); }
 function closeSheet(s) {
   s.hidden = true; $('.panel', s).style.transform = '';
   if (s.id === 'camSheet') { s.classList.remove('over'); if (pickResolve) { pickResolve(null); pickResolve = null; } }
@@ -2277,6 +2408,8 @@ function openPop(id) {
   const pop = $('#' + id), key = $('#' + POPS[id]);
   $('.pop', pop).style.top = (key.getBoundingClientRect().bottom + 8) + 'px';
   pop.hidden = false; key.setAttribute('aria-expanded', 'true');
+  if (document.documentElement.classList.contains('ux-popover')) { const panel = $('.pop', pop), pr = panel.getBoundingClientRect(), kr = key.getBoundingClientRect();
+    panel.style.setProperty('--cx', clamp(kr.left + kr.width / 2 - pr.left, 18, pr.width - 18) + 'px'); }
   const cur = $('[aria-checked="true"],[aria-pressed="true"]', pop); if (cur) cur.focus();
   syncVolumeKey();
 }
@@ -2582,7 +2715,7 @@ function syncUI() {
   syncCamList();
   $('#plateModel').textContent = `${cam.model} · ${cam.mp}M ${cam.sensor}`;
   $('#capTitle').textContent = cam.mood;
-  $('#capSub').textContent = `${cam.model} · ${cam.year}`;
+  $('#capSub').textContent = document.documentElement.classList.contains('ux-caption-hero') ? `${cam.model} · ${cam.year} · ${cam.mp}M ${cam.sensor}` : `${cam.model} · ${cam.year}`;
   syncFlags();
 }
 function applySetting(k) {
@@ -2861,6 +2994,7 @@ function wire() {
   $('#btnSave').addEventListener('click', () => viewing && saveToDevice(viewing));
   $('#btnSaveNow').addEventListener('click', async () => { if (viewing && await saveToGallery(viewing)) { toast('휴대폰 갤러리에 저장했어요'); haptic('confirm'); } });
   $('#btnDelete').addEventListener('click', deleteViewing);
+  $('#btnViewerClose').addEventListener('click', closeViewer);
   $('#btnRedevelop').addEventListener('click', onRedevelop);
   $$('.sheet').forEach(s => {
     s.addEventListener('click', e => { if (e.target === s || e.target.closest('[data-close]')) closeSheet(s); });
