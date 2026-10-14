@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko" class="ux-keys-bar ux-camkey ux-lcd-fit ux-caption-hero ux-shoot-row ux-sheet-head ux-selection ux-ko-headings ux-popover ux-cam-sheets ux-album-grid ux-viewer-clean">
+<html lang="ko" class="ux-keys-bar ux-camkey ux-lcd-fit ux-caption-hero ux-shoot-row ux-sheet-head ux-selection ux-ko-headings ux-popover ux-cam-sheets ux-album-grid ux-viewer-clean ux2-cats ux2-card ux2-level ux2-days ux2-develop ux2-tag ux2-hint">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -440,6 +440,56 @@ html.ux-viewer-clean .vbtn.armed::before{display:none}
 html.ux-viewer-clean #btnDelete{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 7h16M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5'/%3E%3C/svg%3E")}
 html.ux-viewer-clean #btnRedevelop{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 12a7.5 7.5 0 0 1 13-5.1M19.5 12a7.5 7.5 0 0 1-13 5.1'/%3E%3Cpath d='M18 3v4.2h-4.2M6 21v-4.2h4.2'/%3E%3C/svg%3E")}
 html.ux-viewer-clean #btnSave{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 15V4M7.5 8.5 12 4l4.5 4.5M5 13v6h14v-6'/%3E%3C/svg%3E")}
+/* ── round 2 (each item is a class on <html>; remove the class to turn it off) ── */
+.camcats,.level,.vgrid,.hint,[data-ux2]{display:none}
+/* ux2-cats: camera list filtered by kind */
+html.ux2-cats .camcats{display:flex;gap:6px;overflow-x:auto;padding:2px 16px 10px;scrollbar-width:none;flex:none}
+html.ux2-cats .camcats::-webkit-scrollbar{display:none}
+html.ux2-cats .camcats button{flex:none;min-height:40px;padding:0 14px;border-radius:20px;border:1px solid rgba(255,255,255,.16);background:transparent;color:var(--menu-sub);font:600 13.5px var(--font-ui)}
+html.ux2-cats .camcats button small{margin-left:5px;font:400 10px var(--font-osd);opacity:.75}
+html.ux2-cats .camcats button[aria-pressed="true"]{border-color:transparent;background:var(--menu-fg);color:var(--menu-top)}
+/* ux2-card: the current camera's own card, opened from its name under the carousel */
+html.ux2-card .caption{cursor:pointer;-webkit-tap-highlight-color:transparent}
+html.ux2-card .caption b::after{content:"";display:inline-block;width:6px;height:6px;margin:0 0 3px 7px;border:solid currentColor;border-width:0 1.6px 1.6px 0;transform:rotate(-45deg);opacity:.55}
+.caminfo{display:grid;gap:14px;padding-top:4px}
+.ci-shot{position:relative;margin:0;border-radius:12px;overflow:hidden;background:#0a1426;aspect-ratio:4/3}
+.ci-shot img{display:block;width:100%;height:100%;object-fit:cover}
+.ci-badge{position:absolute;left:10px;bottom:10px;display:flex;align-items:center;gap:8px;padding:6px 10px 6px 6px;border-radius:12px;background:linear-gradient(var(--ci-hi),var(--ci-lo));color:var(--ci-ink);box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.ci-badge svg{width:54px;height:36px}
+.ci-badge b{font:400 10px/1.2 var(--font-osd);letter-spacing:.08em}
+.ci-head h3{margin:0;font:700 21px/1.3 var(--font-ui);letter-spacing:-.02em;text-wrap:balance}
+.ci-head p{margin:4px 0 0;font:400 11px/1.5 var(--font-osd);letter-spacing:.06em;color:var(--menu-sub)}
+.ci-vibe{display:inline-block;margin-bottom:6px;padding:3px 9px;border-radius:10px;background:rgba(255,255,255,.1);font:600 12px var(--font-ui);color:var(--menu-fg)}
+.ci-tags{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.ci-tags span{font:500 12px var(--font-ui);color:var(--menu-sub)}
+.ci-tags i{font-style:normal;padding:5px 10px;border-radius:14px;border:1px solid rgba(255,255,255,.16);font:500 13px var(--font-ui);color:var(--menu-fg)}
+.ci-story{margin:0;font:400 14px/1.7 var(--font-ui);color:var(--menu-fg)}
+.ci-motif{margin:-6px 0 0;font:400 12px/1.5 var(--font-ui);color:var(--menu-sub)}
+.ci-acts{display:grid;grid-template-columns:1fr 1.4fr;gap:8px;margin-top:2px}
+.ci-acts .pbtn{min-height:48px}
+/* ux2-level: spirit level and an optional rule-of-thirds grid in the viewfinder */
+html.ux2-level .level{display:block;position:absolute;left:32%;right:32%;top:50%;height:0}
+html.ux2-level .level i{position:absolute;inset:-.75px 0 auto;height:1.5px;border-radius:1px;background:rgba(238,242,232,.6);transform:rotate(var(--a,0deg));transition:background .15s}
+html.ux2-level .level::before,html.ux2-level .level::after{content:"";position:absolute;top:-.75px;width:10px;height:1.5px;background:rgba(238,242,232,.85)}
+html.ux2-level .level::before{left:-16px}html.ux2-level .level::after{right:-16px}
+html.ux2-level .level.ok i{background:var(--amber)}
+html.ux2-level .level.ok::before,html.ux2-level .level.ok::after{background:var(--amber)}
+html.ux2-level .level[hidden],html.ux2-level .vgrid[hidden]{display:none}
+html.ux2-level .vgrid{display:block;position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent calc(33.333% - .5px),rgba(238,242,232,.32) 0 calc(33.333% + .5px),transparent 0 calc(66.666% - .5px),rgba(238,242,232,.32) 0 calc(66.666% + .5px),transparent 0),
+    linear-gradient(transparent calc(33.333% - .5px),rgba(238,242,232,.32) 0 calc(33.333% + .5px),transparent 0 calc(66.666% - .5px),rgba(238,242,232,.32) 0 calc(66.666% + .5px),transparent 0)}
+html.ux2-level [data-ux2="level"]{display:flex}
+/* ux2-days: album grouped by the day the photos were taken */
+html.ux2-days .grid .day{grid-column:1/-1;margin:12px 4px 4px;font:600 13px/1.3 var(--font-ui);color:var(--menu-fg)}
+html.ux2-days .grid .day:first-child{margin-top:4px}
+html.ux2-days .grid .day small{margin-left:6px;font:400 12px var(--font-ui);color:var(--menu-sub)}
+/* ux2-develop: a new photo develops in on the album button */
+@keyframes develop{0%{filter:brightness(.18) sepia(.85) contrast(.75) saturate(.6)}55%{filter:brightness(.85) sepia(.3) contrast(.95)}100%{filter:none}}
+html.ux2-develop .thumb.dev{animation:develop 1.8s ease-out}
+/* ux2-hint: a first-days reminder that the viewfinder swipes */
+html.ux2-hint .hint{display:block;position:absolute;left:50%;bottom:16%;transform:translateX(-50%);padding:7px 12px;border-radius:16px;background:rgba(0,0,0,.55);color:var(--osd);font:500 12.5px/1 var(--font-ui);white-space:nowrap;opacity:0;transition:opacity .35s}
+html.ux2-hint .hint.show{opacity:1}
+html.ux2-hint .hint[hidden]{display:none}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -465,6 +515,9 @@ html.ux-viewer-clean #btnSave{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://
           <div class="af" id="af"><i></i><i></i><i></i><i></i></div>
           <div class="camtag" id="camTag"></div>
           <div class="zoombar" id="zoomBar" hidden><b>W</b><span class="track"><i id="zoomKnob"></i></span><b>T</b><em id="zoomVal">×1.0</em></div>
+          <div class="vgrid" id="vgrid" hidden></div>
+          <div class="level" id="level" hidden><i></i></div>
+          <div class="hint" id="hint" hidden>‹ 좌우로 밀면 카메라가 바뀌어요 ›</div>
           <div class="evbar" id="evBar" hidden><span id="evVal">±0.0</span><span class="track"><i id="evKnob"></i></span><span>EV</span></div>
         </div>
       </div>
@@ -558,6 +611,8 @@ html.ux-viewer-clean #btnSave{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://
           <div class="seg" data-key="aspect"><button data-v="4:3">4:3</button><button data-v="1:1">1:1</button></div></div>
         <div class="row"><span class="lbl">저장 크기</span>
           <div class="seg" data-key="quality"><button data-v="2M">2M</button><button data-v="5M">5M</button><button data-v="8M">8M</button></div></div>
+        <div class="row" data-ux2="level"><label for="optLevel">수평계</label><input type="checkbox" class="switch" id="optLevel" data-key="levelOn"></div>
+        <div class="row" data-ux2="level"><label for="optGrid">3분할 격자</label><input type="checkbox" class="switch" id="optGrid" data-key="gridOn"></div>
         <div class="row"><label for="optMirror">셀카를 보이는 그대로 저장</label><input type="checkbox" class="switch" id="optMirror" data-key="mirrorSelfie"></div>
         <div class="row" data-web><label for="optGeo">위치(좌표) 표시</label><input type="checkbox" class="switch" id="optGeo" data-key="geo"></div>
       </section>
@@ -600,7 +655,22 @@ html.ux-viewer-clean #btnSave{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://
 <div class="sheet" id="camListSheet" hidden role="dialog" aria-modal="true" aria-labelledby="camListTitle">
   <div class="panel">
     <div class="panel-head"><h2 id="camListTitle">CAMERA</h2><div class="acts"><button class="pbtn" id="btnCamPreview">색감 미리보기</button><button class="pbtn amber" data-close>닫기</button><button class="xbtn" data-close aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button></div></div>
+    <div class="camcats" id="camCats" role="group" aria-label="카메라 종류"></div>
     <div class="camlist" id="camList" role="radiogroup" aria-label="카메라 고르기"></div>
+  </div>
+</div>
+
+<div class="sheet" id="camInfoSheet" hidden role="dialog" aria-modal="true" aria-labelledby="camInfoTitle">
+  <div class="panel">
+    <div class="panel-head"><h2 id="camInfoTitle">CAMERA</h2><div class="acts"><button class="pbtn amber" data-close>닫기</button><button class="xbtn" data-close aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button></div></div>
+    <div class="panel-body caminfo">
+      <figure class="ci-shot"><img id="ciShot" alt=""><figcaption class="ci-badge" id="ciBadge"></figcaption></figure>
+      <div class="ci-head"><span class="ci-vibe" id="ciVibe"></span><h3 id="ciMood"></h3><p id="ciSpec"></p></div>
+      <div class="ci-tags" id="ciTags"></div>
+      <p class="ci-story" id="ciStory"></p>
+      <p class="ci-motif" id="ciMotif"></p>
+      <div class="ci-acts"><button class="pbtn" id="ciOther">다른 카메라 보기</button><button class="pbtn amber" id="ciShoot">이 카메라로 찍기</button></div>
+    </div>
   </div>
 </div>
 
@@ -699,7 +769,7 @@ const DEFAULTS = {
   color: 'orange', align: 'right', infoTheme: 'light', ddayOn: false, anniv: '', caption: '',
   aspect: '4:3', quality: '5M', amount: 100, geo: false, sound: true, haptics: true, flash: false, timer: 0,
   light: 'off', mirrorSelfie: true, autoSave: true, reviewAfter: false, volumeKey: true,
-  facing: 'environment', seq: 0, onboarded: false, osdOn: true
+  facing: 'environment', seq: 0, onboarded: false, osdOn: true, levelOn: true, gridOn: false, hints: 0, swiped: false
 };
 const S = (() => { try { return Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch { return { ...DEFAULTS }; } })();
 if (S.dateMode !== 'now' && S.dateMode !== 'year' && S.dateMode !== 'custom') S.dateMode = 'now';
@@ -830,6 +900,19 @@ const CAMERAS = [
       bloom: .18, bloomR: .02, bloomTint: [.9, .93, 1], clip: .2, ccd: 0, iso: 100, css: 'brightness(.82) contrast(1.3) saturate(1.4) hue-rotate(4deg)' } },
 ];
 const camById = id => CAMERAS.find(c => c.id === id) || CAMERAS.find(c => c.id === DEFAULTS.cam);
+/* round 2: scenes each camera suits (이럴 때 좋아요) and the groups of the camera list */
+const SCENES = {
+  px128: ['장난 셀카', '픽셀 그림', '한낮'], disk: ['방 안 소품', '창가', '로파이'], digi130: ['친구들', '교실', '한낮'], swivel: ['거리', '건물', '흐린 날'],
+  q2100: ['가족', '거실', '일상'], nightir: ['밤', '캠핑', '어둠 속'], dv03: ['운동회', '아이들', '움직임'], webcam: ['셀카', '내 방', '밤'],
+  kenox: ['졸업식', '단체 사진', '한낮'], c7: ['햇살', '인물', '오후'], vga: ['셀카', '친구들', '미니홈피'], ixa55: ['여행', '인물', '실내'],
+  exs5: ['카페', '파스텔', '맑은 날'], snap28: ['골목', '거리 스냅', '흑백'], t77: ['인물', '화장한 날', '한낮'], f31: ['밤 골목', '실내 조명', '야경'],
+  aqua: ['바다', '계곡', '여름'], wide28: ['단체 사진', '풍경', '여행'], touch2m: ['등굣길', '버스 창가', '흐린 날'], toy8: ['노을', '여행', '영상처럼'],
+  vivid: ['바다', '하늘', '해 질 녘']
+};
+const KINDS = [['all', '전체'], ['digi', '디카'], ['phone', '폰카'], ['toy', '장난감'], ['night', '흑백·밤']];
+const KIND_OF = { vga: 'phone', touch2m: 'phone', webcam: 'phone', px128: 'toy', disk: 'toy', dv03: 'toy', toy8: 'toy', nightir: 'night', snap28: 'night', f31: 'night' };
+const kindOf = c => KIND_OF[c.id] || 'digi';
+const UX2 = id => document.documentElement.classList.contains('ux2-' + id);
 if (!CAMERAS.some(c => c.id === S.cam)) S.cam = DEFAULTS.cam;
 const camParams = cam => Object.assign({}, BASE, cam.p);
 const currentCam = () => camById(S.cam);
@@ -1662,7 +1745,7 @@ function haptic(kind) {
 let camGen = 0, openingGen = -1;
 const opening = () => openingGen === camGen;
 /* last touch or key press: an update never reloads mid-gesture, and the screen may sleep after 2 idle minutes */
-let lastTouch = 0, awakeFrom = 0, awake = null;
+let lastTouch = 0, awakeFrom = 0, awake = null, hintShown = false;
 const AWAKE_MS = 120000;
 function syncAwake() {
   const on = !!(live && !overlayOpen() && Date.now() - Math.max(lastTouch, awakeFrom) < AWAKE_MS);
@@ -1675,7 +1758,7 @@ function stopCamera() {
   if (cdCancel) cdCancel(); // leaving the app or losing the camera mid-countdown: no blind shot
   if (stream) stream.getTracks().forEach(t => t.stop());
   stream = null; track = null; live = false;
-  syncAwake();
+  syncAwake(); syncGrid(); $('#level').hidden = true;
   syncVolumeKey();
 }
 function superseded(s) { if (s) s.getTracks().forEach(t => t.stop()); const e = new Error('camera start superseded'); e.superseded = true; return e; }
@@ -1700,7 +1783,8 @@ async function startCamera() {
   live = true;
   track.addEventListener('ended', () => { if (stream === s) { stopCamera(); needsStatic = true; showPerm('error'); relayout(); } });
   hidePerm();
-  awakeFrom = Date.now(); syncAwake();
+  awakeFrom = Date.now(); syncAwake(); syncGrid();
+  if (!hintShown) { hintShown = true; setTimeout(swipeHint, 1200); }
   syncVolumeKey();
 }
 async function startCameraSafe() {
@@ -2248,17 +2332,24 @@ const urlOf = (rec, key) => { const k = '_' + key + 'Url'; if (!rec[k]) rec[k] =
 function releaseUrls(rec) { ['_blobUrl', '_thumbUrl'].forEach(k => { if (rec[k]) URL.revokeObjectURL(rec[k]); delete rec[k]; }); }
 let dbBroken = false;
 async function loadPhotos() {
+  thumbOf = undefined;
   try { photos = (await DB.all() || []).filter(r => r && r.blob).sort((a, b) => b.created - a.created); }
   catch (e) {
     photos = []; dbBroken = true; logIssue('db', e && `${e.name} ${e.message}`);
     toast('앨범을 열지 못했어요. 앱을 완전히 닫았다가 다시 열어 주세요', 4000);
   }
   syncAlbum();
+  thumbOf = photos[0] ? photos[0].id : ''; // from here on a new photo on the button develops in
 }
+let thumbOf; // id of the photo on the album button; undefined until the album has loaded
 function syncAlbum() {
   const btn = $('#btnGallery');
   if (jobs.length > 1) {} // jobs[0] is the shot being stored; a newer shot's snapshot is already on the thumb
-  else if (photos[0]) { btn.style.backgroundImage = `url("${urlOf(photos[0], 'thumb')}")`; btn.classList.add('has'); }
+  else if (photos[0]) {
+    btn.style.backgroundImage = `url("${urlOf(photos[0], 'thumb')}")`; btn.classList.add('has');
+    if (UX2('develop') && thumbOf !== undefined && thumbOf !== photos[0].id && photos[0].created > Date.now() - 60000) { btn.classList.remove('dev'); void btn.offsetWidth; btn.classList.add('dev'); }
+    thumbOf = photos[0].id;
+  }
   else if (!jobs.length && !busyOther) { btn.style.backgroundImage = ''; btn.classList.remove('has'); }
   drawOverlay(); // shots-left counter
   if (!$('#gallerySheet').hidden) renderGrid();
@@ -2391,7 +2482,21 @@ function renderGrid() {
   $('#galleryEmpty').hidden = photos.length > 0; grid.hidden = !photos.length;
   if (dbBroken) $('#galleryEmpty span').textContent = '앨범을 열지 못했어요. 앱을 완전히 닫았다가 다시 열어 주세요.';
   $('#galleryTitle').textContent = `ALBUM · ${photos.length}`;
+  const days = UX2('days'), counts = {};
+  const dayKey = rec => { const d = new Date(rec.taken || rec.created); return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; };
+  if (days) for (const rec of photos) counts[dayKey(rec)] = (counts[dayKey(rec)] || 0) + 1;
+  let lastDay = '';
   for (const rec of photos) {
+    if (days && dayKey(rec) !== lastDay) {
+      lastDay = dayKey(rec);
+      const d = new Date(rec.taken || rec.created), now = new Date(), y = new Date(now); y.setDate(now.getDate() - 1);
+      const same = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+      const label = same(d, now) ? '오늘' : same(d, y) ? '어제'
+        : `${d.getFullYear() !== now.getFullYear() ? d.getFullYear() + '년 ' : ''}${d.getMonth() + 1}월 ${d.getDate()}일 (${'일월화수목금토'[d.getDay()]})`;
+      const h = document.createElement('h4'); h.className = 'day'; h.textContent = label;
+      const sm = document.createElement('small'); sm.textContent = `${counts[lastDay]}장`; h.appendChild(sm);
+      grid.appendChild(h);
+    }
     const b = document.createElement('button');
     b.style.backgroundImage = `url("${urlOf(rec, 'thumb')}")`;
     b.setAttribute('aria-label', `사진 100-${pad4(rec.no)} 보기`);
@@ -2506,7 +2611,7 @@ function selectCam(id) {
   const c = currentCam(), boot = $('#boot'), tag = $('#camTag');
   $('#bootText').textContent = c.model;
   boot.classList.remove('on'); void boot.offsetWidth; boot.classList.add('on');
-  tag.textContent = `${c.model} · ${c.year}`; tag.classList.add('show');
+  tag.textContent = UX2('tag') ? `${c.vibe} · ${c.model}` : `${c.model} · ${c.year}`; tag.classList.add('show');
   clearTimeout(tagT); tagT = setTimeout(() => tag.classList.remove('show'), 1400);
   beep(3400, .02, 0, .03);
 }
@@ -2537,8 +2642,27 @@ function buildCamList() {
     list.appendChild(b);
   }
 }
+let camKind = 'all';
+function buildCamCats() {
+  const box = $('#camCats');
+  for (const [k, label] of KINDS) {
+    const n = k === 'all' ? CAMERAS.length : CAMERAS.filter(c => kindOf(c) === k).length;
+    const b = document.createElement('button');
+    b.type = 'button'; b.dataset.k = k; b.textContent = label;
+    const sm = document.createElement('small'); sm.textContent = n; b.appendChild(sm);
+    b.addEventListener('click', () => { haptic('tick'); camKind = k; syncCamCats(); });
+    box.appendChild(b);
+  }
+}
+function syncCamCats() {
+  const on = UX2('cats');
+  $$('#camCats button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === camKind)));
+  $$('#camList .camcell').forEach(b => { b.hidden = on && camKind !== 'all' && kindOf(camById(b.dataset.v)) !== camKind; });
+}
 function openCamList() {
   $('#camListTitle').textContent = `CAMERA · ${CAMERAS.length}`;
+  if (camKind !== 'all' && kindOf(currentCam()) !== camKind) camKind = 'all'; // never hide the camera in use
+  syncCamCats();
   syncCamList();
   openSheet('#camListSheet');
   const cur = $(`#camList [data-v="${S.cam}"]`);
@@ -2580,6 +2704,36 @@ async function renderCamThumbs(source, mirror) {
       $('img', b).src = capLens.canvas.toDataURL('image/jpeg', .82);
     } catch { return; }
   }
+}
+/* the current camera's card: what it is, what it suits, and the scene in front of you through it */
+function openCamInfo() {
+  const c = currentCam(), b = c.body, sheet = $('#camInfoSheet');
+  $('#camInfoTitle').textContent = c.code;
+  const badge = $('#ciBadge'); badge.innerHTML = camIcon(c, '-ci');
+  const name = document.createElement('b'); name.textContent = `${c.model} · ${c.year}`; badge.appendChild(name);
+  badge.style.setProperty('--ci-hi', b.hi); badge.style.setProperty('--ci-lo', b.lo); badge.style.setProperty('--ci-ink', b.ink);
+  $('#ciVibe').textContent = c.vibe;
+  $('#ciMood').textContent = c.mood;
+  $('#ciSpec').textContent = `${c.mp}M ${c.sensor} · ${c.lens.filter(Boolean).join(' ')} · ${c.ko}`;
+  const tags = $('#ciTags'); tags.textContent = '';
+  const lab = document.createElement('span'); lab.textContent = '이럴 때 좋아요'; tags.appendChild(lab);
+  for (const t of SCENES[c.id] || []) { const i = document.createElement('i'); i.textContent = t; tags.appendChild(i); }
+  $('#ciStory').textContent = c.story;
+  $('#ciMotif').textContent = '모티프 · ' + c.motif;
+  $('#ciShot').removeAttribute('src'); $('#ciShot').alt = `${c.vibe} 카메라로 본 지금 장면`;
+  openSheet('#camInfoSheet');
+  // the live frame (or the sample scene) through this camera, rendered once
+  const useLive = live && video.readyState >= 2 && video.videoWidth;
+  let src = sampleSrc;
+  if (useLive) { const cv = document.createElement('canvas'); cv.width = video.videoWidth; cv.height = video.videoHeight; cv.getContext('2d').drawImage(video, 0, 0); src = cv; }
+  nextFrame().then(() => {
+    if (sheet.hidden || currentCam() !== c || !src) return;
+    try {
+      capOk(); capLens.upload(src);
+      capLens.render(640, 480, camParams(c), { mirror: useLive && S.facing === 'user', zoom: 1, time: 2.3, amount: S.amount / 100, flash: 0 });
+      $('#ciShot').src = capLens.canvas.toDataURL('image/jpeg', .85);
+    } catch {}
+  });
 }
 function openCamSheet() {
   if (pickResolve) { pickResolve(null); pickResolve = null; }
@@ -2648,7 +2802,10 @@ function bindGestures() {
     pts.delete(e.pointerId);
     if (mode === 'pinch') { if (!pts.size) mode = null; return; }
     const dx = e.clientX - x0, dy = e.clientY - y0, dt = performance.now() - t0;
-    if (mode === 'swipe' && !edge && Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) stepCam(dx < 0 ? 1 : -1);
+    if (mode === 'swipe' && !edge && Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      stepCam(dx < 0 ? 1 : -1);
+      if (!S.swiped) { S.swiped = true; persist(); $('#hint').classList.remove('show'); }
+    }
     else if (!mode && dt < 300 && e.type === 'pointerup') {
       const now = performance.now();
       if (now - lastTap < 320) { zoom = 1; ev = 0; showZoomEv('zoom'); showZoomEv('ev'); toast('줌·밝기를 처음으로 되돌렸어요', 1400); lastTap = 0; }
@@ -2719,7 +2876,7 @@ function syncUI() {
   syncFlags();
 }
 function applySetting(k) {
-  persist(); syncUI();
+  persist(); syncUI(); syncGrid();
   if (['stamp', 'aspect', 'quality'].includes(k)) relayout(); else drawOverlay();
   needsStatic = true;
   if (k === 'geo') updateGeo();
@@ -2965,6 +3122,12 @@ function wire() {
   }
   $('#btnMoreDate').addEventListener('click', () => { closePops(); openSheet('#menuSheet'); setTimeout(() => $('#ourDay').scrollIntoView({ block: 'start' }), 60); });
   $('#btnMenu').addEventListener('click', () => { haptic('tick'); syncAppInfo(); openSheet('#menuSheet'); });
+  const cap = $('.caption');
+  if (UX2('card')) { cap.setAttribute('role', 'button'); cap.tabIndex = 0; cap.removeAttribute('aria-live'); $('#capTitle').setAttribute('aria-live', 'polite'); cap.setAttribute('aria-description', '눌러서 이 카메라 자세히 보기'); }
+  cap.addEventListener('click', () => { if (UX2('card')) { haptic('tick'); openCamInfo(); } });
+  cap.addEventListener('keydown', e => { if (UX2('card') && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openCamInfo(); } });
+  $('#ciShoot').addEventListener('click', () => closeSheet($('#camInfoSheet')));
+  $('#ciOther').addEventListener('click', () => { closeSheet($('#camInfoSheet')); openCamList(); });
   $('#btnCheck').addEventListener('click', () => { closeSheet($('#menuSheet')); openSheet('#checkSheet'); runCheck(); });
   $('#btnCopyCheck').addEventListener('click', copyCheck);
   $('#btnCheckUpdate').addEventListener('click', () => { haptic('tick'); toast('업데이트를 확인하는 중…', 1500); native('checkUpdate'); });
@@ -3041,6 +3204,7 @@ function wire() {
   window.addEventListener('devicemotion', e => {
     const g = e.accelerationIncludingGravity; if (!g || g.x == null || g.y == null) return;
     const x = IOS ? -g.x : g.x, y = IOS ? -g.y : g.y;
+    syncLevel(x, y, g.z);
     let r = devRot;
     if (Math.abs(x) > 5 && Math.abs(x) > Math.abs(y) * 1.4) r = x > 0 ? -90 : 90;
     else if (Math.abs(y) > Math.abs(x) * 1.4) r = 0;
@@ -3052,8 +3216,30 @@ function wire() {
   }).catch(() => {});
 }
 
+function swipeHint() {
+  if (!UX2('hint') || S.swiped || (S.hints || 0) >= 3) return;
+  S.hints = (S.hints || 0) + 1; persist();
+  const h = $('#hint'); h.hidden = false;
+  setTimeout(() => h.classList.add('show'), 50);
+  setTimeout(() => { h.classList.remove('show'); setTimeout(() => { h.hidden = true; }, 400); }, 3600);
+}
+/* spirit level: the horizon line follows the phone's roll; amber within 1° of level */
+let levelA = null, levelOk = false;
+function syncGrid() { $('#vgrid').hidden = !(UX2('level') && S.gridOn && live); }
+function syncLevel(x, y, z) {
+  const el = $('#level');
+  const flat = z != null && Math.abs(z) > 7.5;
+  const a = Math.atan2(x, y) * 180 / Math.PI;
+  if (levelA === null || Math.abs(a - levelA) > 90) levelA = a; else levelA += (a - levelA) * .25;
+  const dev = ((levelA % 90) + 135) % 90 - 45; // offset from the nearest of portrait / landscape
+  const show = UX2('level') && S.levelOn && live && !overlayOpen() && !flat && Math.abs(dev) < 14;
+  el.hidden = !show; if (!show) { levelOk = false; return; }
+  el.style.setProperty('--a', levelA.toFixed(2) + 'deg'); // the world's horizon, whichever way the phone is held
+  const ok = Math.abs(dev) < 1;
+  if (ok !== levelOk) { levelOk = ok; el.classList.toggle('ok', ok); if (ok) haptic('tick'); }
+}
 async function boot() {
-  buildCarousel(); buildCamGrid(); buildCamList(); bindSettings(); syncUI(); wire();
+  buildCarousel(); buildCamGrid(); buildCamList(); buildCamCats(); bindSettings(); syncUI(); wire();
   sampleSrc = makeSample();
   lens = makeLens(glc);
   if (!NATIVE && navigator.permissions && navigator.permissions.query) navigator.permissions.query({ name: 'camera' })
