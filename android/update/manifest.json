@@ -1,7 +1,7 @@
 {
  "package": "com.geuhaeyeoreum.camera",
- "build": 503,
- "version": "1.3.0+3",
+ "build": 504,
+ "version": "1.3.0+4",
  "minNative": 5,
  "files": {
   "fonts/IBMPlexSansKR-Medium.woff2": {
@@ -37,10 +37,10 @@
    "size": 876
   },
   "index.html": {
-   "sha256": "b151dae0c7cea12836a27acc5ca08379c277e2fda8b5fff86663ce8ad88f0007",
-   "size": 196072
+   "sha256": "88c440d1b2808a0f1044393f317cbefa8f79475bffe3a87b30efc60cab18a628",
+   "size": 210661
   }
  },
- "date": "2026-10-14T16:01Z",
- "notes": "새 카메라 F-200 VIVID(짙푸름) 추가"
+ "date": "2026-10-14T16:13Z",
+ "notes": "화면 정리 1차(12가지) 적용"
 }
