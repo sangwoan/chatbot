@@ -191,7 +191,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
 .pop{position:absolute;right:10px;width:min(360px,calc(100% - 20px));display:grid;gap:10px;padding:14px;border-radius:16px;color:var(--menu-fg);
   background:linear-gradient(var(--menu-top),var(--menu-bot));box-shadow:0 14px 34px rgba(0,0,0,.45)}
 .pop h4{margin:0;font:700 11px/1 var(--font-osd);letter-spacing:.14em;color:var(--menu-sub)}
-.styles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.styles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 .styles button{display:grid;justify-items:center;gap:6px;padding:8px 0 7px;min-height:74px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:var(--menu-fg)}
 .styles button[aria-checked="true"]{border-color:var(--amber);background:rgba(240,138,36,.16)}
 .styles span{font:600 12px/1 var(--font-ui)}
@@ -202,6 +202,10 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-
 .sp.info::after{content:"";position:absolute;left:4px;right:4px;bottom:3px;height:2px;background:linear-gradient(90deg,#1c1b19 0 40%,transparent 40% 70%,#1c1b19 70%)}
 .sp.pola{box-shadow:inset 0 0 0 3px #f4f1ea,inset 0 -10px 0 #f4f1ea}
 .sp.pola::after{content:"";position:absolute;left:5px;bottom:4px;width:18px;height:2px;border-radius:1px;background:#2d3047}
+.sp.strip{box-shadow:inset 7px 0 0 #0c0a09,inset -7px 0 0 #0c0a09,inset 0 2px 0 #0c0a09,inset 0 -2px 0 #0c0a09}
+.sp.strip::after{content:"";position:absolute;inset:3px 2px;background:repeating-linear-gradient(#efe9dd 0 2px,transparent 2px 5px) left/2px 100% no-repeat,repeating-linear-gradient(#efe9dd 0 2px,transparent 2px 5px) right/2px 100% no-repeat}
+.sp.slide{background:linear-gradient(135deg,#f5f1e8,#e3dccd)}
+.sp.slide::after{content:"";position:absolute;inset:6px 12px;border-radius:2px;background:linear-gradient(#5d7fb0,#d9a68f 60%,#7a6a8c);box-shadow:0 0 0 1px rgba(40,32,22,.35)}
 .sp.off::after{content:"";position:absolute;left:50%;top:50%;width:46px;height:2px;background:rgba(255,255,255,.6);transform:translate(-50%,-50%) rotate(-36deg)}
 .seg{display:inline-flex;border:1px solid rgba(255,255,255,.26);border-radius:10px;overflow:hidden}
 .seg.wide{display:grid;grid-auto-flow:column;grid-auto-columns:1fr}
@@ -555,6 +559,8 @@ html.ux2-hint .hint[hidden]{display:none}
       <button role="radio" data-v="digi"><i class="sp digi"></i><span>디카</span></button>
       <button role="radio" data-v="info"><i class="sp info"></i><span>정보바</span></button>
       <button role="radio" data-v="polaroid"><i class="sp pola"></i><span>폴라</span></button>
+      <button role="radio" data-v="strip"><i class="sp strip"></i><span>필름컷</span></button>
+      <button role="radio" data-v="slide"><i class="sp slide"></i><span>슬라이드</span></button>
       <button role="radio" data-v="off"><i class="sp off"></i><span>없음</span></button>
     </div>
     <h4>찍히는 날짜</h4>
@@ -603,7 +609,7 @@ html.ux2-hint .hint[hidden]{display:none}
         <div class="row"><label for="optDday">D-day 함께 찍기</label><input type="checkbox" class="switch" id="optDday" data-key="ddayOn"></div>
         <div class="row"><label for="optAnniv">기념일 (그날 = D+1)</label><input type="date" class="field" id="optAnniv" data-key="anniv"></div>
         <div class="row"><label for="optCaption">한 줄 문구</label><input type="text" class="field" id="optCaption" data-key="caption" maxlength="24" placeholder="예: 우리 첫 여행"></div>
-        <p class="hint">문구는 폴라·정보바·디카 스탬프에 들어가요. 필름 스탬프는 그 시절처럼 숫자만 찍어요.</p>
+        <p class="hint">문구는 폴라·정보바·디카·슬라이드 스탬프에 들어가요. 필름과 필름컷은 그 시절처럼 숫자만 찍어요.</p>
       </section>
       <section class="group">
         <h3><i class="h-en">SHOOT · </i>촬영</h3>
@@ -1352,6 +1358,12 @@ function layoutFor(tpl, iw, ih) {
   const m = Math.min(iw, ih);
   if (tpl === 'info') { const bar = Math.round(m * .16); return { tpl, W: iw, H: ih + bar, ix: 0, iy: 0, iw, ih, bar }; }
   if (tpl === 'polaroid') { const s = Math.round(m * .06), b = Math.round(m * .27); return { tpl, W: iw + 2 * s, H: ih + s + b, ix: s, iy: s, iw, ih, side: s, bottom: b }; }
+  if (tpl === 'strip') { // a 35mm frame as a scanner sees it: sprocket bands along the film, a sliver of base between frames
+    const lg = Math.max(iw, ih), band = Math.round(lg * .12), gap = Math.round(lg * .028);
+    return ih >= iw ? { tpl, W: iw + 2 * band, H: ih + 2 * gap, ix: band, iy: gap, iw, ih, band, gap, vertical: 1 }
+      : { tpl, W: iw + 2 * gap, H: ih + 2 * band, ix: gap, iy: band, iw, ih, band, gap, vertical: 0 };
+  }
+  if (tpl === 'slide') { const side = Math.round(Math.max(iw, ih) * 1.36); return { tpl, W: side, H: side, ix: Math.round((side - iw) / 2), iy: Math.round((side - ih) / 2), iw, ih }; }
   return { tpl, W: iw, H: ih, ix: 0, iy: 0, iw, ih };
 }
 const scaleLayout = (L, k) => { const o = { tpl: L.tpl }; for (const key in L) if (typeof L[key] === 'number') o[key] = L[key] * k; return o; };
@@ -1590,7 +1602,38 @@ function drawPolaroidText(ctx, L, meta) {
   ctx.restore();
 }
 
+function roundRectPath(ctx, x, y, w, h, r) {
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+/* film-cut: black film base with the backlit sprocket holes of a scanned 35mm negative */
+function drawStripBase(ctx, L) {
+  ctx.fillStyle = '#0c0a09'; ctx.fillRect(0, 0, L.W, L.H);
+  const v = !!L.vertical, lg = Math.max(L.iw, L.ih), pitch = lg * .098, across = lg * .05, along = lg * .036;
+  const len = v ? L.H : L.W, n = Math.floor(len / pitch), off = (len - (n - 1) * pitch) / 2;
+  ctx.fillStyle = '#efe9dd'; ctx.shadowColor = 'rgba(255,240,215,.55)'; ctx.shadowBlur = lg * .004;
+  for (let i = 0; i < n; i++) {
+    const t = off + i * pitch;
+    for (const far of [false, true]) {
+      const c = far ? (v ? L.W : L.H) - L.band * .36 : L.band * .36; // holes sit toward the film's outer edge
+      ctx.beginPath();
+      if (v) roundRectPath(ctx, c - across / 2, t - along / 2, across, along, along * .3);
+      else roundRectPath(ctx, t - along / 2, c - across / 2, along, across, along * .3);
+      ctx.fill();
+    }
+  }
+  ctx.shadowBlur = 0;
+}
+function drawSlideMount(ctx, L) {
+  const g = ctx.createLinearGradient(0, 0, L.W, L.H); g.addColorStop(0, '#f5f1e8'); g.addColorStop(1, '#e8e2d5');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, L.W, L.H);
+  const lg = Math.max(L.iw, L.ih), e = lg * .018;
+  ctx.fillStyle = 'rgba(120,108,88,.16)'; // the pressed rim around the window
+  ctx.beginPath(); roundRectPath(ctx, L.ix - e, L.iy - e, L.iw + 2 * e, L.ih + 2 * e, lg * .035); ctx.fill();
+}
 function drawBackground(ctx, L) {
+  if (L.tpl === 'strip') { drawStripBase(ctx, L); return; }
+  if (L.tpl === 'slide') { drawSlideMount(ctx, L); return; }
   if (L.tpl === 'info') { ctx.fillStyle = infoColors().bg; ctx.fillRect(0, L.iy + L.ih, L.W, L.H - L.iy - L.ih); }
   else if (L.tpl === 'polaroid') {
     const g = ctx.createLinearGradient(0, 0, 0, L.H); g.addColorStop(0, '#f8f5ee'); g.addColorStop(1, '#eeeadf');
@@ -1640,6 +1683,56 @@ function drawForeground(ctx, L, meta) {
   else if (L.tpl === 'digi') drawDigiStamp(ctx, L, meta, col);
   else if (L.tpl === 'info') drawInfoText(ctx, L, meta, col);
   else if (L.tpl === 'polaroid') drawPolaroidText(ctx, L, meta);
+  else if (L.tpl === 'strip') { drawStripEdge(ctx, L, meta); drawFilmStamp(ctx, L, meta, col); }
+  else if (L.tpl === 'slide') drawSlideText(ctx, L, meta);
+}
+const frameNo = () => ((S.seq || 0) % 36) + 1;
+/* edge print in the sprocket bands, the way the lab's film base reads */
+function drawStripEdge(ctx, L, meta) {
+  const v = !!L.vertical, lg = Math.max(L.iw, L.ih), fs = lg * .022, n = frameNo();
+  const inner = L.band * .82; // between the holes and the picture
+  ctx.save();
+  ctx.fillStyle = 'rgba(232,160,70,.92)'; ctx.font = `600 ${fs}px ${OSD_FONT}`; ctx.textBaseline = 'middle';
+  if ('letterSpacing' in ctx) ctx.letterSpacing = (fs * .12).toFixed(2) + 'px';
+  const label = `SUMMER 400  ${meta.cam.code}`, num = `< ${n}    ${n}A`;
+  const put = (text, cx, cy, rot) => { ctx.save(); ctx.translate(cx, cy); ctx.rotate(rot); ctx.textAlign = 'center'; ctx.fillText(text, 0, 0); ctx.restore(); };
+  if (v) {
+    put(label, inner, L.iy + L.ih * .3, -Math.PI / 2);
+    put(num, L.W - inner, L.iy + L.ih * .72, -Math.PI / 2);
+  } else {
+    put(label, L.ix + L.iw * .3, L.H - inner, 0);
+    put(num, L.ix + L.iw * .72, inner, 0);
+  }
+  ctx.restore();
+}
+/* slide mount: rounded window, printed date and number, an optional handwritten label */
+function drawSlideText(ctx, L, meta) {
+  const lg = Math.max(L.iw, L.ih), r = lg * .03, x = L.ix, y = L.iy, w = L.iw, h = L.ih;
+  ctx.save();
+  const g = ctx.createLinearGradient(0, 0, L.W, L.H); g.addColorStop(0, '#f5f1e8'); g.addColorStop(1, '#e8e2d5');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.rect(x, y, w, h); roundRectPath(ctx, x, y, w, h, r); ctx.fill('evenodd'); // round the window's corners
+  ctx.strokeStyle = 'rgba(40,32,22,.42)'; ctx.lineWidth = lg * .004; ctx.beginPath(); roundRectPath(ctx, x, y, w, h, r); ctx.stroke();
+  const top = y, bottom = L.H - (y + h), ink = '#5f584b', fs = Math.min(Math.min(top, bottom) * .2, lg * .03);
+  ctx.fillStyle = ink; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+  const hand = [meta.caption, meta.dday].filter(Boolean).join('  ');
+  ctx.font = `600 ${fs * .8}px ${UI_FONT}`; if ('letterSpacing' in ctx) ctx.letterSpacing = (fs * .22).toFixed(2) + 'px';
+  // with a handwritten label the printed header moves to the right half so the two never meet
+  let room = w;
+  if (hand) { ctx.textAlign = 'right'; const t = `SLIDE · ${meta.cam.code}`; ctx.fillText(t, x + w, top * .5); room = w - ctx.measureText(t).width - fs * 1.5; ctx.textAlign = 'center'; }
+  else ctx.fillText(`SUMMER SLIDE  ·  ${meta.cam.code}`, L.W / 2, top * .5);
+  const M = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'], d = meta.date;
+  ctx.font = `700 ${fs}px ${UI_FONT}`; if ('letterSpacing' in ctx) ctx.letterSpacing = (fs * .18).toFixed(2) + 'px';
+  ctx.fillText(`${M[d.getMonth()]} ${d.getDate()} · ${d.getFullYear()}${R.showTime ? '  ' + timeText(d) : ''}`, L.W / 2, L.H - bottom * .5);
+  ctx.textAlign = 'right'; ctx.font = `600 ${fs * .7}px ${UI_FONT}`;
+  ctx.fillText(`No. ${pad2(frameNo())}`, L.W - L.ix * .32, L.H - bottom * .5);
+  if (hand) {
+    if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+    ctx.fillStyle = '#2d3047'; ctx.textAlign = 'left';
+    ctx.save(); ctx.translate(x, top * .52); ctx.rotate(-.02);
+    ctx.fillText(fitText(ctx, hand, room, Math.min(fs * 1.8, top * .5), 400, PEN_FONT), 0, 0);
+    ctx.restore();
+  }
+  ctx.restore();
 }
 async function ensureFonts(text) {
   if (!document.fonts || !document.fonts.load) return;
@@ -1758,7 +1851,7 @@ function stopCamera() {
   if (cdCancel) cdCancel(); // leaving the app or losing the camera mid-countdown: no blind shot
   if (stream) stream.getTracks().forEach(t => t.stop());
   stream = null; track = null; live = false;
-  syncAwake(); syncGrid(); $('#level').hidden = true;
+  syncAwake(); syncGrid(); $('#level').hidden = true; levelShown = false;
   syncVolumeKey();
 }
 function superseded(s) { if (s) s.getTracks().forEach(t => t.stop()); const e = new Error('camera start superseded'); e.superseded = true; return e; }
@@ -2483,13 +2576,14 @@ function renderGrid() {
   if (dbBroken) $('#galleryEmpty span').textContent = '앨범을 열지 못했어요. 앱을 완전히 닫았다가 다시 열어 주세요.';
   $('#galleryTitle').textContent = `ALBUM · ${photos.length}`;
   const days = UX2('days'), counts = {};
-  const dayKey = rec => { const d = new Date(rec.taken || rec.created); return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; };
+  // grouped by the day a photo came into the album (the album's own order), so an imported old photo never splits today
+  const dayKey = rec => { const d = new Date(rec.created); return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; };
   if (days) for (const rec of photos) counts[dayKey(rec)] = (counts[dayKey(rec)] || 0) + 1;
   let lastDay = '';
   for (const rec of photos) {
     if (days && dayKey(rec) !== lastDay) {
       lastDay = dayKey(rec);
-      const d = new Date(rec.taken || rec.created), now = new Date(), y = new Date(now); y.setDate(now.getDate() - 1);
+      const d = new Date(rec.created), now = new Date(), y = new Date(now); y.setDate(now.getDate() - 1);
       const same = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
       const label = same(d, now) ? '오늘' : same(d, y) ? '어제'
         : `${d.getFullYear() !== now.getFullYear() ? d.getFullYear() + '년 ' : ''}${d.getMonth() + 1}월 ${d.getDate()}일 (${'일월화수목금토'[d.getDay()]})`;
@@ -2829,7 +2923,7 @@ function tapFocus(cx, cy) {
 }
 
 /* ───────── controls ↔ settings ───────── */
-const STAMP_KO = { film: '필름', digi: '디카', info: '정보바', polaroid: '폴라', off: '없음' };
+const STAMP_KO = { film: '필름', digi: '디카', info: '정보바', polaroid: '폴라', strip: '필름컷', slide: '슬라이드', off: '없음' };
 function shotFlags() {
   return [S.flash && 'FLASH', S.timer && `SELF ${S.timer}S`, S.light !== 'off' && (S.light === 'rand' ? 'LIGHT RND' : 'LIGHT'),
     zoom > 1.05 && `×${zoom.toFixed(1)}`, Math.abs(ev) > .05 && `${ev > 0 ? '+' : '−'}${Math.abs(ev).toFixed(1)}EV`].filter(Boolean);
@@ -3224,7 +3318,7 @@ function swipeHint() {
   setTimeout(() => { h.classList.remove('show'); setTimeout(() => { h.hidden = true; }, 400); }, 3600);
 }
 /* spirit level: the horizon line follows the phone's roll; amber within 1° of level */
-let levelA = null, levelOk = false;
+let levelA = null, levelOk = false, levelShown = false;
 function syncGrid() { $('#vgrid').hidden = !(UX2('level') && S.gridOn && live); }
 function syncLevel(x, y, z) {
   const el = $('#level');
@@ -3233,8 +3327,9 @@ function syncLevel(x, y, z) {
   if (levelA === null || Math.abs(a - levelA) > 90) levelA = a; else levelA += (a - levelA) * .25;
   const dev = ((levelA % 90) + 135) % 90 - 45; // offset from the nearest of portrait / landscape
   const show = UX2('level') && S.levelOn && live && !overlayOpen() && !flat && Math.abs(dev) < 14;
-  el.hidden = !show; if (!show) { levelOk = false; return; }
-  el.style.setProperty('--a', levelA.toFixed(2) + 'deg'); // the world's horizon, whichever way the phone is held
+  if (show !== levelShown) { levelShown = show; el.hidden = !show; }
+  if (!show) { levelOk = false; return; }
+  el.style.setProperty('--a', levelA.toFixed(1) + 'deg'); // the world's horizon, whichever way the phone is held
   const ok = Math.abs(dev) < 1;
   if (ok !== levelOk) { levelOk = ok; el.classList.toggle('ok', ok); if (ok) haptic('tick'); }
 }
