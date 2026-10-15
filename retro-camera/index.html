@@ -445,16 +445,20 @@ html.ux-viewer-clean #btnDelete{--ic:url("data:image/svg+xml,%3Csvg xmlns='http:
 html.ux-viewer-clean #btnRedevelop{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 12a7.5 7.5 0 0 1 13-5.1M19.5 12a7.5 7.5 0 0 1-13 5.1'/%3E%3Cpath d='M18 3v4.2h-4.2M6 21v-4.2h4.2'/%3E%3C/svg%3E")}
 html.ux-viewer-clean #btnSave{--ic:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 15V4M7.5 8.5 12 4l4.5 4.5M5 13v6h14v-6'/%3E%3C/svg%3E")}
 /* ── round 2 (each item is a class on <html>; remove the class to turn it off) ── */
-.camcats,.level,.vgrid,.hint,[data-ux2]{display:none}
+.camcats,.level,.vgrid,.swipehint,[data-ux2]{display:none}
 /* ux2-cats: camera list filtered by kind */
 html.ux2-cats .camcats{display:flex;gap:6px;overflow-x:auto;padding:2px 16px 10px;scrollbar-width:none;flex:none}
 html.ux2-cats .camcats::-webkit-scrollbar{display:none}
-html.ux2-cats .camcats button{flex:none;min-height:40px;padding:0 14px;border-radius:20px;border:1px solid rgba(255,255,255,.16);background:transparent;color:var(--menu-sub);font:600 13.5px var(--font-ui)}
-html.ux2-cats .camcats button small{margin-left:5px;font:400 10px var(--font-osd);opacity:.75}
+html.ux2-cats .camcats button{flex:none;min-height:40px;padding:0 12px;border-radius:20px;border:1px solid rgba(255,255,255,.16);background:transparent;color:var(--menu-sub);font:600 13.5px var(--font-ui)}
+html.ux2-cats .camcats button small{margin-left:5px;font:400 11px var(--font-osd);color:inherit;opacity:.85}
+html.ux2-cats .camcats::after{content:"";flex:0 0 4px}
+html.ux2-cats #camListSheet .panel{height:min(90%,700px)}
+html.ux2-cats #camListSheet .camlist{flex:1;align-content:start}
 html.ux2-cats .camcats button[aria-pressed="true"]{border-color:transparent;background:var(--menu-fg);color:var(--menu-top)}
 /* ux2-card: the current camera's own card, opened from its name under the carousel */
 html.ux2-card .caption{cursor:pointer;-webkit-tap-highlight-color:transparent}
-html.ux2-card .caption b::after{content:"";display:inline-block;width:6px;height:6px;margin:0 0 3px 7px;border:solid currentColor;border-width:0 1.6px 1.6px 0;transform:rotate(-45deg);opacity:.55}
+html.ux2-card .caption b{position:relative;display:table;margin:0 auto}
+html.ux2-card .caption b::after{content:"";position:absolute;right:-14px;top:50%;width:6px;height:6px;margin-top:-4px;border:solid currentColor;border-width:0 1.6px 1.6px 0;transform:rotate(-45deg);opacity:.55}
 .caminfo{display:grid;gap:14px;padding-top:4px}
 .ci-shot{position:relative;margin:0;border-radius:12px;overflow:hidden;background:#0a1426;aspect-ratio:4/3}
 .ci-shot img{display:block;width:100%;height:100%;object-fit:cover}
@@ -463,6 +467,7 @@ html.ux2-card .caption b::after{content:"";display:inline-block;width:6px;height
 .ci-badge b{font:400 10px/1.2 var(--font-osd);letter-spacing:.08em}
 .ci-head h3{margin:0;font:700 21px/1.3 var(--font-ui);letter-spacing:-.02em;text-wrap:balance}
 .ci-head p{margin:4px 0 0;font:400 11px/1.5 var(--font-osd);letter-spacing:.06em;color:var(--menu-sub)}
+.ci-head p span{font:500 12px/1.5 var(--font-ui);letter-spacing:0}
 .ci-vibe{display:inline-block;margin-bottom:6px;padding:3px 9px;border-radius:10px;background:rgba(255,255,255,.1);font:600 12px var(--font-ui);color:var(--menu-fg)}
 .ci-tags{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .ci-tags span{font:500 12px var(--font-ui);color:var(--menu-sub)}
@@ -472,14 +477,14 @@ html.ux2-card .caption b::after{content:"";display:inline-block;width:6px;height
 .ci-acts{display:grid;grid-template-columns:1fr 1.4fr;gap:8px;margin-top:2px}
 .ci-acts .pbtn{min-height:48px}
 /* ux2-level: spirit level and an optional rule-of-thirds grid in the viewfinder */
-html.ux2-level .level{display:block;position:absolute;left:32%;right:32%;top:50%;height:0}
+html.ux2-level .level{display:block;position:absolute;left:36%;right:36%;top:50%;height:0;transform:rotate(var(--snap,0deg))}
 html.ux2-level .level i{position:absolute;inset:-.75px 0 auto;height:1.5px;border-radius:1px;background:rgba(238,242,232,.6);transform:rotate(var(--a,0deg));transition:background .15s}
 html.ux2-level .level::before,html.ux2-level .level::after{content:"";position:absolute;top:-.75px;width:10px;height:1.5px;background:rgba(238,242,232,.85)}
 html.ux2-level .level::before{left:-16px}html.ux2-level .level::after{right:-16px}
 html.ux2-level .level.ok i{background:var(--amber)}
 html.ux2-level .level.ok::before,html.ux2-level .level.ok::after{background:var(--amber)}
 html.ux2-level .level[hidden],html.ux2-level .vgrid[hidden]{display:none}
-html.ux2-level .vgrid{display:block;position:absolute;inset:0;
+html.ux2-level .vgrid{display:block;position:absolute;pointer-events:none;
   background:linear-gradient(90deg,transparent calc(33.333% - .5px),rgba(238,242,232,.32) 0 calc(33.333% + .5px),transparent 0 calc(66.666% - .5px),rgba(238,242,232,.32) 0 calc(66.666% + .5px),transparent 0),
     linear-gradient(transparent calc(33.333% - .5px),rgba(238,242,232,.32) 0 calc(33.333% + .5px),transparent 0 calc(66.666% - .5px),rgba(238,242,232,.32) 0 calc(66.666% + .5px),transparent 0)}
 html.ux2-level [data-ux2="level"]{display:flex}
@@ -491,9 +496,9 @@ html.ux2-days .grid .day small{margin-left:6px;font:400 12px var(--font-ui);colo
 @keyframes develop{0%{filter:brightness(.18) sepia(.85) contrast(.75) saturate(.6)}55%{filter:brightness(.85) sepia(.3) contrast(.95)}100%{filter:none}}
 html.ux2-develop .thumb.dev{animation:develop 1.8s ease-out}
 /* ux2-hint: a first-days reminder that the viewfinder swipes */
-html.ux2-hint .hint{display:block;position:absolute;left:50%;bottom:16%;transform:translateX(-50%);padding:7px 12px;border-radius:16px;background:rgba(0,0,0,.55);color:var(--osd);font:500 12.5px/1 var(--font-ui);white-space:nowrap;opacity:0;transition:opacity .35s}
-html.ux2-hint .hint.show{opacity:1}
-html.ux2-hint .hint[hidden]{display:none}
+html.ux2-hint .swipehint{display:block;position:absolute;left:50%;top:12%;transform:translateX(-50%);padding:7px 12px;border-radius:16px;background:rgba(0,0,0,.55);color:var(--osd);font:500 12.5px/1 var(--font-ui);white-space:nowrap;opacity:0;transition:opacity .35s}
+html.ux2-hint .swipehint.show{opacity:1}
+html.ux2-hint .swipehint[hidden]{display:none}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -514,14 +519,14 @@ html.ux2-hint .hint[hidden]{display:none}
     <div class="lcd" id="lcd">
       <div class="frame" id="frame">
         <canvas id="gl" aria-label="뷰파인더"></canvas>
+        <div class="vgrid" id="vgrid" hidden></div>
         <canvas id="deco" aria-hidden="true"></canvas>
         <div class="osd" id="osd" aria-hidden="true">
           <div class="af" id="af"><i></i><i></i><i></i><i></i></div>
           <div class="camtag" id="camTag"></div>
           <div class="zoombar" id="zoomBar" hidden><b>W</b><span class="track"><i id="zoomKnob"></i></span><b>T</b><em id="zoomVal">×1.0</em></div>
-          <div class="vgrid" id="vgrid" hidden></div>
           <div class="level" id="level" hidden><i></i></div>
-          <div class="hint" id="hint" hidden>‹ 좌우로 밀면 카메라가 바뀌어요 ›</div>
+          <div class="swipehint" id="hint" hidden>‹ 좌우로 밀면 카메라가 바뀌어요 ›</div>
           <div class="evbar" id="evBar" hidden><span id="evVal">±0.0</span><span class="track"><i id="evKnob"></i></span><span>EV</span></div>
         </div>
       </div>
@@ -675,7 +680,7 @@ html.ux2-hint .hint[hidden]{display:none}
       <div class="ci-tags" id="ciTags"></div>
       <p class="ci-story" id="ciStory"></p>
       <p class="ci-motif" id="ciMotif"></p>
-      <div class="ci-acts"><button class="pbtn" id="ciOther">다른 카메라 보기</button><button class="pbtn amber" id="ciShoot">이 카메라로 찍기</button></div>
+      <div class="ci-acts"><button class="pbtn" id="ciOther">다른 카메라 보기</button><button class="pbtn amber" id="ciShoot">찍으러 가기</button></div>
     </div>
   </div>
 </div>
@@ -1851,7 +1856,7 @@ function stopCamera() {
   if (cdCancel) cdCancel(); // leaving the app or losing the camera mid-countdown: no blind shot
   if (stream) stream.getTracks().forEach(t => t.stop());
   stream = null; track = null; live = false;
-  syncAwake(); syncGrid(); $('#level').hidden = true; levelShown = false;
+  syncAwake(); syncGrid(); levelOff();
   syncVolumeKey();
 }
 function superseded(s) { if (s) s.getTracks().forEach(t => t.stop()); const e = new Error('camera start superseded'); e.superseded = true; return e; }
@@ -1950,7 +1955,7 @@ function relayout() {
   const k = Math.min(aw / L.W, ah / L.H), bw = Math.round(L.W * k), bh = Math.round(L.H * k);
   frame.style.width = bw + 'px'; frame.style.height = bh + 'px';
   const ir = { left: L.ix * k + 'px', top: L.iy * k + 'px', width: L.iw * k + 'px', height: L.ih * k + 'px' };
-  Object.assign(glc.style, ir); Object.assign(osd.style, ir);
+  Object.assign(glc.style, ir); Object.assign(osd.style, ir); Object.assign($('#vgrid').style, ir);
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   let gw = Math.round(L.iw * k * dpr), gh = Math.round(L.ih * k * dpr);
   const cap = 1280 / Math.max(gw, gh);
@@ -2432,16 +2437,16 @@ async function loadPhotos() {
     toast('앨범을 열지 못했어요. 앱을 완전히 닫았다가 다시 열어 주세요', 4000);
   }
   syncAlbum();
-  thumbOf = photos[0] ? photos[0].id : ''; // from here on a new photo on the button develops in
+  thumbOf = photos[0] ? photos[0].id : ''; thumbAt = photos[0] ? photos[0].created : 0; // from here on a new photo on the button develops in
 }
-let thumbOf; // id of the photo on the album button; undefined until the album has loaded
+let thumbOf, thumbAt = 0; // the photo on the album button (undefined until the album has loaded) and the newest time shown
 function syncAlbum() {
   const btn = $('#btnGallery');
   if (jobs.length > 1) {} // jobs[0] is the shot being stored; a newer shot's snapshot is already on the thumb
   else if (photos[0]) {
     btn.style.backgroundImage = `url("${urlOf(photos[0], 'thumb')}")`; btn.classList.add('has');
-    if (UX2('develop') && thumbOf !== undefined && thumbOf !== photos[0].id && photos[0].created > Date.now() - 60000) { btn.classList.remove('dev'); void btn.offsetWidth; btn.classList.add('dev'); }
-    thumbOf = photos[0].id;
+    if (UX2('develop') && thumbOf !== undefined && photos[0].created > thumbAt && photos[0].created > Date.now() - 60000) { btn.classList.remove('dev'); void btn.offsetWidth; btn.classList.add('dev'); }
+    thumbOf = photos[0].id; thumbAt = Math.max(thumbAt, photos[0].created);
   }
   else if (!jobs.length && !busyOther) { btn.style.backgroundImage = ''; btn.classList.remove('has'); }
   drawOverlay(); // shots-left counter
@@ -2808,7 +2813,8 @@ function openCamInfo() {
   badge.style.setProperty('--ci-hi', b.hi); badge.style.setProperty('--ci-lo', b.lo); badge.style.setProperty('--ci-ink', b.ink);
   $('#ciVibe').textContent = c.vibe;
   $('#ciMood').textContent = c.mood;
-  $('#ciSpec').textContent = `${c.mp}M ${c.sensor} · ${c.lens.filter(Boolean).join(' ')} · ${c.ko}`;
+  const spec = $('#ciSpec'); spec.textContent = `${c.mp}M ${c.sensor} · ${c.lens.filter(Boolean).join(' ')} · `;
+  const ko = document.createElement('span'); ko.textContent = c.ko; spec.appendChild(ko);
   const tags = $('#ciTags'); tags.textContent = '';
   const lab = document.createElement('span'); lab.textContent = '이럴 때 좋아요'; tags.appendChild(lab);
   for (const t of SCENES[c.id] || []) { const i = document.createElement('i'); i.textContent = t; tags.appendChild(i); }
@@ -3216,8 +3222,13 @@ function wire() {
   }
   $('#btnMoreDate').addEventListener('click', () => { closePops(); openSheet('#menuSheet'); setTimeout(() => $('#ourDay').scrollIntoView({ block: 'start' }), 60); });
   $('#btnMenu').addEventListener('click', () => { haptic('tick'); syncAppInfo(); openSheet('#menuSheet'); });
+  $('#btnGallery').addEventListener('animationend', e => { if (e.animationName === 'develop') e.currentTarget.classList.remove('dev'); });
   const cap = $('.caption');
-  if (UX2('card')) { cap.setAttribute('role', 'button'); cap.tabIndex = 0; cap.removeAttribute('aria-live'); $('#capTitle').setAttribute('aria-live', 'polite'); cap.setAttribute('aria-description', '눌러서 이 카메라 자세히 보기'); }
+  if (UX2('card')) {
+    cap.setAttribute('role', 'button'); cap.removeAttribute('aria-live'); $('#capTitle').setAttribute('aria-live', 'polite'); cap.setAttribute('aria-description', '눌러서 이 카메라 자세히 보기');
+    const short = matchMedia('(max-height:620px)'), tab = () => { cap.tabIndex = short.matches ? -1 : 0; };
+    tab(); if (short.addEventListener) short.addEventListener('change', tab);
+  }
   cap.addEventListener('click', () => { if (UX2('card')) { haptic('tick'); openCamInfo(); } });
   cap.addEventListener('keydown', e => { if (UX2('card') && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openCamInfo(); } });
   $('#ciShoot').addEventListener('click', () => closeSheet($('#camInfoSheet')));
@@ -3318,7 +3329,8 @@ function swipeHint() {
   setTimeout(() => { h.classList.remove('show'); setTimeout(() => { h.hidden = true; }, 400); }, 3600);
 }
 /* spirit level: the horizon line follows the phone's roll; amber within 1° of level */
-let levelA = null, levelOk = false, levelShown = false;
+let levelA = null, levelOk = false, levelShown = false, levelTickAt = 0;
+function levelOff() { const el = $('#level'); el.hidden = true; levelShown = false; if (levelOk) { levelOk = false; el.classList.remove('ok'); } }
 function syncGrid() { $('#vgrid').hidden = !(UX2('level') && S.gridOn && live); }
 function syncLevel(x, y, z) {
   const el = $('#level');
@@ -3327,11 +3339,16 @@ function syncLevel(x, y, z) {
   if (levelA === null || Math.abs(a - levelA) > 90) levelA = a; else levelA += (a - levelA) * .25;
   const dev = ((levelA % 90) + 135) % 90 - 45; // offset from the nearest of portrait / landscape
   const show = UX2('level') && S.levelOn && live && !overlayOpen() && !flat && Math.abs(dev) < 14;
-  if (show !== levelShown) { levelShown = show; el.hidden = !show; }
-  if (!show) { levelOk = false; return; }
-  el.style.setProperty('--a', levelA.toFixed(1) + 'deg'); // the world's horizon, whichever way the phone is held
-  const ok = Math.abs(dev) < 1;
-  if (ok !== levelOk) { levelOk = ok; el.classList.toggle('ok', ok); if (ok) haptic('tick'); }
+  if (!show) { if (levelShown || levelOk) levelOff(); return; }
+  if (!levelShown) { levelShown = true; el.hidden = false; }
+  // the box sits on the nearest portrait/landscape axis (so its end ticks are the reference), the line shows the world's horizon
+  el.style.setProperty('--snap', (Math.round((levelA - dev) / 90) * 90) + 'deg');
+  el.style.setProperty('--a', dev.toFixed(1) + 'deg');
+  const ok = levelOk ? Math.abs(dev) < 1.3 : Math.abs(dev) < .7; // hysteresis: no flicker or buzzing around 1°
+  if (ok !== levelOk) {
+    levelOk = ok; el.classList.toggle('ok', ok);
+    if (ok && performance.now() - levelTickAt > 600) { levelTickAt = performance.now(); haptic('tick'); }
+  }
 }
 async function boot() {
   buildCarousel(); buildCamGrid(); buildCamList(); buildCamCats(); bindSettings(); syncUI(); wire();
