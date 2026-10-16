@@ -660,23 +660,23 @@ html.ux3-film .blk.amount .range-ends{display:flex;justify-content:space-between
       </section>
       <section class="group" id="grpStamp">
         <h3><i class="h-en">STAMP · </i>스탬프 세부 설정</h3>
-        <div class="row"><span class="lbl">찍히는 날짜</span>
+        <div data-for="film digi info polaroid strip slide" class="row"><span class="lbl">찍히는 날짜</span>
           <div class="seg" data-key="dateMode"><button data-v="now">오늘</button><button data-v="year" id="segYear">그해</button><button data-v="custom">직접</button></div></div>
-        <div class="row custom"><label for="optCustom">직접 고른 날짜</label><input type="datetime-local" class="field" id="optCustom" data-key="customDate"></div>
-        <div class="row"><span class="lbl">날짜 순서</span>
+        <div data-for="film digi info polaroid strip slide" class="row custom"><label for="optCustom">직접 고른 날짜</label><input type="datetime-local" class="field" id="optCustom" data-key="customDate"></div>
+        <div data-for="film digi info polaroid strip" class="row"><span class="lbl">날짜 순서</span>
           <div class="seg" data-key="dateOrder"><button data-v="ymd">년 월 일</button><button data-v="mdy">월 일 년</button><button data-v="dmy">일 월 년</button></div></div>
-        <div class="row"><label for="optTime">시간도 함께 찍기</label><input type="checkbox" class="switch" id="optTime" data-key="showTime"></div>
+        <div data-for="film digi info polaroid strip slide" class="row"><label for="optTime">시간도 함께 찍기</label><input type="checkbox" class="switch" id="optTime" data-key="showTime"></div>
         <div class="row"><label for="optOsd">화면 정보(모드·남은 장수·배터리)도 찍기</label><input type="checkbox" class="switch" id="optOsd" data-key="osdOn"></div>
-        <div class="row"><span class="lbl">스탬프 색</span>
+        <div data-for="film digi info strip" class="row"><span class="lbl">스탬프 색</span>
           <div class="swatches" data-key="color">
             <button data-v="orange" style="--sw:#ff8f2e" aria-label="오렌지"></button>
             <button data-v="yellow" style="--sw:#ffd23f" aria-label="옐로"></button>
             <button data-v="red" style="--sw:#ff4b33" aria-label="레드"></button>
             <button data-v="white" style="--sw:#f4f4ef" aria-label="화이트"></button>
           </div></div>
-        <div class="row"><span class="lbl">스탬프 위치</span>
+        <div data-for="film digi strip" class="row"><span class="lbl">스탬프 위치</span>
           <div class="seg" data-key="align"><button data-v="left">왼쪽 아래</button><button data-v="right">오른쪽 아래</button></div></div>
-        <div class="row"><span class="lbl">정보바 색</span>
+        <div data-for="info" class="row"><span class="lbl">정보바 색</span>
           <div class="seg" data-key="infoTheme"><button data-v="light">화이트</button><button data-v="dark">블랙</button></div></div>
       </section>
       <section class="group" id="ourDay">
@@ -2923,7 +2923,7 @@ function openCamSheet() {
   let source = sampleSrc;
   if (useLive) { const c = document.createElement('canvas'); c.width = video.videoWidth; c.height = video.videoHeight; c.getContext('2d').drawImage(video, 0, 0); source = c; }
   renderCamThumbs(source, useLive && S.facing === 'user');
-  const cur = $(`#camGrid .cam-card[data-v="${S.cam}"]`); if (cur) cur.scrollIntoView({ block: 'nearest' });
+  const cur = $(`#camGrid .cam-card[data-v="${S.cam}"]`); if (cur) cur.scrollIntoView({ block: 'center' }); // never half a card under the header
 }
 async function pickCamera(rec) {
   $('#camSheet').classList.add('over');
@@ -3027,6 +3027,8 @@ function syncUI() {
   const cam = currentCam();
   $$('#car button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === S.cam)));
   $('#optCustom').hidden = S.dateMode !== 'custom';
+  // stamp rows that do nothing for the chosen style stay out of the way
+  $$('#menuSheet [data-for]').forEach(r => { r.hidden = !r.dataset.for.split(' ').includes(S.stamp); });
   $('#segYear').textContent = `그해 (${cam.year})`;
   $('#amountVal').textContent = S.amount + '%';
   $('#btnFlash').classList.toggle('on', !!S.flash); $('#btnFlash').setAttribute('aria-pressed', String(!!S.flash));
