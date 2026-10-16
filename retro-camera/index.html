@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko" class="ux-keys-bar ux-camkey ux-lcd-fit ux-caption-hero ux-shoot-row ux-sheet-head ux-selection ux-ko-headings ux-popover ux-cam-sheets ux-album-grid ux-viewer-clean ux2-cats ux2-card ux2-level ux2-days ux2-develop ux2-tag ux2-hint">
+<html lang="ko" class="ux3-film ux-lcd-fit ux-caption-hero ux-shoot-row ux-sheet-head ux-selection ux-ko-headings ux-popover ux-cam-sheets ux-album-grid ux-viewer-clean ux2-cats ux2-card ux2-level ux2-days ux2-develop ux2-tag ux2-hint">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -499,20 +499,82 @@ html.ux2-develop .thumb.dev{animation:develop 1.8s ease-out}
 html.ux2-hint .swipehint{display:block;position:absolute;left:50%;top:12%;transform:translateX(-50%);padding:7px 12px;border-radius:16px;background:rgba(0,0,0,.55);color:var(--osd);font:500 12.5px/1 var(--font-ui);white-space:nowrap;opacity:0;transition:opacity .35s}
 html.ux2-hint .swipehint.show{opacity:1}
 html.ux2-hint .swipehint[hidden]{display:none}
+/* ── round 3 [ux3-film] (Film Cam school): only camera-essential keys stay on the body — flash and timer up top, album / shutter / flip below —
+   as small monochrome icons printed on the body, no labels, no key bar. "On" = a tinted, ringed pill (flash bolt lit amber, timer shows 3초/10초).
+   Stamp style, light and colour strength move into the menu, which becomes a live drawer: the viewfinder above it keeps running. ── */
+html.ux3-film .status{min-height:52px;padding:4px 6px 2px}
+.qk{display:flex;gap:2px}
+.qkey{appearance:none;position:relative;flex:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:44px;height:44px;padding:0 10px;border:0;border-radius:22px;
+  background:transparent;color:var(--ink);transition:background-color .15s,color .15s,padding .15s}
+.qkey svg{flex:none;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.qkey span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.qkey:active{background:color-mix(in srgb,currentColor 14%,transparent)}
+.qkey.on{background:color-mix(in srgb,var(--ink) 13%,transparent);box-shadow:inset 0 0 0 1.3px color-mix(in srgb,var(--ink) 38%,transparent)}
+.qkey.on:active{background:color-mix(in srgb,var(--ink) 22%,transparent)}
+#btnFlash.on svg path{fill:#ffb21e}
+#btnTimer.on{padding:0 14px 0 11px}
+#btnTimer.on span{position:static;width:auto;height:auto;overflow:visible;clip:auto;font:600 14px/1 var(--font-ui);letter-spacing:-.01em}
+/* picker header: engraved brand with the power LED, and "all cameras" (it used to be the camera chip in the status row) */
+html.ux3-film .plate{align-items:center;min-height:44px;margin-top:auto;padding:0 8px 0 18px}
+html.ux3-film .plate b{display:inline-flex;align-items:center;gap:9px}
+html.ux3-film .plate b .led{display:block;width:6px;height:6px}
+html.ux3-film.ux-lcd-fit .carousel{margin-top:0}
+.allcams{position:relative;display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 14px;border:0;background:none;color:var(--ink);font:600 13px/1 var(--font-ui);letter-spacing:-.01em}
+.allcams::before{content:"";position:absolute;inset:6px 0;border-radius:16px;box-shadow:inset 0 0 0 1.2px color-mix(in srgb,currentColor 32%,transparent);transition:background-color .15s}
+.allcams:active::before{background:color-mix(in srgb,currentColor 13%,transparent)}
+.allcams svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.9}
+html.ux3-film .plate .allcams span{display:inline}
+.allcams small{font:500 12px/1 var(--font-ui);opacity:.6}
+@media (max-height:700px){html.ux3-film .plate{display:flex}}
+/* shutter row: empty album and flip share one quiet, recessed material; a photo thumb keeps its white print border */
+html.ux3-film .shoot{margin-top:auto}
+html.ux3-film .thumb:not(.has){background:color-mix(in srgb,var(--ink) 9%,transparent);color:var(--ink);box-shadow:inset 0 0 0 1.2px color-mix(in srgb,var(--ink) 26%,transparent)}
+html.ux3-film .thumb:not(.has) svg{opacity:.8}
+html.ux3-film .flip{width:52px;height:52px;padding:0;border-radius:16px;background:color-mix(in srgb,var(--ink) 9%,transparent);box-shadow:inset 0 0 0 1.2px color-mix(in srgb,var(--ink) 26%,transparent)}
+html.ux3-film .flip svg{width:24px;height:24px}
+html.ux3-film .flip:active{background:color-mix(in srgb,var(--ink) 18%,transparent)}
+/* sheets slide up instead of popping in */
+@keyframes sheetUp{from{transform:translateY(36px)}}
+html.ux3-film .sheet:not([hidden]) > .panel{animation:sheetUp .2s cubic-bezier(.2,.85,.25,1)}
+/* the menu: a live drawer over the lower body; the viewfinder above stays visible and keeps rendering */
+html.ux3-film #menuSheet{background:linear-gradient(rgba(8,10,16,0) 34%,rgba(8,10,16,.3))}
+html.ux3-film #menuSheet .panel{height:min(60%,620px);max-height:none;box-shadow:0 -6px 24px rgba(0,0,0,.45)}
+html.ux3-film #menuSheet .panel-head{gap:6px;padding:20px 8px 8px 10px}
+html.ux3-film #menuSheet .panel-head h2{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.jump{flex:1;min-width:0;display:flex;overflow-x:auto;scrollbar-width:none;touch-action:pan-x}
+.jump::-webkit-scrollbar{display:none}
+.jump button{flex:none;height:44px;padding:0 10px;border:0;border-radius:22px;background:none;color:var(--menu-sub);font:600 14.5px/1 var(--font-ui);letter-spacing:-.01em;white-space:nowrap}
+.jump button[aria-current="true"]{background:rgba(255,255,255,.1);color:var(--menu-fg)}
+.jump button:active{background:rgba(255,255,255,.14)}
+html.ux3-film #menuBody{scroll-padding-top:8px}
+html.ux3-film #grpLook h3{margin-top:12px}
+.blk{padding:4px 0 12px;border-bottom:1px solid rgba(255,255,255,.07)}
+.blk-h{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:40px}
+.blk-h .lbl,.blk-h label{font:500 15px var(--font-ui)}
+.blk-h .val{font:600 13.5px/1.2 var(--font-ui);color:#ffc98a}
+html.ux3-film #amountVal{font:700 12px/1.3 var(--font-osd);letter-spacing:.06em}
+.styles.strip{display:flex;gap:6px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;margin:0 -16px;padding:2px 16px 2px;scroll-padding-inline:16px;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 30px),transparent);mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 30px),transparent)}
+.styles.strip::-webkit-scrollbar{display:none}
+.styles.strip button{flex:0 0 74px;min-height:78px;padding:10px 0 9px;scroll-snap-align:start}
+.row:has(+ .hint.note){border-bottom:0}
+.hint.note{margin:-6px 0 0;padding:0 0 12px;font-size:12.5px;line-height:1.5;border-bottom:1px solid rgba(255,255,255,.07)}
+.blk.amount{padding-bottom:10px;border-bottom:0}
+.blk.amount .range{display:block;width:100%;margin:0}
+html.ux3-film .blk.amount .range-ends{display:flex;justify-content:space-between;margin:-2px 2px 0;font:400 12px/1.4 var(--font-ui);color:var(--menu-sub)}
+.row.custom:has(#optCustom[hidden]){display:none}
+.row.custom .field{flex:1 1 200px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 <div class="cam" id="cam">
   <header class="status">
-    <button class="camkey" id="btnCam" aria-haspopup="dialog" aria-label="카메라 고르기"><span id="chipIcon"></span><span class="led" id="led"></span><b id="chipCode">AQUA</b></button>
-    <div class="keys">
-      <button class="key" id="btnFlash" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z"/></svg><span id="lblFlash">플래시</span></button>
-      <button class="key" id="btnTimer" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 2M9.5 2.5h5"/></svg><span id="lblTimer">타이머</span></button>
-      <button class="key" id="btnDate" aria-haspopup="dialog" aria-expanded="false"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M13 14.5h4"/></svg><span id="lblDate">필름</span></button>
-      <button class="key" id="btnLight" aria-pressed="false" aria-haspopup="dialog" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4M5.3 5.3l2.6 2.6M16.1 16.1l2.6 2.6M18.7 5.3l-2.6 2.6M7.9 16.1l-2.6 2.6"/><circle cx="12" cy="12" r="2.6"/></svg><span id="lblLight">빛</span></button>
-      <button class="key" id="btnMenu" aria-haspopup="dialog"><svg viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span>메뉴</span></button>
+    <div class="qk">
+      <button class="qkey" id="btnFlash" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.2 2.8 5.6 13.2h5.6l-1 8 7.6-10.4h-5.6z"/></svg><span id="lblFlash">플래시</span></button>
+      <button class="qkey" id="btnTimer" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 2M9.5 2.5h5"/></svg><span id="lblTimer">타이머</span></button>
     </div>
+    <button class="qkey" id="btnMenu" aria-haspopup="dialog" aria-label="메뉴 · 날짜 스탬프와 사진 느낌"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button>
   </header>
 
   <main class="vf">
@@ -542,13 +604,14 @@ html.ux2-hint .swipehint[hidden]{display:none}
     </div>
   </main>
 
-  <div class="plate" aria-hidden="true"><b>그해여름</b><span id="plateModel">AQUA-720</span></div>
+  <div class="plate"><b aria-hidden="true"><span class="led" id="led"></span>그해여름</b><span id="plateModel" aria-hidden="true">AQUA-720</span>
+    <button class="allcams" id="btnCam" aria-haspopup="dialog" aria-label="카메라 전체 보기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/></svg><span>전체</span><small id="camCount">21</small></button></div>
   <section class="carousel"><div class="car" id="car" role="radiogroup" aria-label="카메라"></div></section>
   <div class="caption" aria-live="polite"><b id="capTitle"></b><small id="capSub"></small></div>
   <section class="shoot">
     <button class="thumb" id="btnGallery" aria-label="앨범 보기"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="14" height="13" rx="1.5"/><path d="M7 3.5h13v13"/></svg></button>
     <button class="shutter" id="shutter" aria-label="촬영"></button>
-    <button class="key flip" id="btnFlip" aria-label="전면·후면 카메라 전환"><svg viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 0 1 13-5.1M19.5 12a7.5 7.5 0 0 1-13 5.1"/><path d="M18 3v4.2h-4.2M6 21v-4.2h4.2"/></svg></button>
+    <button class="qkey flip" id="btnFlip" aria-label="전면·후면 카메라 전환"><svg viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 0 1 13-5.1M19.5 12a7.5 7.5 0 0 1-13 5.1"/><path d="M18 3v4.2h-4.2M6 21v-4.2h4.2"/></svg></button>
   </section>
 </div>
 
@@ -556,43 +619,52 @@ html.ux2-hint .swipehint[hidden]{display:none}
 <input type="file" id="fileImport" accept="image/*" multiple hidden>
 <input type="file" id="fileCapture" accept="image/*" capture="environment" hidden>
 
-<div class="pop-wrap" id="datePop" hidden>
-  <div class="pop" id="datePanel" role="dialog" aria-label="날짜 스탬프">
-    <h4><i class="h-en">DATE · </i>날짜 스탬프</h4>
-    <div class="styles" role="radiogroup" aria-label="스탬프 모양" data-key="stamp">
-      <button role="radio" data-v="film"><i class="sp film"></i><span>필름</span></button>
-      <button role="radio" data-v="digi"><i class="sp digi"></i><span>디카</span></button>
-      <button role="radio" data-v="info"><i class="sp info"></i><span>정보바</span></button>
-      <button role="radio" data-v="polaroid"><i class="sp pola"></i><span>폴라</span></button>
-      <button role="radio" data-v="strip"><i class="sp strip"></i><span>필름컷</span></button>
-      <button role="radio" data-v="slide"><i class="sp slide"></i><span>슬라이드</span></button>
-      <button role="radio" data-v="off"><i class="sp off"></i><span>없음</span></button>
-    </div>
-    <h4>찍히는 날짜</h4>
-    <div class="seg wide" data-key="dateMode"><button data-v="now">오늘</button><button data-v="year" id="segYear">그해</button><button data-v="custom">직접</button></div>
-    <input type="datetime-local" class="field" id="optCustom" data-key="customDate" aria-label="직접 지정할 날짜와 시간">
-    <button class="linkbtn" id="btnMoreDate">문구 · D-day · 스탬프 색은 메뉴에서</button>
-  </div>
-</div>
-
-<div class="pop-wrap" id="lookPop" hidden>
-  <div class="pop" id="lookPanel" role="dialog" aria-label="빛과 색감">
-    <h4><i class="h-en">LIGHT · </i>빛 효과</h4>
-    <div class="seg wide" data-key="light"><button data-v="off">끔</button><button data-v="soft">약하게</button><button data-v="rand">랜덤</button></div>
-    <p class="pop-note" id="lightNote"></p>
-    <h4><label for="optAmount"><i class="h-en">LOOK · </i>카메라 색감 강도</label> <span id="amountVal">100%</span></h4>
-    <input type="range" class="range wide" id="optAmount" data-key="amount" min="0" max="100" step="5">
-    <p class="pop-note long">0%는 원본 그대로, 100%는 그 시절 카메라 그대로예요. 화면에서 바로 확인하며 조절하세요.</p>
-    <p class="range-ends"><span>원본</span><span>그 시절 그대로</span></p>
-  </div>
-</div>
-
-<div class="sheet" id="menuSheet" hidden role="dialog" aria-modal="true" aria-labelledby="menuTitle">
+<!-- the menu is a live drawer: the viewfinder above it keeps running, so stamp, light and colour changes show as you make them -->
+<div class="sheet live" id="menuSheet" hidden role="dialog" aria-modal="true" aria-labelledby="menuTitle">
   <div class="panel">
-    <div class="panel-head"><h2 id="menuTitle">MENU</h2><div class="acts"><button class="pbtn amber" data-close>완료</button><button class="xbtn" data-close aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button></div></div>
+    <div class="panel-head"><h2 id="menuTitle">MENU</h2>
+      <nav class="jump" id="menuJump" aria-label="메뉴 바로가기"><button data-to="grpLook">느낌</button><button data-to="grpShoot">촬영</button><button data-to="grpStamp">스탬프</button><button data-to="ourDay">우리의 날</button><button data-to="grpMore">기타</button></nav>
+      <div class="acts"><button class="pbtn amber" data-close>완료</button><button class="xbtn" data-close aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button></div></div>
     <div class="panel-body" id="menuBody">
-      <section class="group">
-        <h3><i class="h-en">STAMP · </i>날짜 스탬프</h3>
+      <section class="group look" id="grpLook">
+        <h3><i class="h-en">LOOK · </i>사진 느낌</h3>
+        <div class="blk">
+          <div class="blk-h"><span class="lbl">날짜 스탬프</span><span class="val" id="stampVal">필름</span></div>
+          <div class="styles strip" role="radiogroup" aria-label="스탬프 모양" data-key="stamp">
+            <button role="radio" data-v="film"><i class="sp film"></i><span>필름</span></button>
+            <button role="radio" data-v="digi"><i class="sp digi"></i><span>디카</span></button>
+            <button role="radio" data-v="info"><i class="sp info"></i><span>정보바</span></button>
+            <button role="radio" data-v="polaroid"><i class="sp pola"></i><span>폴라</span></button>
+            <button role="radio" data-v="strip"><i class="sp strip"></i><span>필름컷</span></button>
+            <button role="radio" data-v="slide"><i class="sp slide"></i><span>슬라이드</span></button>
+            <button role="radio" data-v="off"><i class="sp off"></i><span>없음</span></button>
+          </div>
+        </div>
+        <div class="row"><span class="lbl">빛 효과</span>
+          <div class="seg" data-key="light"><button data-v="off">끔</button><button data-v="soft">약하게</button><button data-v="rand">랜덤</button></div></div>
+        <p class="hint note" id="lightNote"></p>
+        <div class="blk amount">
+          <div class="blk-h"><label for="optAmount">카메라 색감 강도</label><span class="val" id="amountVal">100%</span></div>
+          <input type="range" class="range wide" id="optAmount" data-key="amount" min="0" max="100" step="5">
+          <p class="range-ends"><span>원본</span><span>그 시절 그대로</span></p>
+        </div>
+      </section>
+      <section class="group" id="grpShoot">
+        <h3><i class="h-en">SHOOT · </i>촬영</h3>
+        <div class="row"><span class="lbl">화면 비율</span>
+          <div class="seg" data-key="aspect"><button data-v="4:3">4:3</button><button data-v="1:1">1:1</button></div></div>
+        <div class="row"><span class="lbl">저장 크기</span>
+          <div class="seg" data-key="quality"><button data-v="2M">2M</button><button data-v="5M">5M</button><button data-v="8M">8M</button></div></div>
+        <div class="row" data-ux2="level"><label for="optLevel">수평계</label><input type="checkbox" class="switch" id="optLevel" data-key="levelOn"></div>
+        <div class="row" data-ux2="level"><label for="optGrid">3분할 격자</label><input type="checkbox" class="switch" id="optGrid" data-key="gridOn"></div>
+        <div class="row"><label for="optMirror">셀카를 보이는 그대로 저장</label><input type="checkbox" class="switch" id="optMirror" data-key="mirrorSelfie"></div>
+        <div class="row" data-web><label for="optGeo">위치(좌표) 표시</label><input type="checkbox" class="switch" id="optGeo" data-key="geo"></div>
+      </section>
+      <section class="group" id="grpStamp">
+        <h3><i class="h-en">STAMP · </i>스탬프 세부 설정</h3>
+        <div class="row"><span class="lbl">찍히는 날짜</span>
+          <div class="seg" data-key="dateMode"><button data-v="now">오늘</button><button data-v="year" id="segYear">그해</button><button data-v="custom">직접</button></div></div>
+        <div class="row custom"><label for="optCustom">직접 고른 날짜</label><input type="datetime-local" class="field" id="optCustom" data-key="customDate"></div>
         <div class="row"><span class="lbl">날짜 순서</span>
           <div class="seg" data-key="dateOrder"><button data-v="ymd">년 월 일</button><button data-v="mdy">월 일 년</button><button data-v="dmy">일 월 년</button></div></div>
         <div class="row"><label for="optTime">시간도 함께 찍기</label><input type="checkbox" class="switch" id="optTime" data-key="showTime"></div>
@@ -616,18 +688,7 @@ html.ux2-hint .swipehint[hidden]{display:none}
         <div class="row"><label for="optCaption">한 줄 문구</label><input type="text" class="field" id="optCaption" data-key="caption" maxlength="24" placeholder="예: 우리 첫 여행"></div>
         <p class="hint">문구는 폴라·정보바·디카·슬라이드 스탬프에 들어가요. 필름과 필름컷은 그 시절처럼 숫자만 찍어요.</p>
       </section>
-      <section class="group">
-        <h3><i class="h-en">SHOOT · </i>촬영</h3>
-        <div class="row"><span class="lbl">화면 비율</span>
-          <div class="seg" data-key="aspect"><button data-v="4:3">4:3</button><button data-v="1:1">1:1</button></div></div>
-        <div class="row"><span class="lbl">저장 크기</span>
-          <div class="seg" data-key="quality"><button data-v="2M">2M</button><button data-v="5M">5M</button><button data-v="8M">8M</button></div></div>
-        <div class="row" data-ux2="level"><label for="optLevel">수평계</label><input type="checkbox" class="switch" id="optLevel" data-key="levelOn"></div>
-        <div class="row" data-ux2="level"><label for="optGrid">3분할 격자</label><input type="checkbox" class="switch" id="optGrid" data-key="gridOn"></div>
-        <div class="row"><label for="optMirror">셀카를 보이는 그대로 저장</label><input type="checkbox" class="switch" id="optMirror" data-key="mirrorSelfie"></div>
-        <div class="row" data-web><label for="optGeo">위치(좌표) 표시</label><input type="checkbox" class="switch" id="optGeo" data-key="geo"></div>
-      </section>
-      <section class="group">
+      <section class="group" id="grpMore">
         <h3><i class="h-en">AFTER · </i>찍은 다음</h3>
         <div class="row" data-native><label for="optAutoSave">휴대폰 갤러리에 바로 저장</label><input type="checkbox" class="switch" id="optAutoSave" data-key="autoSave"></div>
         <div class="row"><label for="optReview">찍고 바로 크게 보기</label><input type="checkbox" class="switch" id="optReview" data-key="reviewAfter"></div>
@@ -1806,7 +1867,7 @@ let busyOther = 0;
 /* ───────── feedback: toast, LED, sound, haptics ───────── */
 let toastT = 0;
 function toast(msg, ms = 2600) {
-  const t = $('#toast'); t.textContent = msg; t.classList.toggle('float', overlayOpen()); t.classList.add('show');
+  const t = $('#toast'); t.textContent = msg; t.classList.toggle('float', overlayOpen() || popOpen()); t.classList.add('show');
   clearTimeout(toastT); toastT = setTimeout(() => { t.classList.remove('show'); if (updatePending) setTimeout(maybeApplyUpdate, 300); }, ms);
 }
 function setLed() { $('#led').className = 'led' + (cdCancel ? ' timer' : jobs.length + busyOther ? ' busy' : ''); }
@@ -1982,7 +2043,7 @@ function drawOverlay() {
 }
 const sigOf = m => [m.cam.id, m.date.getFullYear(), m.date.getMonth(), m.date.getDate(), m.date.getHours(), m.date.getMinutes(), m.dday, m.exif.shutter, m.exif.iso, m.loc,
   m.osd ? [m.osd.size, m.osd.count, m.osd.bat, m.osd.flags.join(',')].join('/') : ''].join('|');
-const overlayOpen = () => !$('#viewer').hidden || !$('#onb').hidden || $$('.sheet').some(s => !s.hidden);
+const overlayOpen = () => !$('#viewer').hidden || !$('#onb').hidden || $$('.sheet').some(s => !s.hidden && !s.classList.contains('live'));
 function renderPreview(t) {
   const cam = currentCam();
   lens.render(view.glW, view.glH, camParams(cam), {
@@ -2604,9 +2665,11 @@ function renderGrid() {
     grid.appendChild(b);
   }
 }
-/* small popovers under the status keys; unlike sheets they keep the viewfinder live */
-const POPS = { datePop: 'btnDate', lookPop: 'btnLight' };
-const popOpen = () => Object.keys(POPS).some(id => !$('#' + id).hidden);
+/* small popovers under the status keys; unlike sheets they keep the viewfinder live.
+   [ux3-film] the status keys no longer open popovers (stamp and look live in the menu), so POPS is empty;
+   the menu is a "live" drawer instead, and counts as a pop: the viewfinder keeps running, but the shutter keys stay off */
+const POPS = {};
+const popOpen = () => Object.keys(POPS).some(id => !$('#' + id).hidden) || $$('.sheet.live').some(s => !s.hidden);
 function openPop(id) {
   closePops();
   const pop = $('#' + id), key = $('#' + POPS[id]);
@@ -2621,6 +2684,21 @@ function closePops() {
   let any = false;
   for (const [id, key] of Object.entries(POPS)) if (!$('#' + id).hidden) { $('#' + id).hidden = true; $('#' + key).setAttribute('aria-expanded', 'false'); any = true; }
   syncVolumeKey(); return any;
+}
+/* [ux3-film] mark the menu section in view on the shortcut row in the menu head */
+let jumping = false, jumpT = 0;
+function markJump(on) {
+  $$('#menuJump button').forEach(b => b === on ? b.setAttribute('aria-current', 'true') : b.removeAttribute('aria-current'));
+  const nav = $('#menuJump');
+  if (nav.scrollWidth > nav.clientWidth) nav.scrollLeft = on.offsetLeft - (nav.clientWidth - on.offsetWidth) / 2;
+}
+function syncJump() {
+  const body = $('#menuBody'), btns = $$('#menuJump button'); if (!btns.length) return;
+  const y = body.scrollTop + body.clientHeight * .3, end = body.scrollTop + body.clientHeight >= body.scrollHeight - 4;
+  let on = btns[0];
+  for (const b of btns) { const g = $('#' + b.dataset.to); if (g && g.offsetTop - body.offsetTop <= y) on = b; }
+  if (end) on = btns[btns.length - 1];
+  markJump(on);
 }
 /* drag a sheet down by its handle to close it */
 function bindSheetDrag(sheet) {
@@ -2696,7 +2774,8 @@ function syncBars() {
   if (!NATIVE) return;
   const b = currentCam().body;
   if (!$('#viewer').hidden) native('setBarColors', '#050608', '#050608', false, false);
-  else if ($$('.sheet').some(s => !s.hidden)) native('setBarColors', mixHex(b.hi, '#080a10', .55), '#0c182d', false, false);
+  else if ($$('.sheet').some(s => !s.hidden && !s.classList.contains('live'))) native('setBarColors', mixHex(b.hi, '#080a10', .55), '#0c182d', false, false);
+  else if ($$('.sheet.live').some(s => !s.hidden)) native('setBarColors', b.hi, '#0c182d', lumOf(b.hi) > 140, false); // live menu: the body stays on top
   else native('setBarColors', b.hi, b.lo, lumOf(b.hi) > 140, lumOf(b.lo) > 140);
 }
 function mixHex(a, b, t) {
@@ -2956,19 +3035,13 @@ function syncUI() {
   $('#lblFlash').textContent = S.flash ? '플래시 켬' : '플래시';
   $('#btnTimer').classList.toggle('on', !!S.timer); $('#btnTimer').setAttribute('aria-pressed', String(!!S.timer));
   $('#lblTimer').textContent = S.timer ? S.timer + '초' : '타이머';
-  $('#btnLight').classList.toggle('on', S.light !== 'off'); $('#btnLight').setAttribute('aria-pressed', String(S.light !== 'off'));
-  $('#lblLight').textContent = S.light === 'soft' ? '약하게' : S.light === 'rand' ? '랜덤' : '빛';
   $('#lightNote').textContent = S.light === 'soft' ? '밝은 곳에 CCD 번짐과 플레어가 생겨요.' : S.light === 'rand' ? '찍을 때마다 다른 빛과 먼지가 들어가요.' : '켜면 그 시절 CCD처럼 밝은 빛이 번지고 플레어가 생겨요.';
-  $('#btnDate').classList.toggle('on', S.stamp !== 'off');
-  $('#lblDate').textContent = STAMP_KO[S.stamp] || '날짜';
+  $('#stampVal').textContent = STAMP_KO[S.stamp] || '없음';
   $('#btnFlash').setAttribute('aria-label', S.flash ? '플래시 켜짐' : '플래시 꺼짐');
   $('#btnTimer').setAttribute('aria-label', S.timer ? `셀프 타이머 ${S.timer}초` : '셀프 타이머 꺼짐');
-  $('#btnLight').setAttribute('aria-label', `빛 효과 ${$('#lblLight').textContent}`);
-  $('#btnDate').setAttribute('aria-label', `날짜 스탬프 ${$('#lblDate').textContent}`);
   applyBody(cam);
-  $('#chipCode').textContent = cam.code;
-  if ($('#chipIcon').dataset.v !== cam.id) { $('#chipIcon').innerHTML = camIcon(cam, '-chip'); $('#chipIcon').dataset.v = cam.id; }
-  $('#btnCam').setAttribute('aria-label', `카메라 고르기, 지금 ${cam.model}`);
+  $('#camCount').textContent = CAMERAS.length;
+  $('#btnCam').setAttribute('aria-label', `카메라 ${CAMERAS.length}대 전체 보기, 지금 ${cam.model}`);
   syncCamList();
   $('#plateModel').textContent = `${cam.model} · ${cam.mp}M ${cam.sensor}`;
   $('#capTitle').textContent = cam.mood;
@@ -3082,7 +3155,7 @@ let apkUpdateUrl = '', updatePending = false, reloadLock = 0, savingQueued = fal
 function pickerBack() { if (picking) { clearTimeout(pickT); pickT = setTimeout(() => { picking = false; }, 3000); } }
 /* nothing in flight and nobody in the middle of something: no photo developing or waiting to be saved, no open sheet, picker or message */
 const idle = () => !jobs.length && !busyOther && !shooting && !cdCancel && !halfPressed && !pendingShots && !opening() && Date.now() - lastTouch > 5000
-  && !overlayOpen() && !popOpen() && !document.hidden && !storageAsking && !pendingSaves.length && !savingQueued && !picking;
+  && !overlayOpen() && !$$('.sheet').some(x => !x.hidden) && !popOpen() && !document.hidden && !storageAsking && !pendingSaves.length && !savingQueued && !picking;
 /* the shell asks right before it reloads; saying yes also holds the shutter until the page is gone */
 window.geuhaeCanReload = () => {
   if (!idle() || $('#toast').classList.contains('show')) return false;
@@ -3220,8 +3293,20 @@ function wire() {
     wrap.addEventListener('pointerdown', e => { downOnWrap = e.target === wrap; });
     wrap.addEventListener('click', e => { if (downOnWrap && e.target === wrap) closePops(); downOnWrap = false; });
   }
-  $('#btnMoreDate').addEventListener('click', () => { closePops(); openSheet('#menuSheet'); setTimeout(() => $('#ourDay').scrollIntoView({ block: 'start' }), 60); });
-  $('#btnMenu').addEventListener('click', () => { haptic('tick'); syncAppInfo(); openSheet('#menuSheet'); });
+  $('#btnMenu').addEventListener('click', () => {
+    haptic('tick'); syncAppInfo(); openSheet('#menuSheet');
+    const body = $('#menuBody'), strip = $('#menuSheet .styles'), cur = $('[aria-checked="true"]', strip);
+    body.scrollTop = 0; syncJump();
+    if (cur) strip.scrollLeft = cur.offsetLeft - (strip.clientWidth - cur.offsetWidth) / 2;
+  });
+  // section shortcuts in the menu head: tap to jump, and the one in view is marked as you scroll
+  const mBody = $('#menuBody');
+  $$('#menuJump button').forEach(b => b.addEventListener('click', () => {
+    const g = $('#' + b.dataset.to); haptic('tick');
+    markJump(b); jumping = true; clearTimeout(jumpT); jumpT = setTimeout(() => { jumping = false; }, 900); // the tapped one stays marked while the jump glides
+    mBody.scrollTo({ top: g.offsetTop - mBody.offsetTop - 14, behavior: 'smooth' });
+  }));
+  mBody.addEventListener('scroll', () => { if (!jumping) syncJump(); }, { passive: true });
   $('#btnGallery').addEventListener('animationend', e => { if (e.animationName === 'develop') e.currentTarget.classList.remove('dev'); });
   const cap = $('.caption');
   if (UX2('card')) {
@@ -3285,7 +3370,7 @@ function wire() {
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') { if (window.geuhaeOnBack()) e.preventDefault(); return; }
     if (!$('#viewer').hidden) { if (e.key === 'ArrowRight') stepViewer(1); else if (e.key === 'ArrowLeft') stepViewer(-1); return; }
-    if (e.target !== document.body || overlayOpen()) return;
+    if (e.target !== document.body || overlayOpen() || popOpen()) return;
     if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); shoot(); }
     else if (e.key === 'ArrowRight') stepCam(1);
     else if (e.key === 'ArrowLeft') stepCam(-1);
@@ -3338,7 +3423,7 @@ function syncLevel(x, y, z) {
   const a = Math.atan2(x, y) * 180 / Math.PI;
   if (levelA === null || Math.abs(a - levelA) > 90) levelA = a; else levelA += (a - levelA) * .25;
   const dev = ((levelA % 90) + 135) % 90 - 45; // offset from the nearest of portrait / landscape
-  const show = UX2('level') && S.levelOn && live && !overlayOpen() && !flat && Math.abs(dev) < 14;
+  const show = UX2('level') && S.levelOn && live && !overlayOpen() && !popOpen() && !flat && Math.abs(dev) < 14;
   if (!show) { if (levelShown || levelOk) levelOff(); return; }
   if (!levelShown) { levelShown = true; el.hidden = false; }
   // the box sits on the nearest portrait/landscape axis (so its end ticks are the reference), the line shows the world's horizon
