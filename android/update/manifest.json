@@ -1,7 +1,7 @@
 {
  "package": "com.geuhaeyeoreum.camera",
- "build": 504,
- "version": "1.3.0+4",
+ "build": 505,
+ "version": "1.3.0+5",
  "minNative": 5,
  "files": {
   "fonts/IBMPlexSansKR-Medium.woff2": {
@@ -37,10 +37,10 @@
    "size": 876
   },
   "index.html": {
-   "sha256": "88c440d1b2808a0f1044393f317cbefa8f79475bffe3a87b30efc60cab18a628",
-   "size": 210661
+   "sha256": "6b27004d8dc7c17e6feac49d2db721c09479fb97f3b8ce32f4fef66e4cb31f80",
+   "size": 241586
   }
  },
- "date": "2026-10-14T16:13Z",
- "notes": "화면 정리 1차(12가지) 적용"
+ "date": "2026-10-16T13:13Z",
+ "notes": "화면 정리 3차: 위쪽은 플래시·타이머·메뉴 아이콘만, 나머지는 메뉴 서랍으로 · 2차 개선 · 필름컷/슬라이드 테두리"
 }
