@@ -22,8 +22,10 @@ watches:
     max_total_krw: 100000
     poll_seconds: 60
     # 페이지의 취소 규정을 확인한 뒤 채움. 비워두면 '모름' 처리 → 자동 확정 금지
+    # 원문(2026-10-18 확인): [화담숲입장권] 예약일 1일 전 23:59까지 취소 시 무료 취소,
+    #   예약일 당일 혹은 예약일 이후 취소 시 30% 취소 수수료 적용
+    # 전날 자정 마감을 보수적으로 '방문 24시간 전'으로 둔다(실제보다 일찍 마감되는 쪽).
     cancel_policy:
-      tiers: []
-      # 예) 방문 24시간 전까지 무료, 이후 100%:
-      # - {hours_before: 24, fee_ratio: 0.0}
-      # - {hours_before: 0, fee_ratio: 1.0}
+      tiers:
+        - {hours_before: 24, fee_ratio: 0.0}
+        - {hours_before: 0, fee_ratio: 0.3}
