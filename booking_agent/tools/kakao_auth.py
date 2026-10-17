@@ -5,7 +5,7 @@
   - 동의항목: '카카오톡 메시지 전송(talk_message)' 사용
   - 플랫폼 > Web 사이트 도메인: https://leisure-web.yanolja.com , https://nol.yanolja.com
 
-    KAKAO_REST_API_KEY=... python tools/kakao_auth.py
+    python tools/kakao_auth.py     # booking_agent/.env 의 KAKAO_REST_API_KEY 사용
 """
 import os
 import sys
@@ -19,6 +19,7 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from agent.notify import KakaoNotifier, save_kakao_token  # noqa: E402
+from agent.runner import load_env  # noqa: E402
 
 REDIRECT = "http://localhost:8765/callback"
 code_holder: dict = {}
@@ -26,8 +27,12 @@ code_holder: dict = {}
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        qs = parse_qs(urlparse(self.path).query)
-        code_holder["code"] = qs.get("code", [None])[0]
+        parsed = urlparse(self.path)
+        if parsed.path != "/callback":
+            self.send_response(404)
+            self.end_headers()
+            return
+        code_holder["code"] = parse_qs(parsed.query).get("code", [None])[0]
         self.send_response(200)
         self.send_header("Content-Type", "text/plain; charset=utf-8")
         self.end_headers()
@@ -38,7 +43,8 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
-    key = os.environ["KAKAO_REST_API_KEY"]
+    load_env(Path(__file__).resolve().parent.parent / ".env")
+    key = os.environ.get("KAKAO_REST_API_KEY") or sys.exit("booking_agent/.env 에 KAKAO_REST_API_KEY=... 를 먼저 넣어주세요")
     url = "https://kauth.kakao.com/oauth/authorize?" + urlencode(
         {"client_id": key, "redirect_uri": REDIRECT, "response_type": "code", "scope": "talk_message"}
     )

@@ -142,5 +142,6 @@ booking_agent/
 ## 8. 진행 상황
 - [x] 코어: 기준 판정 / 결재 게이트 / 중복 알림 방지 / 재검증·드라이런·일일한도·킬스위치 / 테스트
 - [x] 알림: 카카오·텔레그램·맥·콘솔
-- [ ] NOL 회차 파싱 — `tools/discover.py` 수집 결과 필요 (클라우드 환경에서 NOL 접속 불가)
+- [x] 맥북 원클릭 실행: `CLAUDE.md` 런북("실행") + `scripts/setup.sh` + launchd 서비스(`scripts/service.sh`)
+- [ ] NOL 회차 파싱 — 맥북의 Claude가 `tools/discover.py --auto` 수집 후 구현 (클라우드 환경에서 NOL 접속 불가)
 - [ ] 화담숲 취소 규정 확인 후 `watches.yaml`에 입력

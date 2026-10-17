@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import os
 import random
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -142,7 +143,13 @@ class Agent:
 
     async def run_watch(self, watch: Watch) -> None:
         errors = 0
-        while not self.store.booked(watch.id):
+        while True:
+            if self.store.booked(watch.id):
+                self.notifier.send(f"⏹ [{watch.id}] 예약 완료 처리됨 — 감시 종료")
+                return
+            if max(watch.dates) < self.clock().date():
+                self.notifier.send(f"⏹ [{watch.id}] 모든 날짜가 지나 감시 종료")
+                return
             try:
                 await self.tick(watch)
                 if errors >= ERROR_ALERT_AFTER:
@@ -187,28 +194,55 @@ def load(path: str) -> tuple[Settings, list[str], list[Watch]]:
     )
 
 
+def load_env(path: Path) -> None:
+    """KEY=VALUE 형식의 .env를 환경변수로 (이미 설정된 값은 유지)."""
+    if not path.exists():
+        return
+    for line in path.read_text().splitlines():
+        key, sep, value = line.strip().partition("=")
+        value = value.strip().strip("'\"")
+        if sep and value and not key.startswith("#"):
+            os.environ.setdefault(key.strip(), value)
+
+
 async def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("-c", "--config", default="watches.yaml")
-    ap.add_argument("--once", action="store_true")
+    ap.add_argument("--once", action="store_true", help="1회 확인(알림 포함)")
+    ap.add_argument("--probe", action="store_true", help="슬롯 전체를 출력만 하고 알림은 보내지 않음")
     ap.add_argument("--headed", action="store_true", help="브라우저 창 띄우기")
     ap.add_argument("--test-notify", action="store_true")
+    ap.add_argument("--mark-booked", metavar="WATCH_ID", help="직접 예약 완료 → 해당 감시 종료")
     args = ap.parse_args()
 
+    load_env(Path(args.config).resolve().parent / ".env")
     settings, channels, watches = load(args.config)
+    HOME.mkdir(parents=True, exist_ok=True)
+    store = Store(HOME / "agent.db")
+    if args.mark_booked:
+        store.record_booking(args.mark_booked, "manual", None, "manual")
+        print(f"{args.mark_booked}: 예약 완료로 기록 — 실행 중인 감시는 다음 확인 때 종료됩니다.")
+        return
+
     notifier = MultiNotifier(channels)
     if args.test_notify:
         notifier.send("예약 에이전트 테스트 알림입니다.", watches[0].url if watches else None)
         return
 
-    HOME.mkdir(parents=True, exist_ok=True)
-    store = Store(HOME / "agent.db")
     adapters = {name: make_adapter(name, headless=not args.headed) for name in {w.adapter for w in watches}}
     for a in adapters.values():
         await a.start()
     agent = Agent(settings, store, notifier, adapters)
     try:
-        if args.once:
+        if args.probe:
+            for w in watches:
+                slots = await adapters[w.adapter].fetch_slots(w)
+                hits = {s.key for s in matching_slots(w, slots, now_kst())}
+                print(f"\n[{w.id}] 슬롯 {len(slots)}개, 기준 충족 {len(hits)}개")
+                for s in sorted(slots, key=lambda s: (s.day, s.start)):
+                    mark = "★" if s.key in hits else ("○" if s.available else "×")
+                    print(f"  {mark} {s.key}  잔여={s.remaining}  단가={s.unit_price_krw}")
+        elif args.once:
             for w in watches:
                 await agent.tick(w)
         else:

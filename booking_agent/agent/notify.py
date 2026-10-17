@@ -47,6 +47,8 @@ class KakaoNotifier(Notifier):
     def __init__(self):
         self.rest_key = os.environ["KAKAO_REST_API_KEY"]
         self.client_secret = os.environ.get("KAKAO_CLIENT_SECRET")
+        if not KAKAO_TOKEN_FILE.exists():
+            raise FileNotFoundError(f"{KAKAO_TOKEN_FILE} 없음 — tools/kakao_auth.py 먼저 실행")
 
     def _token(self) -> str:
         tok = json.loads(KAKAO_TOKEN_FILE.read_text())
@@ -134,7 +136,14 @@ class MultiNotifier(Notifier):
     """여러 채널에 동시에 알림. 승인은 승인 가능한 첫 채널로."""
 
     def __init__(self, names: list[str]):
-        self.channels = [CHANNELS[n]() for n in names]
+        self.channels = []
+        for n in names:
+            try:
+                self.channels.append(CHANNELS[n]())
+            except Exception as e:  # 설정 안 된 채널은 건너뛰고 나머지로 진행
+                print(f"[notify] {n} 채널 비활성: {e!r}", flush=True)
+        if not self.channels:
+            self.channels = [ConsoleNotifier()]
         self.can_approve = any(c.can_approve for c in self.channels)
 
     def send(self, text, link=None):

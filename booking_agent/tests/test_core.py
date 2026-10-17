@@ -215,3 +215,29 @@ def test_approval_needed_but_one_way_channel_falls_back_to_manual():
 def test_empty_slot_list_is_treated_as_error():
     with pytest.raises(RuntimeError):
         run(make(FakeAdapter([], []), FakeNotifier(), at(10, 17, 12)), watch())
+
+
+def test_run_watch_stops_when_marked_booked():
+    ad, nt = FakeAdapter([SLOT], []), FakeNotifier()
+    agent = make(ad, nt, at(10, 17, 12))
+    agent.store.record_booking("w", "manual", None, "manual")
+    asyncio.run(asyncio.wait_for(agent.run_watch(watch(mode="notify_only")), 1))
+    assert "예약 완료" in nt.sent[-1]
+
+
+def test_run_watch_stops_after_last_date():
+    ad, nt = FakeAdapter([SLOT], []), FakeNotifier()
+    asyncio.run(asyncio.wait_for(make(ad, nt, at(11, 2, 9)).run_watch(watch()), 1))
+    assert "지나" in nt.sent[-1]
+
+
+def test_load_env_skips_empty_and_keeps_existing(tmp_path, monkeypatch):
+    from agent.runner import load_env
+
+    monkeypatch.setenv("KEEP", "old")
+    monkeypatch.delenv("EMPTY", raising=False)
+    monkeypatch.delenv("NEW", raising=False)
+    (tmp_path / ".env").write_text("# c\nKEEP=new\nEMPTY=\nNEW='v'\n")
+    load_env(tmp_path / ".env")
+    import os
+    assert os.environ["KEEP"] == "old" and "EMPTY" not in os.environ and os.environ["NEW"] == "v"
