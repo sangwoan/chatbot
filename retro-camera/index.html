@@ -582,6 +582,7 @@ html.ux4-silver .status{padding:10px 16px 4px}
 html.ux4-silver .status .qkey{height:30px;min-width:46px;padding:0 12px;border-radius:15px;color:#e9eaec;
   background:linear-gradient(#45484e,#1e2024);box-shadow:0 1px 0 rgba(255,255,255,.8),0 2px 3px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.2)}
 html.ux4-silver .status .qkey svg{width:17px;height:17px}
+html.ux4-silver .status .qkey::before{content:"";position:absolute;inset:-7px -4px}  /* the pill looks 30px tall but takes a 44px tap */
 html.ux4-silver .status .qkey.on{color:#ffd84a;background:linear-gradient(#45484e,#1e2024)}
 html.ux4-silver .status .qkey::after{position:absolute;top:50%;transform:translateY(-50%);font:400 9px/1 var(--font-osd);letter-spacing:.18em;color:var(--ink-soft);white-space:nowrap;text-shadow:0 1px 0 rgba(255,255,255,.6)}
 html.ux4-silver #btnFlash::after{content:"FLASH";left:calc(100% + 8px)}
@@ -608,6 +609,8 @@ html.ux4-silver #btnGallery::before{content:"PLAY ▶"}
 html.ux4-silver #btnTimer::before{content:"SELF"}
 html.ux4-silver #btnRatio::before{content:"SIZE"}
 html.ux4-silver #btnFlip::before{content:"FLIP"}
+html.ux4-silver .caption{position:relative}
+html.ux4-silver .caption::before{content:"";position:absolute;inset:-9px 0}  /* short screens draw the caption 22px tall; keep a 40px tap */
 @media (max-height:620px){html.ux4-silver .shoot{padding:12px 18px 20px}html.ux4-silver .vf{padding:8px 14px 20px}}
 </style>
 </head>
