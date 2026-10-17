@@ -1,0 +1,29 @@
+defaults:
+  max_auto_krw: 100000          # 이 금액 이상이면 승인 필요
+  max_cancel_fee_ratio: 0.10    # 예약 시점 취소수수료가 예약금의 10% 초과면 승인 필요
+  min_cancel_buffer_hours: 24   # 수수료 10% 이하로 취소 가능한 기간이 24시간 미만이면 승인 필요
+  approval_timeout_min: 10      # 승인 요청 후 이 시간 안에 응답 없으면 진행 안 함
+  realert_min: 15               # 같은 자리가 계속 열려 있으면 15분마다 다시 알림
+  daily_cap_krw: 200000         # 하루 자동결제 총액 한도
+  dry_run: true                 # true면 결제 직전에서 멈춤
+
+notify:
+  channels: [kakao, mac]        # kakao | telegram | mac | console
+
+watches:
+  - id: hwadam-2026-fall
+    adapter: nol
+    mode: notify_only           # NOL은 알림 + 직접 결제
+    url: https://leisure-web.yanolja.com/leisure/10367229
+    dates: [2026-10-24, 2026-10-25, 2026-11-01]   # 앞에 있을수록 우선
+    time_from: "11:00"
+    time_to: "15:00"
+    quantity: 2
+    max_total_krw: 100000
+    poll_seconds: 60
+    # 페이지의 취소 규정을 확인한 뒤 채움. 비워두면 '모름' 처리 → 자동 확정 금지
+    cancel_policy:
+      tiers: []
+      # 예) 방문 24시간 전까지 무료, 이후 100%:
+      # - {hours_before: 24, fee_ratio: 0.0}
+      # - {hours_before: 0, fee_ratio: 1.0}
