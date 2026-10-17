@@ -1,7 +1,7 @@
 {
  "package": "com.geuhaeyeoreum.camera",
- "build": 506,
- "version": "1.3.0+6",
+ "build": 507,
+ "version": "1.3.0+7",
  "minNative": 5,
  "files": {
   "fonts/IBMPlexSansKR-Medium.woff2": {
@@ -37,10 +37,10 @@
    "size": 876
   },
   "index.html": {
-   "sha256": "e85a97812e4535a823d14e82bd8ae26bb7d07d6d7bd882f6fc87581190009ca8",
-   "size": 242058
+   "sha256": "bfce71d3ed71a3905a20311d3ead8d8f610d65957f1761ab6a9ff75613984ee9",
+   "size": 243532
   }
  },
- "date": "2026-10-16T16:39Z",
- "notes": "스탬프 모양에 맞는 설정만 보이기"
+ "date": "2026-10-17T04:06Z",
+ "notes": "셔터 양옆에 타이머·화면 비율(4:3/1:1) 버튼"
 }

@@ -526,6 +526,13 @@ html.ux3-film .plate .allcams span{display:inline}
 @media (max-height:700px){html.ux3-film .plate{display:flex}}
 /* shutter row: empty album and flip share one quiet, recessed material; a photo thumb keeps its white print border */
 html.ux3-film .shoot{margin-top:auto}
+/* bottom row: album · timer · shutter · ratio · flip; the two quick keys sit in the free space beside the shutter */
+.shoot:has(.sidekey){grid-template-columns:auto 1fr auto 1fr auto}
+.shoot .sidekey{justify-self:center;min-width:48px;height:48px;border-radius:24px;color:var(--ink);background:color-mix(in srgb,var(--ink) 7%,transparent);box-shadow:inset 0 0 0 1.2px color-mix(in srgb,var(--ink) 22%,transparent)}
+.shoot .sidekey{position:relative;width:48px;padding:0}
+.shoot #btnTimer.on span{position:absolute;top:-4px;left:-6px;min-width:20px;height:20px;padding:0 5px;box-sizing:border-box;border-radius:10px;display:grid;place-items:center;color:#fff;background:var(--key-on);font:400 11px/1 var(--font-osd);letter-spacing:0}
+.shoot .sidekey.on{background:color-mix(in srgb,var(--ink) 15%,transparent);box-shadow:inset 0 0 0 1.4px color-mix(in srgb,var(--ink) 45%,transparent)}
+.shoot .ratio b{font:400 12px/1 var(--font-osd);letter-spacing:.06em}
 html.ux3-film .thumb:not(.has){background:color-mix(in srgb,var(--ink) 9%,transparent);color:var(--ink);box-shadow:inset 0 0 0 1.2px color-mix(in srgb,var(--ink) 26%,transparent)}
 html.ux3-film .thumb:not(.has) svg{opacity:.8}
 html.ux3-film .flip{width:52px;height:52px;padding:0;border-radius:16px;background:color-mix(in srgb,var(--ink) 9%,transparent);box-shadow:inset 0 0 0 1.2px color-mix(in srgb,var(--ink) 26%,transparent)}
@@ -570,7 +577,6 @@ html.ux3-film .blk.amount .range-ends{display:flex;justify-content:space-between
   <header class="status">
     <div class="qk">
       <button class="qkey" id="btnFlash" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.2 2.8 5.6 13.2h5.6l-1 8 7.6-10.4h-5.6z"/></svg><span id="lblFlash">플래시</span></button>
-      <button class="qkey" id="btnTimer" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 2M9.5 2.5h5"/></svg><span id="lblTimer">타이머</span></button>
     </div>
     <button class="qkey" id="btnMenu" aria-haspopup="dialog" aria-label="메뉴 · 날짜 스탬프와 사진 느낌"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button>
   </header>
@@ -608,7 +614,9 @@ html.ux3-film .blk.amount .range-ends{display:flex;justify-content:space-between
   <div class="caption" aria-live="polite"><b id="capTitle"></b><small id="capSub"></small></div>
   <section class="shoot">
     <button class="thumb" id="btnGallery" aria-label="앨범 보기"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="14" height="13" rx="1.5"/><path d="M7 3.5h13v13"/></svg></button>
+    <button class="qkey sidekey" id="btnTimer" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 2M9.5 2.5h5"/></svg><span id="lblTimer">타이머</span></button>
     <button class="shutter" id="shutter" aria-label="촬영"></button>
+    <button class="qkey sidekey ratio" id="btnRatio" aria-label="화면 비율 4:3"><b id="lblRatio">4:3</b></button>
     <button class="qkey flip" id="btnFlip" aria-label="전면·후면 카메라 전환"><svg viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 0 1 13-5.1M19.5 12a7.5 7.5 0 0 1-13 5.1"/><path d="M18 3v4.2h-4.2M6 21v-4.2h4.2"/></svg></button>
   </section>
 </div>
@@ -3027,6 +3035,7 @@ function syncUI() {
   const cam = currentCam();
   $$('#car button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === S.cam)));
   $('#optCustom').hidden = S.dateMode !== 'custom';
+  $('#lblRatio').textContent = S.aspect; $('#btnRatio').setAttribute('aria-label', `화면 비율 ${S.aspect}, 눌러서 바꾸기`); $('#btnRatio').classList.toggle('on', S.aspect === '1:1');
   // stamp rows that do nothing for the chosen style stay out of the way
   $$('#menuSheet [data-for]').forEach(r => { r.hidden = !r.dataset.for.split(' ').includes(S.stamp); });
   $('#segYear').textContent = `그해 (${cam.year})`;
@@ -3034,7 +3043,7 @@ function syncUI() {
   $('#btnFlash').classList.toggle('on', !!S.flash); $('#btnFlash').setAttribute('aria-pressed', String(!!S.flash));
   $('#lblFlash').textContent = S.flash ? '플래시 켬' : '플래시';
   $('#btnTimer').classList.toggle('on', !!S.timer); $('#btnTimer').setAttribute('aria-pressed', String(!!S.timer));
-  $('#lblTimer').textContent = S.timer ? S.timer + '초' : '타이머';
+  $('#lblTimer').textContent = S.timer ? S.timer + ($('#btnTimer').classList.contains('sidekey') ? 's' : '초') : '타이머';
   $('#lightNote').textContent = S.light === 'soft' ? '밝은 곳에 CCD 번짐과 플레어가 생겨요.' : S.light === 'rand' ? '찍을 때마다 다른 빛과 먼지가 들어가요.' : '켜면 그 시절 CCD처럼 밝은 빛이 번지고 플레어가 생겨요.';
   $('#stampVal').textContent = STAMP_KO[S.stamp] || '없음';
   $('#btnFlash').setAttribute('aria-label', S.flash ? '플래시 켜짐' : '플래시 꺼짐');
@@ -3286,6 +3295,7 @@ function wire() {
       if (!caps.torch) toast('이 카메라는 플래시를 켤 수 없어서 플래시 느낌만 넣어요');
     }
   });
+  $('#btnRatio').addEventListener('click', () => { S.aspect = S.aspect === '1:1' ? '4:3' : '1:1'; applySetting('aspect'); haptic('tick'); });
   $('#btnTimer').addEventListener('click', () => { S.timer = S.timer === 0 ? 3 : S.timer === 3 ? 10 : 0; applySetting('timer'); haptic('tick'); });
   for (const id of Object.keys(POPS)) {
     $('#' + POPS[id]).addEventListener('click', () => { haptic('tick'); $('#' + id).hidden ? openPop(id) : closePops(); });
