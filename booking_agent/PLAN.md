@@ -143,5 +143,6 @@ booking_agent/
 - [x] 코어: 기준 판정 / 결재 게이트 / 중복 알림 방지 / 재검증·드라이런·일일한도·킬스위치 / 테스트
 - [x] 알림: 카카오·텔레그램·맥·콘솔
 - [x] 맥북 원클릭 실행: `CLAUDE.md` 런북("실행") + `scripts/setup.sh` + launchd 서비스(`scripts/service.sh`)
-- [ ] NOL 회차 파싱 — 맥북의 Claude가 `tools/discover.py --auto` 수집 후 구현 (클라우드 환경에서 NOL 접속 불가)
-- [ ] 화담숲 취소 규정 확인 후 `watches.yaml`에 입력
+- [ ] NOL 회차 파싱 — **보류**. 2026-10-18 맥북에서 `tools/discover.py --auto` 실행 시 NOL이 자동화 브라우저를 첫 요청부터 차단(Cloudflare). 원칙 4(우회 금지)에 따라 감시하지 않는다. NOL 공식 알림이 생기거나 차단 정책이 바뀌면 재검토
+- [x] 화담숲 취소 규정 확인 후 `watches.yaml`에 입력 (2026-10-18)
+- [x] 예약·티켓 사이트 150곳 자동 감시 가능 여부 조사 → `research/PLATFORM_SURVEY.md`, `research/platform_survey.csv`

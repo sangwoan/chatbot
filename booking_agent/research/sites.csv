@@ -1,0 +1,151 @@
+region,category,name,url
+KR,공연티켓,NOL 티켓(인터파크),https://tickets.interpark.com
+KR,공연티켓,예스24 티켓,https://ticket.yes24.com
+KR,공연티켓,멜론티켓,https://ticket.melon.com
+KR,공연티켓,티켓링크,https://www.ticketlink.co.kr
+KR,공연장,세종문화회관,https://www.sejongpac.or.kr
+KR,공연장,예술의전당,https://www.sac.or.kr
+KR,공연장,국립극장,https://www.ntok.go.kr
+KR,공연장,LG아트센터 서울,https://www.lgart.com
+KR,공연장,롯데콘서트홀,https://www.lotteconcerthall.com
+KR,전시,국립현대미술관,https://www.mmca.go.kr
+KR,전시,국립중앙박물관,https://www.museum.go.kr
+KR,영화,CGV,https://www.cgv.co.kr
+KR,영화,롯데시네마,https://www.lottecinema.co.kr
+KR,영화,메가박스,https://www.megabox.co.kr
+KR,테마파크,에버랜드,https://www.everland.com
+KR,테마파크,롯데월드 어드벤처,https://adventure.lotteworld.com
+KR,테마파크,서울랜드,https://www.seoulland.co.kr
+KR,테마파크,레고랜드 코리아,https://www.legoland.kr
+KR,관광지,한국민속촌,https://www.koreanfolk.co.kr
+KR,관광지,궁궐(궁능유적본부),https://royal.khs.go.kr
+KR,관광지,서울스카이,https://seoulsky.lotteworld.com
+KR,관광지,아쿠아플라넷,https://www.aquaplanet.co.kr
+KR,관광지,화담숲,https://www.hwadamsup.com
+KR,관광지,국립수목원,https://kna.forest.go.kr
+KR,공공예약,서울시 공공서비스예약,https://yeyak.seoul.go.kr
+KR,공공예약,숲나들e(국립자연휴양림),https://www.foresttrip.go.kr
+KR,공공예약,국립공원 예약,https://reservation.knps.or.kr
+KR,캠핑,고캠핑,https://www.gocamping.or.kr
+KR,공공예약,가보고싶은섬(여객선),https://island.haewoon.co.kr
+KR,캠핑,땡큐캠핑,https://www.thankqcamping.com
+KR,캠핑,캠핏,https://www.camfit.co.kr
+KR,철도,코레일,https://www.letskorail.com
+KR,철도,SRT,https://etk.srail.kr
+KR,버스,고속버스(KOBUS),https://www.kobus.co.kr
+KR,버스,버스타고(시외버스),https://www.bustago.or.kr
+KR,항공,대한항공,https://www.koreanair.com
+KR,항공,아시아나항공,https://flyasiana.com
+KR,항공,제주항공,https://www.jejuair.net
+KR,항공,진에어,https://www.jinair.com
+KR,항공,티웨이항공,https://www.twayair.com
+KR,항공,에어부산,https://www.airbusan.com
+KR,항공,에어서울,https://flyairseoul.com
+KR,항공,이스타항공,https://www.eastarjet.com
+KR,항공,에어프레미아,https://www.airpremia.com
+KR,렌터카,쏘카,https://www.socar.kr
+KR,숙박,NOL(야놀자),https://nol.yanolja.com
+KR,레저티켓,NOL 레저(야놀자),https://leisure-web.yanolja.com
+KR,숙박,여기어때,https://www.yeogi.com
+KR,여행,마이리얼트립,https://www.myrealtrip.com
+KR,여행,NOL 인터파크 투어,https://travel.interpark.com
+KR,여행,하나투어,https://www.hanatour.com
+KR,여행,모두투어,https://www.modetour.com
+KR,여행,노랑풍선,https://www.ybtour.co.kr
+KR,항공권,네이버 항공권,https://flight.naver.com
+KR,숙박,네이버 호텔,https://hotels.naver.com
+KR,액티비티,와그,https://www.waug.com
+KR,액티비티,프립,https://www.frip.co.kr
+KR,호텔,롯데호텔,https://www.lottehotel.com
+KR,호텔,신라호텔,https://www.shilla.net
+KR,호텔,조선호텔앤리조트,https://www.josunhotel.com
+KR,리조트,한화리조트,https://www.hanwharesort.co.kr
+KR,리조트,소노호텔앤리조트,https://www.sonohotelsresorts.com
+KR,리조트,곤지암리조트,https://www.konjiamresort.co.kr
+KR,리조트,하이원리조트,https://www.high1.com
+KR,리조트,용평리조트,https://www.yongpyong.co.kr
+KR,맛집,캐치테이블,https://app.catchtable.co.kr
+KR,맛집,테이블링,https://www.tabling.co.kr
+KR,맛집,테이블매니저,https://www.tablemanager.io
+KR,생활예약,네이버 예약,https://booking.naver.com
+KR,병원,똑닥,https://www.ddocdoc.com
+KR,골프,XGOLF,https://www.xgolf.com
+KR,골프,골프존 티스캐너,https://www.teescanner.com
+GL,맛집,OpenTable,https://www.opentable.com
+GL,맛집,Resy,https://resy.com
+GL,맛집,Tock,https://www.exploretock.com
+GL,맛집,SevenRooms,https://www.sevenrooms.com
+GL,맛집,TheFork,https://www.thefork.com
+GL,맛집,타베로그,https://tabelog.com
+GL,맛집,핫페퍼 구르메,https://www.hotpepper.jp
+GL,맛집,omakase.in,https://omakase.in
+GL,맛집,TableCheck,https://www.tablecheck.com
+GL,맛집,Chope,https://www.chope.co
+GL,맛집,포켓몬카페,https://reserve.pokemon-cafe.jp
+GL,숙박,에어비앤비,https://www.airbnb.com
+GL,숙박,부킹닷컴,https://www.booking.com
+GL,숙박,아고다,https://www.agoda.com
+GL,숙박,익스피디아,https://www.expedia.com
+GL,숙박,호텔스닷컴,https://www.hotels.com
+GL,숙박,트립닷컴,https://www.trip.com
+GL,숙박,라쿠텐 트래블,https://travel.rakuten.co.jp
+GL,숙박,자란,https://www.jalan.net
+GL,숙박,잇큐,https://www.ikyu.com
+GL,호텔,메리어트,https://www.marriott.com
+GL,호텔,힐튼,https://www.hilton.com
+GL,호텔,IHG,https://www.ihg.com
+GL,호텔,하얏트,https://www.hyatt.com
+GL,호텔,아코르,https://all.accor.com
+GL,캠핑,Recreation.gov,https://www.recreation.gov
+GL,캠핑,Hipcamp,https://www.hipcamp.com
+GL,항공권,구글 항공권,https://www.google.com/travel/flights
+GL,항공권,스카이스캐너,https://www.skyscanner.net
+GL,항공권,카약,https://www.kayak.com
+GL,항공권,호퍼,https://www.hopper.com
+GL,항공권,Kiwi.com,https://www.kiwi.com
+GL,항공,일본항공(JAL),https://www.jal.co.jp
+GL,항공,ANA,https://www.ana.co.jp
+GL,항공,싱가포르항공,https://www.singaporeair.com
+GL,항공,캐세이퍼시픽,https://www.cathaypacific.com
+GL,항공,델타항공,https://www.delta.com
+GL,항공,유나이티드항공,https://www.united.com
+GL,항공,아메리칸항공,https://www.aa.com
+GL,항공,에미레이트항공,https://www.emirates.com
+GL,항공,카타르항공,https://www.qatarairways.com
+GL,항공,루프트한자,https://www.lufthansa.com
+GL,항공,에바항공,https://www.evaair.com
+GL,항공,피치항공,https://www.flypeach.com
+GL,항공,ExpertFlyer(좌석 알림 서비스),https://www.expertflyer.com
+GL,철도,트레인라인,https://www.thetrainline.com
+GL,철도,레일유럽,https://www.raileurope.com
+GL,철도,암트랙,https://www.amtrak.com
+GL,철도,SNCF Connect,https://www.sncf-connect.com
+GL,철도,유로스타,https://www.eurostar.com
+GL,철도,독일철도(DB),https://www.bahn.de
+GL,철도,JR동일본 에키넷,https://www.eki-net.com
+GL,철도,JR서일본 e5489,https://www.jr-odekake.net
+GL,교통,12Go,https://12go.asia
+GL,버스,플릭스버스,https://www.flixbus.com
+GL,공연티켓,티켓마스터,https://www.ticketmaster.com
+GL,공연티켓,AXS,https://www.axs.com
+GL,공연티켓,StubHub,https://www.stubhub.com
+GL,공연티켓,SeatGeek,https://seatgeek.com
+GL,공연티켓,이벤트브라이트,https://www.eventbrite.com
+GL,공연티켓,DICE,https://dice.fm
+GL,공연티켓,이벤팀,https://www.eventim.de
+GL,공연티켓,로손티켓,https://l-tike.com
+GL,공연티켓,티켓피아,https://t.pia.jp
+GL,공연티켓,이플러스,https://eplus.jp
+GL,액티비티,클룩,https://www.klook.com
+GL,액티비티,KKday,https://www.kkday.com
+GL,액티비티,GetYourGuide,https://www.getyourguide.com
+GL,액티비티,Viator,https://www.viator.com
+GL,액티비티,Tiqets,https://www.tiqets.com
+GL,테마파크,도쿄 디즈니 리조트,https://www.tokyodisneyresort.jp
+GL,테마파크,유니버설 스튜디오 재팬,https://www.usj.co.jp
+GL,테마파크,디즈니랜드(미국),https://disneyland.disney.go.com
+GL,관광지,팀랩,https://www.teamlab.art
+GL,관광지,사그라다 파밀리아,https://sagradafamilia.org
+GL,관광지,알함브라,https://tickets.alhambra-patronato.es
+GL,관광지,바티칸 박물관,https://tickets.museivaticani.va
+GL,관광지,시부야 스카이,https://www.shibuya-scramble-square.com
