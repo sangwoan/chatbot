@@ -1184,6 +1184,8 @@ uniform float u_lightAmt,u_smearAmt,u_flareAmt,u_dustAmt,u_leakAmt;
 uniform vec2 u_seed,u_leakPos;
 uniform vec3 u_leakColor;
 uniform vec4 u_light[3];
+uniform vec3 u_vgain,u_vleakColor;
+uniform vec3 u_vleak; // per-shot variation: colour drift, and a faint leak at (x, y) of strength z
 const vec3 W=vec3(.299,.587,.114);
 vec3 tap(vec2 uv){
   uv=clamp(uv,0.,1.);
@@ -1336,6 +1338,13 @@ void main(){
     // B&W bodies: smear, flare, dust and leaks only change brightness, in the body's own tint
     if(u_mono>.5) c=preLight+dot(c-preLight,W)*u_tint/max(dot(u_tint,W),.01);
   }
+  if(u_vleak.z>0.||u_vgain!=vec3(1.)){
+    // no two shots alike: a touch of white-balance drift and a faint leak at the edge, B&W bodies keep their tint
+    vec3 pv=c;
+    c*=u_vgain;
+    c+=u_vleakColor*u_vleak.z*(1.-smoothstep(0.,.85,length((uv-u_vleak.xy)*asp)));
+    if(u_mono>.5) c=pv+dot(c-pv,W)*u_tint/max(dot(u_tint,W),.01);
+  }
   if(u_scan>0.) c*=1.-u_scan*(.5+.5*cos(v.y*240.*6.2832));
   float cell=max(1.,floor(u_res.x/720.+.5));
   vec2 gp=floor(gl_FragCoord.xy/cell);
@@ -1380,6 +1389,27 @@ function lightUniforms(cam, mode, seed, lights) {
   return {
     amt: 1, smear: camParams(cam).ccd, flare: rand ? .85 : .45, dust: rand ? .6 : .25,
     leak: rand ? .3 + .4 * rnd() : 0, seed: [seed % 97 + .5, (seed * 7) % 89 + .5], leakPos, leakColor, lights
+  };
+}
+
+/* per-shot variation: every developed photo drifts a little from the last, as cheap sensors and plastic lenses did.
+   Kept small on purpose: about ±2.5% white balance, ±0.035 EV, ±10% vignette, and on most shots a faint warm leak at an edge.
+   The same seed always gives the same result, so redeveloping a photo keeps its character. */
+const NO_VARY = { gain: [1, 1, 1], leak: [0, 0, 0], leakColor: [0, 0, 0], ev: 0, vig: 1 };
+function varyFor(seed) {
+  if (!seed) return NO_VARY;
+  let s = seed % 2147483646 + 1;
+  const rnd = () => { s = (s * 48271) % 2147483647; return s / 2147483647; };
+  const sym = k => (rnd() * 2 - 1) * k;
+  const warm = sym(.025), tintG = sym(.012);
+  const side = Math.floor(rnd() * 4), along = .15 + .7 * rnd();
+  const pos = [[along, -.04], [along, 1.04], [-.04, along], [1.04, along]][side];
+  const hue = rnd();
+  return {
+    gain: [1 + warm, 1 + tintG, 1 - warm],
+    leak: [pos[0], pos[1], rnd() < .7 ? .05 + .07 * rnd() : 0],
+    leakColor: [1, .5 + .3 * hue, .3 + .2 * (1 - hue)],
+    ev: sym(.035), vig: 1 + sym(.1)
   };
 }
 
@@ -1439,6 +1469,8 @@ class Lens {
     const L = o.light || NO_LIGHT;
     f1('u_lightAmt', L.amt); f1('u_smearAmt', L.smear); f1('u_flareAmt', L.flare); f1('u_dustAmt', L.dust); f1('u_leakAmt', L.leak);
     f2('u_seed', L.seed); f2('u_leakPos', L.leakPos); f3('u_leakColor', L.leakColor);
+    const V = o.vary || NO_VARY;
+    f3('u_vgain', V.gain); f3('u_vleak', V.leak); f3('u_vleakColor', V.leakColor);
     if (U.u_light) {
       const a = new Float32Array(12);
       L.lights.slice(0, 3).forEach((p, i) => { a[i * 4] = p.x; a[i * 4 + 1] = p.y; a[i * 4 + 2] = p.i; a[i * 4 + 3] = p.pt ?? 1; });
@@ -2209,7 +2241,8 @@ function compose(src, meta, o) {
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, L.W, L.H);
     drawBackground(ctx, L);
     capLens.upload(src);
-    capLens.render(L.iw, L.ih, camParams(o.cam), { mirror: false, zoom: 1, time: Math.random() * 100, amount: R.amount / 100, flash: o.flash || 0, ev: o.ev || 0, light: o.light });
+    const V = o.vary || NO_VARY, P = camParams(o.cam);
+    capLens.render(L.iw, L.ih, { ...P, vignette: P.vignette * V.vig }, { mirror: false, zoom: 1, time: Math.random() * 100, amount: R.amount / 100, flash: o.flash || 0, ev: (o.ev || 0) + V.ev, light: o.light, vary: V });
     ctx.drawImage(capLens.canvas, L.ix, L.iy, L.iw, L.ih);
     if (R.osdOn && meta.osd) drawOsd(ctx, L, meta.osd);
     drawForeground(ctx, L, meta);
@@ -2230,10 +2263,11 @@ async function develop(origin, j) {
   const lights = j.lightMode !== 'off' || camParams(j.cam).star ? detectLights(origin, origin.width, origin.height, null, false) : [];
   await ensureFonts(meta.caption);
   await nextFrame();
-  const out = compose(origin, meta, { cfg: j.cfg, cam: j.cam, flash: j.flash, ev: j.ev, light: lightUniforms(j.cam, j.lightMode, j.seed, lights) });
+  const vary = j.vary || 1 + Math.floor(Math.random() * 2147483000);
+  const out = compose(origin, meta, { cfg: j.cfg, cam: j.cam, flash: j.flash, ev: j.ev, light: lightUniforms(j.cam, j.lightMode, j.seed, lights), vary: varyFor(vary) });
   await nextFrame();
   const orig = j.origBlob || await toBlob(scaledCopy(origin, 2048), 'image/jpeg', .9);
-  const rec = await storePhoto(out, meta, { orig, job: j, ometa: { taken: j.date.getTime(), exif: j.exif || null, front: !!j.front, ev: j.ev || 0, flash: j.flash || 0, light: j.lightMode, seed: j.seed, osdFlags: j.osdFlags || [] } }, j.date);
+  const rec = await storePhoto(out, meta, { orig, job: j, ometa: { taken: j.date.getTime(), exif: j.exif || null, front: !!j.front, ev: j.ev || 0, flash: j.flash || 0, light: j.lightMode, seed: j.seed, vary, osdFlags: j.osdFlags || [] } }, j.date);
   if (NATIVE && j.cfg.autoSave && !storageRefused) await saveToGallery(rec, true);
   return rec;
 }
@@ -2445,7 +2479,7 @@ async function redevelop(rec, camId) {
   const om = rec.ometa || {};
   const nrec = await develop(src, {
     cfg: { ...S }, cam: camById(camId), date: new Date(om.taken || rec.taken), exif: om.exif, front: om.front, origBlob: rec.orig,
-    flash: om.flash || 0, ev: om.ev || 0, lightMode: om.light || 'off', seed: om.seed || lightSeed, osdFlags: om.osdFlags || []
+    flash: om.flash || 0, ev: om.ev || 0, lightMode: om.light || 'off', seed: om.seed || lightSeed, vary: om.vary, osdFlags: om.osdFlags || []
   });
   return nrec;
 }
