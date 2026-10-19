@@ -63,7 +63,7 @@
 | 예약했어 / 그만 | `.venv/bin/python -m agent.runner --mark-booked <watch id>` 후 `bash scripts/service.sh stop` |
 | 중지 | `bash scripts/service.sh stop` |
 | 날짜·시간·인원 바꿔줘 | `watches.yaml` 수정 → `--probe` 로 확인 → `bash scripts/service.sh restart` |
-| 새 대상 추가 | PLAN.md 원칙대로 플랫폼을 조사(약관·봇 방어·결제 인증)한 뒤 어댑터 추가. 기본값은 `notify_only` |
+| 새 대상 추가 | PLAN.md §9.3 온보딩: `--check-url URL`로 robots 판정 → 약관 확인 후 `watches.yaml`의 `sites`에 판정 기록(명시적 금지면 중단) → http_json·html 규칙 작성 → `--probe`로 화면과 대조. 후보 목록은 `research/platform_survey.csv`의 `새 규칙 판정`. 기본값은 `notify_only` |
 
 ## 변경 금지 규칙 (PLAN.md 원칙)
 - 결재 게이트(10만원 이상 / 예약 시점 취소수수료 10% 초과 / 수수료 10% 이하 취소 가능 기간 24시간 미만 / 금액·규정 불명 → 승인 필요)를 완화하지 않는다.

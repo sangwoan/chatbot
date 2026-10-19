@@ -5,6 +5,7 @@ from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 KST = ZoneInfo("Asia/Seoul")
+MIN_POLL_SECONDS = 60  # 감시 간격은 60초 미만으로 줄이지 않는다
 
 
 @dataclass(frozen=True)
@@ -80,6 +81,7 @@ class Watch:
     poll_seconds: int = 90
     cancel_policy: CancelPolicy | None = None
     options: dict = field(default_factory=dict)
+    enabled: bool = True
 
     @classmethod
     def from_dict(cls, raw: dict) -> Watch:
@@ -95,9 +97,10 @@ class Watch:
             quantity=int(raw["quantity"]),
             mode=raw.get("mode", "notify_only"),
             max_total_krw=raw.get("max_total_krw"),
-            poll_seconds=int(raw.get("poll_seconds", 90)),
+            poll_seconds=max(MIN_POLL_SECONDS, int(raw.get("poll_seconds", 90))),
             cancel_policy=CancelPolicy.from_dict(raw.get("cancel_policy")),
             options=raw.get("options") or {},
+            enabled=bool(raw.get("enabled", True)),
         )
 
 

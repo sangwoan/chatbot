@@ -3,6 +3,7 @@
     python -m agent.runner -c watches.yaml            # 상시 실행
     python -m agent.runner -c watches.yaml --once     # 1회 확인
     python -m agent.runner -c watches.yaml --test-notify
+    python -m agent.runner --check-url URL            # 새 사이트 온보딩: 정책·robots.txt 판정
 """
 from __future__ import annotations
 
@@ -14,8 +15,10 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import requests
 import yaml
 
+from .access import AccessGate, PolicyRefused, SiteBlocked, host_of, path_of
 from .adapters import Adapter, make_adapter
 from .criteria import matching_slots
 from .models import KST, Checkout, Slot, Watch
@@ -155,6 +158,10 @@ class Agent:
                 if errors >= ERROR_ALERT_AFTER:
                     self.notifier.send(f"🟢 [{watch.id}] 감시 복구됨")
                 errors = 0
+            except (PolicyRefused, SiteBlocked) as e:
+                self.store.log(watch.id, "policy_stop", str(e))
+                self.notifier.send(f"⛔ [{watch.id}] 감시 중단: {e}\n우회하지 않습니다. 직접 확인해 주세요.", watch.url)
+                return
             except Exception as e:
                 errors += 1
                 self.store.log(watch.id, "error", repr(e))
@@ -185,13 +192,48 @@ def _drift(before: Checkout, after: Checkout) -> str | None:
     return None
 
 
-def load(path: str) -> tuple[Settings, list[str], list[Watch]]:
+def load(path: str) -> tuple[Settings, list[str], list[Watch], dict]:
     raw = yaml.safe_load(Path(path).read_text())
     return (
         Settings.from_dict(raw.get("defaults") or {}),
         (raw.get("notify") or {}).get("channels", ["console"]),
-        [Watch.from_dict(w) for w in raw["watches"]],
+        [Watch.from_dict(w) for w in raw.get("watches") or []],
+        raw.get("sites") or {},
     )
+
+
+async def check_url(gate: AccessGate, sites: dict, url: str) -> None:
+    """새 사이트 온보딩용: 등록부·robots.txt 판정을 사람이 읽기 좋게 출력."""
+    host = host_of(url)
+    site = {k.lower(): v for k, v in sites.items()}.get(host) or {}
+    rules = await gate.robots(url)
+    print(f"호스트: {host}")
+    print(f"등록부: terms={site.get('terms', 'unreviewed')} status={site.get('status', '-')} {site.get('note', '')}".rstrip())
+    print(f"robots.txt: {'허용' if rules.allowed(path_of(url)) else '금지'} {rules.note}".rstrip())
+    print(f"Crawl-delay: {rules.crawl_delay() or '-'}")
+    if not rules.allowed(path_of(url)):
+        print("판정: 감시 안 함 — robots.txt가 이 경로를 금지(명시적 정책이라 약관과 상관없이 제외)")
+        return
+    try:
+        await gate.check(url)
+        print("판정: 감시 가능")
+    except PolicyRefused as e:
+        print(f"판정: 감시 안 함 — {e}")
+
+
+async def preflight(gate: AccessGate, adapters: dict[str, Adapter], watches: list[Watch], notifier: Notifier | None) -> list[Watch]:
+    """시작 전에 정책을 확인해 감시해도 되는 것만 남긴다."""
+    ok = []
+    for w in watches:
+        try:
+            for url in adapters[w.adapter].urls(w):
+                await gate.check(url)
+            ok.append(w)
+        except PolicyRefused as e:
+            print(f"[{w.id}] 시작 안 함: {e}", flush=True)
+            if notifier:
+                notifier.send(f"⛔ [{w.id}] 시작 안 함: {e}", w.url)
+    return ok
 
 
 def load_env(path: Path) -> None:
@@ -213,30 +255,53 @@ async def main() -> None:
     ap.add_argument("--headed", action="store_true", help="브라우저 창 띄우기")
     ap.add_argument("--test-notify", action="store_true")
     ap.add_argument("--mark-booked", metavar="WATCH_ID", help="직접 예약 완료 → 해당 감시 종료")
+    ap.add_argument("--check-url", metavar="URL", help="새 사이트 온보딩: 등록부·robots.txt 판정만 출력")
+    ap.add_argument("--unblock", metavar="HOST", help="차단 기록 삭제 — 사이트 정책이 바뀐 것을 확인한 뒤에만")
     args = ap.parse_args()
 
     load_env(Path(args.config).resolve().parent / ".env")
-    settings, channels, watches = load(args.config)
+    settings, channels, all_watches, sites = load(args.config)
     HOME.mkdir(parents=True, exist_ok=True)
     store = Store(HOME / "agent.db")
+    gate = AccessGate(sites, store, session=requests.Session())
     if args.mark_booked:
         store.record_booking(args.mark_booked, "manual", None, "manual")
         print(f"{args.mark_booked}: 예약 완료로 기록 — 실행 중인 감시는 다음 확인 때 종료됩니다.")
         return
+    if args.unblock:
+        removed = store.unblock_host(args.unblock.lower())
+        print(f"{args.unblock}: {'차단 기록 삭제' if removed else '차단 기록 없음'}")
+        return
+    if args.check_url:
+        await check_url(gate, sites, args.check_url)
+        return
 
     notifier = MultiNotifier(channels)
     if args.test_notify:
-        notifier.send("예약 에이전트 테스트 알림입니다.", watches[0].url if watches else None)
+        notifier.send("예약 에이전트 테스트 알림입니다.", all_watches[0].url if all_watches else None)
         return
 
-    adapters = {name: make_adapter(name, headless=not args.headed) for name in {w.adapter for w in watches}}
+    watches = [w for w in all_watches if w.enabled]
+    if not watches:
+        print("켜져 있는 감시가 없습니다 — watches.yaml의 enabled를 확인하세요.")
+        return
+    adapters = {name: make_adapter(name, headless=not args.headed, gate=gate) for name in {w.adapter for w in watches}}
+    watches = await preflight(gate, adapters, watches, notifier if not (args.probe or args.once) else None)
+    if not watches:
+        print("정책 확인을 통과한 감시가 없습니다.")
+        return
+    adapters = {name: a for name, a in adapters.items() if any(w.adapter == name for w in watches)}
     for a in adapters.values():
         await a.start()
     agent = Agent(settings, store, notifier, adapters)
     try:
         if args.probe:
             for w in watches:
-                slots = await adapters[w.adapter].fetch_slots(w)
+                try:
+                    slots = await adapters[w.adapter].fetch_slots(w)
+                except (PolicyRefused, SiteBlocked) as e:
+                    print(f"\n[{w.id}] 중단: {e}")
+                    continue
                 hits = {s.key for s in matching_slots(w, slots, now_kst())}
                 print(f"\n[{w.id}] 슬롯 {len(slots)}개, 기준 충족 {len(hits)}개")
                 for s in sorted(slots, key=lambda s: (s.day, s.start)):

@@ -13,6 +13,7 @@
    - 예약금 0원인데 노쇼/취소 수수료가 있는 경우 (비율 계산 불가 → 승인)
 3. **이중 예약 방지**: 감시 항목 1개당 확정은 최대 1건. 확정 후 해당 감시 자동 종료.
 4. **우회 금지**: CAPTCHA 풀이, 봇 탐지 회피(핑거프린트 위장, 프록시 로테이션 등), 대기열 우회는 구현하지 않는다. 이런 방어가 있는 곳은 **알림 전용**으로 처리한다.
+5. **허용 판정 (사용자 결정 2026-10-19)**: 불법이 아니고 사이트 정책에 **명시적 금지**가 없으면 감시를 허용한다. 자세한 기준과 구현은 §9.
 
 ## 1. 현실 체크 (리스크)
 
@@ -146,3 +147,45 @@ booking_agent/
 - [ ] NOL 회차 파싱 — **보류**. 2026-10-18 맥북에서 `tools/discover.py --auto` 실행 시 NOL이 자동화 브라우저를 첫 요청부터 차단(Cloudflare). 원칙 4(우회 금지)에 따라 감시하지 않는다. NOL 공식 알림이 생기거나 차단 정책이 바뀌면 재검토
 - [x] 화담숲 취소 규정 확인 후 `watches.yaml`에 입력 (2026-10-18)
 - [x] 예약·티켓 사이트 150곳 자동 감시 가능 여부 조사 → `research/PLATFORM_SURVEY.md`, `research/platform_survey.csv`
+- [x] 다중 사이트 감시 기반: 접근 게이트·범용 어댑터(§9)
+
+## 9. 다중 사이트 감시 설계 (2026-10-19)
+
+### 9.1 허용 판정 기준 (원칙 5)
+| 상황 | 판정 |
+|---|---|
+| robots.txt가 그 경로를 Disallow (`*` 또는 `booking-agent` 그룹) | 금지 — 기계가 읽는 명시적 정책 |
+| 약관에 자동화·스크레이핑·로봇 접근 금지 조항 | 금지 |
+| 약관이 '서버 부하·운영 방해'를 일으키는 자동 접속만 금지 | 허용 — 60초 이상 간격 유지 |
+| 관련 조항 없음 | 허용 |
+| 약관 미확인 | 감시 시작 안 함 → 온보딩에서 확인 |
+| 기술적 차단(401·403·407·451, 챌린지·CAPTCHA 화면, robots.txt 401·403, 429 3회 연속) | 그 호스트 즉시 중단, 자동 재시도 없음 |
+
+정책과 상관없이 하지 않는 것(원칙 4): CAPTCHA 풀이, UA·핑거프린트 위장, 스텔스 플러그인, 프록시 로테이션, 대기열 우회, 자동 로그인, 차단된 뒤 재시도.
+감시는 알림 전용이 기본이다. 자동 예약은 원칙 1~3과 결재 게이트를 그대로 따른다.
+
+### 9.2 구조
+```
+watch ─▶ 어댑터(http_json · html · nol) ─▶ AccessGate ─▶ 사이트
+                                           1) sites 등록부: 약관 판정·차단 기록
+                                           2) robots.txt (와일드카드·$·최장 일치, 동률이면 Allow)
+                                           3) 호스트별 최소 간격 60초 + Crawl-delay·Retry-After
+                                           4) 정직한 UA: booking-agent/1.0
+                                           5) 차단 감지 → SiteBlocked → 감시 중단·알림·차단 기록
+```
+- `agent/access.py`: `AccessGate`, `RobotsRules`, `detect_block`, `SiteBlocked`, `PolicyRefused`
+- `agent/adapters/http_json.py`: 공개 JSON 응답 → `watch.options.extract` 규칙으로 슬롯 변환
+- `agent/adapters/html.py`: 서버가 그려 주는 HTML → CSS 선택자로 슬롯 변환
+- `watches.yaml`의 `sites:` 등록부: 호스트별 `terms`(allowed · load_only · banned · unreviewed), 근거 URL, 확인일
+- Store `blocked_hosts`: 실행 중 차단된 호스트. `--unblock HOST`는 사용자가 정책 변경을 확인한 뒤에만 쓴다
+
+### 9.3 새 사이트 온보딩
+1. `python -m agent.runner --check-url URL` → 등록부·robots.txt 판정과 Crawl-delay 확인
+2. 약관을 읽고 `sites:`에 판정·근거 URL·확인일 기록. 명시적 금지면 여기서 중단
+3. 공식 알림·대기·API가 있으면 그것을 먼저 안내
+4. 데이터 위치 파악: 페이지가 불러오는 공개 JSON 또는 HTML (1회성, 정직한 UA)
+5. `watches.yaml`에 http_json·html 규칙 작성 → `--probe` 결과를 실제 화면과 대조
+6. `pytest` 통과 후 커밋, `bash scripts/service.sh restart`
+
+### 9.4 후보
+`research/platform_survey.csv`의 `새 규칙 판정` 열을 본다. 약관 원문 확인은 실제로 감시할 사이트를 온보딩할 때 한다.

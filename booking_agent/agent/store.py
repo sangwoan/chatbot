@@ -18,6 +18,9 @@ CREATE TABLE IF NOT EXISTS events (
 CREATE TABLE IF NOT EXISTS bookings (
     watch_id TEXT PRIMARY KEY, slot_key TEXT, at TEXT, total_krw INTEGER, ref TEXT
 );
+CREATE TABLE IF NOT EXISTS blocked_hosts (
+    host TEXT PRIMARY KEY, at TEXT, reason TEXT
+);
 """
 
 
@@ -69,6 +72,21 @@ class Store:
             (watch_id, slot_key, datetime.now().isoformat(), total_krw, ref),
         )
         self.db.commit()
+
+    def block_host(self, host: str, reason: str) -> None:
+        self.db.execute(
+            "INSERT OR REPLACE INTO blocked_hosts VALUES (?,?,?)", (host, datetime.now().isoformat(), reason)
+        )
+        self.db.commit()
+
+    def blocked_reason(self, host: str) -> str | None:
+        row = self.db.execute("SELECT reason FROM blocked_hosts WHERE host=?", (host,)).fetchone()
+        return row[0] if row else None
+
+    def unblock_host(self, host: str) -> bool:
+        cur = self.db.execute("DELETE FROM blocked_hosts WHERE host=?", (host,))
+        self.db.commit()
+        return cur.rowcount > 0
 
     def spent_today(self) -> int:
         row = self.db.execute(

@@ -16,6 +16,10 @@ class Adapter:
 
     async def close(self) -> None: ...
 
+    def urls(self, watch: Watch) -> list[str]:
+        """자동으로 여는 주소들. 시작 전에 AccessGate로 정책을 확인한다."""
+        return [watch.url]
+
     async def fetch_slots(self, watch: Watch) -> list[Slot]:
         raise NotImplementedError
 

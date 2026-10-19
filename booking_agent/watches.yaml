@@ -10,8 +10,41 @@ defaults:
 notify:
   channels: [kakao, mac]        # kakao | telegram | mac | console
 
+# 사이트 정책 등록부 (PLAN.md §9). 여기 판정이 allowed·load_only인 호스트만 감시한다.
+#   terms: allowed     약관에 자동화 관련 금지 조항 없음
+#          load_only   '서버 부하·운영 방해'를 일으키는 자동 접속만 금지 → 60초 이상 간격으로 허용
+#          banned      약관이 자동화·스크레이핑·로봇 접근을 금지 → 감시 안 함
+#          (미기재)     약관 확인 전 → 감시 안 함
+#   status: blocked    기술적으로 막힌 사이트 → 감시 안 함
+#   min_gap_s: 같은 호스트 요청 사이 최소 간격(기본 5초). robots.txt 판정은 실행 때마다 따로 한다.
+sites:
+  leisure-web.yanolja.com:
+    terms: banned
+    status: blocked
+    checked: 2026-10-18
+    note: "Cloudflare가 자동화 브라우저 차단, 약관상 자동화 금지(PLAN.md §7)"
+
 watches:
+  # 예시 — 공개 JSON을 내려 주는 사이트 (sites에 판정을 먼저 기록해야 시작됨)
+  # - id: example-json
+  #   adapter: http_json
+  #   url: https://example.com/product/123            # 알림에 넣을 예약 페이지
+  #   dates: [2026-11-07]
+  #   time_from: "10:00"
+  #   time_to: "16:00"
+  #   quantity: 2
+  #   options:
+  #     requests:
+  #       - url: "https://example.com/api/rounds?date={date:%Y-%m-%d}"
+  #     extract:
+  #       items: "data.rounds[*]"
+  #       time: "startTime"
+  #       available: {path: "remainCount", gt: 0}
+  #       remaining: "remainCount"
+  #       price: "price"
+
   - id: hwadam-2026-fall
+    enabled: false              # NOL 자동 접근 차단 확인(2026-10-18) — 감시하지 않음
     adapter: nol
     mode: notify_only           # NOL은 알림 + 직접 결제
     url: https://leisure-web.yanolja.com/leisure/10367229
