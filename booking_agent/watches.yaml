@@ -23,6 +23,16 @@ sites:
     status: blocked
     checked: 2026-10-18
     note: "Cloudflare가 자동화 브라우저 차단, 약관상 자동화 금지(PLAN.md §7)"
+  yeyak.seoul.go.kr:
+    terms: allowed              # 서울시 통합회원 약관에 자동화 금지 조항 없음
+    status: blocked
+    checked: 2026-10-20
+    note: "잔여 달력 API 3개에 매크로 방지(DynaPath, 2025-03-20) 적용 — 비정상 접근 차단. OpenAPI는 비정기 갱신·서비스 단위라 취소 감지 불가"
+  reservation.knps.or.kr:
+    terms: allowed              # 이용정책에 자동화 금지 조항 없음
+    status: blocked
+    checked: 2026-10-20
+    note: "대피소·야영장 잔여 조회가 NetFUNNEL 대기열 뒤에 있고 예약은 캡차. 공식 대기신청(대기자→예약자 전환 시 결제 안내 문자) 사용"
 
 watches:
   # 예시 — 공개 JSON을 내려 주는 사이트 (sites에 판정을 먼저 기록해야 시작됨)

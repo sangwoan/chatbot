@@ -183,7 +183,7 @@ watch ─▶ 어댑터(http_json · html · nol) ─▶ AccessGate ─▶ 사이
 1. `python -m agent.runner --check-url URL` → 등록부·robots.txt 판정과 Crawl-delay 확인
 2. 약관을 읽고 `sites:`에 판정·근거 URL·확인일 기록. 명시적 금지면 여기서 중단
 3. 공식 알림·대기·API가 있으면 그것을 먼저 안내
-4. 데이터 위치 파악: 페이지가 불러오는 공개 JSON 또는 HTML (1회성, 정직한 UA)
+4. 데이터 위치 파악: 페이지가 불러오는 공개 JSON 또는 HTML (1회성, 정직한 UA). 그 요청에 매크로 방지(동적 경로·일회용 토큰·캡차)가 걸려 있으면 기술적 차단으로 보고 `status: blocked`로 기록한 뒤 중단한다 — 브라우저로 돌려 통과시키는 것도 우회다
 5. `watches.yaml`에 http_json·html 규칙 작성 → `--probe` 결과를 실제 화면과 대조
 6. `pytest` 통과 후 커밋, `bash scripts/service.sh restart`
 
