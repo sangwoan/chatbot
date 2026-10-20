@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko" class="ux4-silver ux3-film ux-lcd-fit ux-caption-hero ux-shoot-row ux-sheet-head ux-selection ux-ko-headings ux-popover ux-cam-sheets ux-album-grid ux-viewer-clean ux2-cats ux2-card ux2-level ux2-days ux2-develop ux2-tag ux2-hint">
+<html lang="ko" class="ux5-zoom ux5-quick ux5-count ux5-card ux4-silver ux3-film ux-lcd-fit ux-caption-hero ux-shoot-row ux-sheet-head ux-selection ux-ko-headings ux-popover ux-cam-sheets ux-album-grid ux-viewer-clean ux2-cats ux2-card ux2-level ux2-days ux2-develop ux2-tag ux2-hint">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -610,6 +610,39 @@ html.ux4-silver #btnFlip::before{content:"FLIP"}
 html.ux4-silver .caption{position:relative}
 html.ux4-silver .caption::before{content:"";position:absolute;inset:-9px 0}  /* short screens draw the caption 22px tall; keep a 40px tap */
 @media (max-height:620px){html.ux4-silver .shoot{padding:12px 18px 20px}html.ux4-silver .vf{padding:8px 14px 20px}}
+
+/* ux5-zoom: a W/T zoom rocker between FLASH and MENU, like the one on a compact's back (tap: next step, hold: smooth) */
+.zoomkey{display:none}
+html.ux5-zoom .zoomkey{display:flex;align-items:center;height:30px;border-radius:15px;color:#e9eaec;
+  background:linear-gradient(#45484e,#1e2024);box-shadow:0 1px 0 rgba(255,255,255,.8),0 2px 3px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.2)}
+html.ux5-zoom .zoomkey button{appearance:none;position:relative;width:46px;height:30px;padding:0;border:0;background:none;color:inherit;font:400 12px/1 var(--font-osd);letter-spacing:.06em}
+html.ux5-zoom .zoomkey button::before{content:"";position:absolute;inset:-7px 0}
+html.ux5-zoom .zoomkey button:first-child{border-radius:15px 0 0 15px}
+html.ux5-zoom .zoomkey button:last-child{border-radius:0 15px 15px 0;box-shadow:inset 1px 0 0 rgba(255,255,255,.16),inset 2px 0 0 rgba(0,0,0,.35)}
+html.ux5-zoom .zoomkey button:active{background:rgba(255,255,255,.14)}
+
+.vgridbtn{display:none}
+html.ux5-quick .vgridbtn{display:grid;place-items:center;flex:none;width:44px;height:44px;margin-left:4px;padding:0;border:0;border-radius:22px;background:none;color:#e9eef7}
+html.ux5-quick .vgridbtn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7}
+html.ux5-quick .vgridbtn:active{background:rgba(255,255,255,.12)}
+
+/* ux5-count: where you are in the album, and tap targets at the photo's edges */
+.vnav{display:none}
+/* two lines, like a digicam's playback info: file number and camera, then position and date */
+html.ux5-count .viewer-top{display:grid;grid-template-columns:44px minmax(0,1fr) auto;grid-template-areas:"back no grid" "back date grid";align-items:center;row-gap:4px}
+html.ux5-count #btnViewerClose{grid-area:back}
+html.ux5-count .viewer-top .play{grid-area:no;margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html.ux5-count #viewerDate{grid-area:date;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;opacity:.75}
+html.ux5-count .vgridbtn{grid-area:grid}
+html.ux5-count .viewer-img{position:relative}
+html.ux5-count .vnav{display:grid;place-items:center;position:absolute;top:50%;width:44px;height:88px;margin-top:-44px;padding:0;border:0;border-radius:22px;background:rgba(0,0,0,.28);color:rgba(255,255,255,.85);font:400 26px/1 var(--font-ui)}
+html.ux5-count .vnav.prev{left:6px}html.ux5-count .vnav.next{right:6px}
+html.ux5-count .vnav[hidden]{display:none}
+
+/* ux5-card: the album reads like the camera's memory card: a DCIM folder per day, how many photos it holds, plainer import wording */
+html.ux5-card .grid .day::before{content:attr(data-dcim);margin-right:8px;font:400 10px/1 var(--font-osd);letter-spacing:.1em;color:#ffb35c;vertical-align:1px}
+.cardfoot{display:none}
+html.ux5-card .cardfoot{display:block;grid-column:1/-1;margin:14px 4px 6px;padding-top:10px;border-top:1px dashed rgba(255,255,255,.14);font:400 10px/1.6 var(--font-osd);letter-spacing:.1em;color:var(--menu-sub);text-align:center}
 </style>
 </head>
 <body>
@@ -618,6 +651,7 @@ html.ux4-silver .caption::before{content:"";position:absolute;inset:-9px 0}  /* 
     <div class="qk">
       <button class="qkey" id="btnFlash" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.2 2.8 5.6 13.2h5.6l-1 8 7.6-10.4h-5.6z"/></svg><span id="lblFlash">플래시</span></button>
     </div>
+    <div class="zoomkey" id="zoomKey" role="group" aria-label="줌"><button id="btnZoomW" aria-label="넓게 · 줌 아웃">W</button><button id="btnZoomT" aria-label="당겨서 · 줌 인">T</button></div>
     <button class="qkey" id="btnMenu" aria-haspopup="dialog" aria-label="메뉴 · 날짜 스탬프와 사진 느낌"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button>
   </header>
 
@@ -714,7 +748,7 @@ html.ux4-silver .caption::before{content:"";position:absolute;inset:-9px 0}  /* 
         <div data-for="film digi info polaroid strip" class="row"><span class="lbl">날짜 순서</span>
           <div class="seg" data-key="dateOrder"><button data-v="ymd">년 월 일</button><button data-v="mdy">월 일 년</button><button data-v="dmy">일 월 년</button></div></div>
         <div data-for="film digi info polaroid strip slide" class="row"><label for="optTime">시간도 함께 찍기</label><input type="checkbox" class="switch" id="optTime" data-key="showTime"></div>
-        <div class="row"><label for="optOsd">화면 정보(모드·남은 장수·배터리)도 찍기</label><input type="checkbox" class="switch" id="optOsd" data-key="osdOn"></div>
+        <div class="row"><label for="optOsd">화면 정보(모드·화질·배터리)도 찍기</label><input type="checkbox" class="switch" id="optOsd" data-key="osdOn"></div>
         <div data-for="film digi info strip" class="row"><span class="lbl">스탬프 색</span>
           <div class="swatches" data-key="color">
             <button data-v="orange" style="--sw:#ff8f2e" aria-label="오렌지"></button>
@@ -809,8 +843,8 @@ html.ux4-silver .caption::before{content:"";position:absolute;inset:-9px 0}  /* 
 </div>
 
 <div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="사진 보기">
-  <div class="viewer-top"><button class="vclose" id="btnViewerClose" aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg></button><span class="play" id="viewerNo">100-0001</span><span id="viewerDate"></span></div>
-  <div class="viewer-img" id="viewerStage"><img id="viewerImg" alt="찍은 사진"></div>
+  <div class="viewer-top"><button class="vclose" id="btnViewerClose" aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg></button><span class="play" id="viewerNo">100-0001</span><span id="viewerDate"></span><button class="vgridbtn" id="btnViewerGrid" aria-label="앨범 전체 보기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/></svg></button></div>
+  <div class="viewer-img" id="viewerStage"><img id="viewerImg" alt="찍은 사진"><button class="vnav prev" id="btnViewerPrev" aria-label="이전 사진">‹</button><button class="vnav next" id="btnViewerNext" aria-label="다음 사진">›</button></div>
   <div class="viewer-note"><span id="viewerNote"></span><button id="btnSaveNow" hidden>갤러리에 저장</button></div>
   <div class="viewer-acts">
     <button class="vbtn" id="btnDelete">삭제</button>
@@ -1031,6 +1065,7 @@ const KINDS = [['all', '전체'], ['digi', '디카'], ['phone', '폰카'], ['toy
 const KIND_OF = { vga: 'phone', touch2m: 'phone', webcam: 'phone', px128: 'toy', disk: 'toy', dv03: 'toy', toy8: 'toy', nightir: 'night', snap28: 'night', f31: 'night' };
 const kindOf = c => KIND_OF[c.id] || 'digi';
 const UX2 = id => document.documentElement.classList.contains('ux2-' + id);
+const UX5 = id => document.documentElement.classList.contains('ux5-' + id);
 if (!CAMERAS.some(c => c.id === S.cam)) S.cam = DEFAULTS.cam;
 const camParams = cam => Object.assign({}, BASE, cam.p);
 const currentCam = () => camById(S.cam);
@@ -1784,10 +1819,11 @@ function drawBackground(ctx, L) {
     ctx.fillStyle = g; ctx.fillRect(0, 0, L.W, L.H);
   }
 }
-/* the LCD's on-screen display (mode, flags, size, shots left, battery), drawn the same way on screen and on the photo */
+/* the LCD's on-screen display (mode, flags, size, battery), drawn the same way on screen and on the photo.
+   No shots-left counter: a fixed [9999] that only counts down reads as a puzzle, not as the camera's card */
 const OSD_INK = '#eef2e8', OSD_FONT = '"Silkscreen","IBM Plex Sans KR",ui-monospace,monospace';
-function osdFor(cam, square, flags, count, bat) {
-  return { code: cam.code, size: cam.mp + 'M' + (square ? ' 1:1' : ''), flags: flags || [], count: clamp(Math.round(count), 0, 9999), bat: bat ?? 3 };
+function osdFor(cam, square, flags, bat) {
+  return { code: cam.code, size: cam.mp + 'M' + (square ? ' 1:1' : ''), flags: flags || [], bat: bat ?? 3 };
 }
 function drawOsd(ctx, L, o) {
   const m = Math.min(L.iw, L.ih), fs = m * .032, pad = m * .024, u = fs / 11, gap = fs * .64;
@@ -1798,10 +1834,10 @@ function drawOsd(ctx, L, o) {
   ctx.fillStyle = OSD_INK; ctx.strokeStyle = OSD_INK;
   ctx.shadowColor = 'rgba(0,0,0,.85)'; ctx.shadowBlur = fs * .18; ctx.shadowOffsetY = fs * .09;
   const W = t => ctx.measureText(t).width;
-  // right block: size, [count], battery; drop "AUTO" and then the size when the frame is too narrow for both corners
-  const count = `[${pad4(o.count)}]`, batW = 17 * u;
+  // right block: size, battery; drop "AUTO" and then the size when the frame is too narrow for both corners
+  const batW = 17 * u;
   let mode = 'AUTO  ' + o.code, size = o.size;
-  const fits = () => W(mode) + gap * 1.5 + (size ? W(size) + gap : 0) + W(count) + gap + batW <= x1 - x0;
+  const fits = () => W(mode) + gap * 1.5 + (size ? W(size) + gap : 0) + batW <= x1 - x0;
   if (!fits()) mode = o.code;
   if (!fits()) size = '';
   ctx.fillText(mode, x0, y0);
@@ -1810,7 +1846,6 @@ function drawOsd(ctx, L, o) {
   ctx.lineWidth = u; ctx.strokeRect(x + u / 2, by + u / 2, 15 * u - u, bh - u);
   ctx.fillRect(x + 15 * u, by + 2 * u, 2 * u, 4 * u);
   for (let i = 0; i < o.bat; i++) ctx.fillRect(x + 2 * u + i * 4 * u, by + u * 1, 3 * u, 6 * u);
-  x -= gap + W(count); ctx.fillText(count, x, y0);
   if (size) { x -= gap + W(size); ctx.fillText(size, x, y0); }
   // flags under the mode, wrapped to the frame width
   let y = y0 + fs * 1.45, line = '';
@@ -2105,9 +2140,8 @@ function relayout() {
   needsStatic = true;
 }
 const previewMeta = () => Object.assign(buildMeta(S, currentCam(), new Date(), null, liveLum, live && S.facing === 'user'),
-  { osd: osdFor(currentCam(), S.aspect === '1:1', previewFlags(), shotsLeft(), batLevel) });
+  { osd: osdFor(currentCam(), S.aspect === '1:1', previewFlags(), batLevel) });
 // queued shots count as taken; a job stops counting the moment its record joins photos (see storePhoto)
-const shotsLeft = () => 9999 - photos.length - jobs.filter(j => !j.stored).length;
 function drawOverlay() {
   if (!view.L) return;
   const ctx = deco.getContext('2d');
@@ -2259,7 +2293,7 @@ function scaledCopy(canvas, maxSide) {
 async function develop(origin, j) {
   const lum = measureLum(origin);
   const meta = buildMeta(j.cfg, j.cam, j.date, j.exif, lum, j.front);
-  meta.osd = osdFor(j.cam, origin.width === origin.height, j.osdFlags, j.osdCount ?? shotsLeft(), j.bat ?? batLevel);
+  meta.osd = osdFor(j.cam, origin.width === origin.height, j.osdFlags, j.bat ?? batLevel);
   const lights = j.lightMode !== 'off' || camParams(j.cam).star ? detectLights(origin, origin.width, origin.height, null, false) : [];
   await ensureFonts(meta.caption);
   await nextFrame();
@@ -2343,7 +2377,7 @@ async function shoot() {
       else { torchOn = await setTorch(true); if (torchOn) await sleep(420); }
     }
     if (!live || gen !== camGen || !video.videoWidth) { toast('카메라가 꺼져서 찍지 않았어요'); return; }
-    const bmp = await grabFrame(), osdAtPress = shotsLeft();
+    const bmp = await grabFrame();
     shutterSound(); blink(); haptic('confirm');
     flyToThumb(viewfinderSnap());
     $('#flashScreen').classList.remove('on');
@@ -2353,7 +2387,7 @@ async function shoot() {
       // the preview is mirrored, so for an un-mirrored selfie "up" is on the other side of the sensor
       bmp, dims: captureDims(), mirror: front && S.mirrorSelfie, zoom, rot: front && !S.mirrorSelfie ? -r : r, date: new Date(), exif: null,
       cfg: { ...S }, cam: currentCam(), front, flash: S.flash ? .55 : 0, ev, lightMode: S.light, seed: lightSeed,
-      osdFlags: shotFlags(), osdCount: osdAtPress, bat: batLevel
+      osdFlags: shotFlags(), bat: batLevel
     });
     if (S.light === 'rand') lightSeed = Math.floor(Math.random() * 100000);
   } catch (e) {
@@ -2661,18 +2695,23 @@ function syncViewer() {
   const rec = viewing; if (!rec) return;
   $('#viewerImg').src = urlOf(rec, 'blob');
   $('#viewerNo').textContent = `100-${pad4(rec.no)}` + (rec.cam ? '  ' + camById(rec.cam).code : '');
+  const at = photos.indexOf(rec);
+  $('#btnViewerPrev').hidden = at <= 0; $('#btnViewerNext').hidden = at < 0 || at >= photos.length - 1;
   const d = new Date(rec.taken);
-  $('#viewerDate').textContent = `${d.getFullYear()}.${pad2(d.getMonth() + 1)}.${pad2(d.getDate())} ${timeText(d)}`;
+  $('#viewerDate').textContent = (UX5('count') && at >= 0 ? `${at + 1}/${photos.length} · ` : '') + `${d.getFullYear()}.${pad2(d.getMonth() + 1)}.${pad2(d.getDate())} ${timeText(d)}`;
   $('#btnSave').textContent = NATIVE ? '보내기' : '기기에 저장';
   $('#btnRedevelop').disabled = !rec.orig;
   $('#viewerNote').textContent = NATIVE ? (rec.saved ? '✓ 휴대폰 갤러리에 저장됨' : '아직 앱 안에만 있어요') : '앱 안 앨범에 보관 중';
   $('#btnSaveNow').hidden = !NATIVE || !!rec.saved;
 }
-function closeViewer() {
+let viewerQuick = false;
+function closeViewer(toAlbum) {
+  const quick = viewerQuick && toAlbum !== true; viewerQuick = false;
   const v = $('#viewer'), back = v._ret || lastFocus; v._ret = null;
   v.hidden = true; viewing = null; disarmDelete(); syncVolumeKey(); syncBars(); syncAwake();
   if (updatePending) setTimeout(maybeApplyUpdate, 300);
   if (back && back.focus && back.isConnected) back.focus();
+  if (quick && !$('#gallerySheet').hidden) closeSheet($('#gallerySheet'));
 }
 function stepViewer(dir) {
   const i = photos.indexOf(viewing), n = photos[i + dir];
@@ -2721,6 +2760,7 @@ function renderGrid() {
   $('#galleryEmpty').hidden = photos.length > 0; grid.hidden = !photos.length;
   if (dbBroken) $('#galleryEmpty span').textContent = '앨범을 열지 못했어요. 앱을 완전히 닫았다가 다시 열어 주세요.';
   $('#galleryTitle').textContent = `ALBUM · ${photos.length}`;
+  if (UX5('card')) $('#btnGalleryImport').textContent = '폰 사진 가져오기';
   const days = UX2('days'), counts = {};
   // grouped by the day a photo came into the album (the album's own order), so an imported old photo never splits today
   const dayKey = rec => { const d = new Date(rec.created); return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; };
@@ -2734,6 +2774,7 @@ function renderGrid() {
       const label = same(d, now) ? '오늘' : same(d, y) ? '어제'
         : `${d.getFullYear() !== now.getFullYear() ? d.getFullYear() + '년 ' : ''}${d.getMonth() + 1}월 ${d.getDate()}일 (${'일월화수목금토'[d.getDay()]})`;
       const h = document.createElement('h4'); h.className = 'day'; h.textContent = label;
+      h.dataset.dcim = `${100 + (d.getFullYear() % 10)}_${pad2(d.getMonth() + 1)}${pad2(d.getDate())}`;
       const sm = document.createElement('small'); sm.textContent = `${counts[lastDay]}장`; h.appendChild(sm);
       grid.appendChild(h);
     }
@@ -2744,6 +2785,7 @@ function renderGrid() {
     b.addEventListener('click', () => openViewer(rec));
     grid.appendChild(b);
   }
+  if (photos.length) { const f = document.createElement('p'); f.className = 'cardfoot'; f.textContent = `MEMORY CARD · 사진 ${photos.length}장`; grid.appendChild(f); }
 }
 /* small popovers under the status keys; unlike sheets they keep the viewfinder live.
    [ux3-film] the status keys no longer open popovers (stamp and look live in the menu), so POPS is empty;
@@ -3408,7 +3450,29 @@ function wire() {
   $('#btnUpdateApk').addEventListener('click', () => { if (apkUpdateUrl) native('openUpdatePage', apkUpdateUrl); });
   $('#btnCam').addEventListener('click', () => { haptic('tick'); openCamList(); });
   $('#btnCamPreview').addEventListener('click', () => { closeSheet($('#camListSheet')); openCamSheet(); });
-  $('#btnGallery').addEventListener('click', openGallery);
+  // ux5-quick: the album key opens the newest photo straight away (back returns to the camera, the grid key to the album)
+  $('#btnGallery').addEventListener('click', () => { openGallery(); if (UX5('quick') && photos.length) { openViewer(photos[0]); viewerQuick = true; } });
+  $('#btnViewerGrid').addEventListener('click', () => closeViewer(true));
+  $('#btnViewerPrev').addEventListener('click', () => stepViewer(-1));
+  $('#btnViewerNext').addEventListener('click', () => stepViewer(1));
+  if (UX5('zoom')) {
+    // tap: jump to the next step; hold: glide, like a compact's zoom rocker
+    const STOPS = [1, 1.5, 2, 3, 4];
+    let zt = 0, zi = 0, held = false, last = 0;
+    const stop = () => { clearTimeout(zt); clearInterval(zi); };
+    // time-based, so a busy phone glides at the same speed: about ×2 per second
+    const glide = dir => { const now = performance.now(), dt = Math.min(.2, (now - last) / 1000); last = now; zoom = clamp(zoom * Math.pow(2, dir * dt), 1, 4); showZoomEv('zoom'); };
+    const jump = dir => {
+      const z = dir > 0 ? (STOPS.find(s => s > zoom + .01) ?? 4) : ([...STOPS].reverse().find(s => s < zoom - .01) ?? 1);
+      haptic(Math.abs(z - zoom) < .01 ? 'reject' : 'tick'); zoom = z; showZoomEv('zoom');
+    };
+    [['#btnZoomT', 1], ['#btnZoomW', -1]].forEach(([q, dir]) => {
+      const b = $(q);
+      b.addEventListener('pointerdown', e => { if (e.button) return; held = false; stop(); zt = setTimeout(() => { held = true; last = performance.now(); zi = setInterval(() => glide(dir), 40); }, 300); });
+      ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => b.addEventListener(t, stop));
+      b.addEventListener('click', () => { if (!held) jump(dir); held = false; });
+    });
+  }
   $('#permPrimary').addEventListener('click', e => permAction(e.currentTarget.dataset.act));
   $('#permSecondary').addEventListener('click', () => $('#fileImport').click());
   $('#btnFlip').addEventListener('click', async () => {
