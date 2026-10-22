@@ -421,7 +421,7 @@ html.ux-cam-sheets .cam-card small{order:5;margin-top:4px;-webkit-line-clamp:2}
 html.ux-cam-sheets .cam-name svg{width:24px;height:16px}
 html.ux-cam-sheets .cam-name b{font:400 9.5px/1.2 var(--font-osd);letter-spacing:.05em;color:var(--menu-sub)}
 
-/* [ux-album-grid] a tight full-width photo grid with the file number as small OSD text (thumbnails stay uncropped); no duplicate 사진 현상하기 when the album is empty */
+/* [ux-album-grid] a tight full-width photo grid with the file number as small OSD text (thumbnails stay uncropped); no duplicate import key when the album is empty */
 html.ux-album-grid .grid{gap:3px;padding:6px 6px 24px}
 html.ux-album-grid .grid button{border-radius:3px}
 html.ux-album-grid #gallerySheet:has(#galleryEmpty:not([hidden])) #btnGalleryImport{display:none}
@@ -617,11 +617,12 @@ html.ux4-silver .caption::before{content:"";position:absolute;inset:-9px 0}  /* 
 .zoomkey{display:none}
 html.ux5-zoom .zoomkey{display:flex;align-items:center;height:30px;border-radius:15px;color:#e9eaec;
   background:linear-gradient(#45484e,#1e2024);box-shadow:0 1px 0 rgba(255,255,255,.8),0 2px 3px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.2)}
-html.ux5-zoom .zoomkey button{appearance:none;position:relative;width:46px;height:30px;padding:0;border:0;background:none;color:inherit;font:400 12px/1 var(--font-osd);letter-spacing:.06em}
+html.ux5-zoom .zoomkey button{appearance:none;position:relative;touch-action:none;-webkit-touch-callout:none;width:46px;height:30px;padding:0;border:0;background:none;color:inherit;font:400 12px/1 var(--font-osd);letter-spacing:.06em}
 html.ux5-zoom .zoomkey button::before{content:"";position:absolute;inset:-7px 0}
 html.ux5-zoom .zoomkey button:first-child{border-radius:15px 0 0 15px}
 html.ux5-zoom .zoomkey button:last-child{border-radius:0 15px 15px 0;box-shadow:inset 1px 0 0 rgba(255,255,255,.16),inset 2px 0 0 rgba(0,0,0,.35)}
 html.ux5-zoom .zoomkey button:active{background:rgba(255,255,255,.14)}
+@media (max-width:340px){html.ux5-zoom .zoomkey button{width:38px}}  /* keeps clear of the printed FLASH / MENU on 320px phones */
 
 .vgridbtn{display:none}
 html.ux5-quick .vgridbtn{display:grid;place-items:center;flex:none;width:44px;height:44px;margin-left:4px;padding:0;border:0;border-radius:22px;background:none;color:#e9eef7}
@@ -641,7 +642,7 @@ html.ux5-count .vnav{display:grid;place-items:center;position:absolute;top:50%;w
 html.ux5-count .vnav.prev{left:6px}html.ux5-count .vnav.next{right:6px}
 html.ux5-count .vnav[hidden]{display:none}
 
-/* ux5-card: the album reads like the camera's memory card: a DCIM folder per day, how many photos it holds, plainer import wording */
+/* ux5-card: the album reads like the camera's memory card: a DCIM folder per day and how many photos it holds */
 html.ux5-card .grid .day::before{content:attr(data-dcim);margin-right:8px;font:400 10px/1 var(--font-osd);letter-spacing:.1em;color:#ffb35c;vertical-align:1px}
 .cardfoot{display:none}
 html.ux5-card .cardfoot{display:block;grid-column:1/-1;margin:14px 4px 6px;padding-top:10px;border-top:1px dashed rgba(255,255,255,.14);font:400 10px/1.6 var(--font-osd);letter-spacing:.1em;color:var(--menu-sub);text-align:center}
@@ -838,15 +839,15 @@ html.ux5-card .cardfoot{display:block;grid-column:1/-1;margin:14px 4px 6px;paddi
 
 <div class="sheet" id="gallerySheet" hidden role="dialog" aria-modal="true" aria-labelledby="galleryTitle">
   <div class="panel">
-    <div class="panel-head"><h2 id="galleryTitle">ALBUM</h2><div class="acts"><button class="pbtn" id="btnGalleryImport">사진 현상하기</button><button class="pbtn amber" data-close>닫기</button><button class="xbtn" data-close aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button></div></div>
+    <div class="panel-head"><h2 id="galleryTitle">ALBUM</h2><div class="acts"><button class="pbtn" id="btnGalleryImport">폰 사진 가져오기</button><button class="pbtn amber" data-close>닫기</button><button class="xbtn" data-close aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button></div></div>
     <div class="grid" id="grid"></div>
-    <div class="empty" id="galleryEmpty" hidden><span>아직 찍은 사진이 없어요.<br>셔터를 누르거나, 갖고 있는 사진을 그 시절 카메라로 현상해 보세요.</span><button class="pbtn amber" id="btnEmptyImport">앨범 사진 현상하기</button></div>
+    <div class="empty" id="galleryEmpty" hidden><span>아직 찍은 사진이 없어요.<br>셔터를 누르거나, 갖고 있는 사진을 그 시절 카메라로 현상해 보세요.</span><button class="pbtn amber" id="btnEmptyImport">폰 사진 가져오기</button></div>
   </div>
 </div>
 
 <div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="사진 보기">
   <div class="viewer-top"><button class="vclose" id="btnViewerClose" aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg></button><span class="play" id="viewerNo">100-0001</span><span id="viewerDate"></span><button class="vgridbtn" id="btnViewerGrid" aria-label="앨범 전체 보기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/></svg></button></div>
-  <div class="viewer-img" id="viewerStage"><img id="viewerImg" alt="찍은 사진"><button class="vnav prev" id="btnViewerPrev" aria-label="이전 사진">‹</button><button class="vnav next" id="btnViewerNext" aria-label="다음 사진">›</button></div>
+  <div class="viewer-img" id="viewerStage"><img id="viewerImg" alt="찍은 사진" draggable="false"><button class="vnav prev" id="btnViewerPrev" aria-label="이전 사진">‹</button><button class="vnav next" id="btnViewerNext" aria-label="다음 사진">›</button></div>
   <div class="viewer-note"><span id="viewerNote"></span><button id="btnSaveNow" hidden>갤러리에 저장</button></div>
   <div class="viewer-acts">
     <button class="vbtn" id="btnDelete">삭제</button>
@@ -2090,7 +2091,7 @@ function showPerm(kind) {
   permKind = kind;
   $('#permTitle').textContent = p[0]; $('#permText').textContent = p[1];
   $('#permPrimary').textContent = p[2]; $('#permPrimary').dataset.act = p[3];
-  $('#permSecondary').textContent = '앨범 사진 현상하기';
+  $('#permSecondary').textContent = '폰 사진 가져오기';
   $('#perm').hidden = false; frame.classList.add('dim');
   $('#shutter').setAttribute('aria-label', p[3] === 'capture' ? '기본 카메라로 촬영' : p[3] === 'settings' ? '촬영 (카메라 권한이 꺼져 있어요)' : p[2]);
   needsStatic = true;
@@ -2762,7 +2763,6 @@ function renderGrid() {
   $('#galleryEmpty').hidden = photos.length > 0; grid.hidden = !photos.length;
   if (dbBroken) $('#galleryEmpty span').textContent = '앨범을 열지 못했어요. 앱을 완전히 닫았다가 다시 열어 주세요.';
   $('#galleryTitle').textContent = `ALBUM · ${photos.length}`;
-  if (UX5('card')) $('#btnGalleryImport').textContent = '폰 사진 가져오기';
   const days = UX2('days'), counts = {};
   // grouped by the day a photo came into the album (the album's own order), so an imported old photo never splits today
   const dayKey = rec => { const d = new Date(rec.created); return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; };
@@ -3463,7 +3463,7 @@ function wire() {
     let zt = 0, zi = 0, held = false, last = 0;
     const stop = () => { clearTimeout(zt); clearInterval(zi); };
     // time-based, so a busy phone glides at the same speed: about ×2 per second
-    const glide = dir => { const now = performance.now(), dt = Math.min(.2, (now - last) / 1000); last = now; zoom = clamp(zoom * Math.pow(2, dir * dt), 1, 4); showZoomEv('zoom'); };
+    const glide = dir => { const now = performance.now(), dt = Math.min(.4, (now - last) / 1000); last = now; zoom = clamp(zoom * Math.pow(2, dir * dt), 1, 4); showZoomEv('zoom'); };
     const jump = dir => {
       const z = dir > 0 ? (STOPS.find(s => s > zoom + .01) ?? 4) : ([...STOPS].reverse().find(s => s < zoom - .01) ?? 1);
       haptic(Math.abs(z - zoom) < .01 ? 'reject' : 'tick'); zoom = z; showZoomEv('zoom');
@@ -3473,6 +3473,7 @@ function wire() {
       b.addEventListener('pointerdown', e => { if (e.button) return; held = false; stop(); zt = setTimeout(() => { held = true; last = performance.now(); zi = setInterval(() => glide(dir), 40); }, 300); });
       ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => b.addEventListener(t, stop));
       b.addEventListener('click', () => { if (!held) jump(dir); held = false; });
+      b.addEventListener('contextmenu', e => e.preventDefault());
     });
   }
   $('#permPrimary').addEventListener('click', e => permAction(e.currentTarget.dataset.act));
