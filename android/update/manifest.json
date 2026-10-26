@@ -1,7 +1,7 @@
 {
  "package": "com.geuhaeyeoreum.camera",
- "build": 512,
- "version": "1.3.0+12",
+ "build": 513,
+ "version": "1.3.0+13",
  "minNative": 5,
  "files": {
   "fonts/IBMPlexSansKR-Medium.woff2": {
@@ -37,10 +37,10 @@
    "size": 876
   },
   "index.html": {
-   "sha256": "f1e14e2962b06ab9e3d16fd3add0a068870f0ebb50d36ac6a8ca312a79e28055",
-   "size": 255759
+   "sha256": "a94620ad05a26d79114d22359fe531a3f4a4b9b6559cefeb41b40df4e6de31c7",
+   "size": 268222
   }
  },
- "date": "2026-10-22T11:24Z",
- "notes": "사진 넘기기·당겨 닫기 오류 수정, 줌 레버 길게 누르기 안정화, 가져오기 버튼 이름 통일"
+ "date": "2026-10-26T11:49Z",
+ "notes": "즐겨찾기·최근 카메라, 사진 확대, 여러 장 고르기, 찍은 카메라로 다시 찍기"
 }

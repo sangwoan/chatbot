@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ko" class="ux5-zoom ux5-quick ux5-count ux5-card ux4-silver ux3-film ux-lcd-fit ux-caption-hero ux-shoot-row ux-sheet-head ux-selection ux-ko-headings ux-popover ux-cam-sheets ux-album-grid ux-viewer-clean ux2-cats ux2-card ux2-level ux2-days ux2-develop ux2-tag ux2-hint">
+<html lang="ko" class="ux6-fav ux6-pinch ux6-select ux6-info ux5-zoom ux5-quick ux5-count ux5-card ux4-silver ux3-film ux-lcd-fit ux-caption-hero ux-shoot-row ux-sheet-head ux-selection ux-ko-headings ux-popover ux-cam-sheets ux-album-grid ux-viewer-clean ux2-cats ux2-card ux2-level ux2-days ux2-develop ux2-tag ux2-hint">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -644,6 +644,39 @@ html.ux5-count .vnav[hidden]{display:none}
 html.ux5-card .grid .day::before{content:attr(data-dcim);margin-right:8px;font:400 10px/1 var(--font-osd);letter-spacing:.1em;color:#ffb35c;vertical-align:1px}
 .cardfoot{display:none}
 html.ux5-card .cardfoot{display:block;grid-column:1/-1;margin:14px 4px 6px;padding-top:10px;border-top:1px dashed rgba(255,255,255,.14);font:400 10px/1.6 var(--font-osd);letter-spacing:.1em;color:var(--menu-sub);text-align:center}
+
+/* ux6-fav: ★ marks a favourite in the camera list; ★ and 최근 tabs sit next to 전체 */
+.camcats button[data-k="fav"],.camcats button[data-k="recent"],#ciFav{display:none}
+html.ux6-fav .camcats button[data-k="fav"],html.ux6-fav .camcats button[data-k="recent"]{display:inline-block}
+html.ux6-fav #ciFav{display:inline-block}
+html.ux6-fav .camcell{position:relative}
+html.ux6-fav .camcell.fav::after{content:"★";position:absolute;top:5px;right:7px;font:400 13px/1 var(--font-ui);color:#ffc04a}
+html.ux6-fav #ciFav[aria-pressed="true"]{color:#ffc04a}
+
+/* ux6-pinch: the photo can be zoomed; while zoomed, one finger pans instead of swiping */
+html.ux6-pinch #viewerImg{will-change:transform;transform-origin:50% 50%}
+
+/* ux6-select: pick several photos in the album, then save or delete them together */
+#btnSelect,.selbar{display:none}
+html.ux6-select #btnSelect{display:inline-block}
+html.ux6-select #gallerySheet:has(#galleryEmpty:not([hidden])) #btnSelect{display:none}
+html.ux6-select #gallerySheet.selecting .selbar{display:flex}
+html.ux6-select #gallerySheet.selecting .panel-head .acts > :not(#btnSelect){display:none}
+html.ux6-select #gallerySheet.selecting .grid button::after{content:"";position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;box-shadow:inset 0 0 0 2px #fff,0 1px 3px rgba(0,0,0,.6);background:rgba(0,0,0,.25)}
+html.ux6-select #gallerySheet.selecting .grid button.sel::after{background:#f08a24 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center/16px no-repeat;box-shadow:0 0 0 2px #fff,0 1px 3px rgba(0,0,0,.6)}
+html.ux6-select #gallerySheet.selecting .grid button.sel{outline:3px solid #f08a24;outline-offset:-3px}
+html.ux6-select .selbar{position:sticky;bottom:0;align-items:center;gap:8px;padding:10px 12px calc(10px + var(--sa-bottom));background:linear-gradient(rgba(12,24,45,.6),#0c182d 40%);border-top:1px solid rgba(255,255,255,.1)}
+html.ux6-select .selbar b{flex:1;font:600 14px/1.2 var(--font-ui);color:var(--menu-fg)}
+html.ux6-select .selbar .pbtn{min-height:44px}
+html.ux6-select .selbar .pbtn[disabled]{opacity:.4}
+
+/* ux6-info: which camera took the photo, and a key to shoot with it again */
+.viewer-cam{display:none}
+html.ux6-info .viewer-cam{display:flex;align-items:center;justify-content:center;gap:10px;min-height:44px;padding:0 16px;font:500 13px/1.3 var(--font-ui);color:#e6e9e2}
+html.ux6-info .viewer-cam[hidden]{display:none}
+html.ux6-info .viewer-cam small{font:400 10px/1 var(--font-osd);letter-spacing:.08em;color:#9aa096}
+html.ux6-info .viewer-cam button{min-height:36px;padding:0 12px;border:0;border-radius:18px;background:rgba(255,255,255,.1);color:#ffb35c;font:600 13px var(--font-ui)}
+html.ux6-info .viewer-cam button[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -815,7 +848,7 @@ html.ux5-card .cardfoot{display:block;grid-column:1/-1;margin:14px 4px 6px;paddi
 
 <div class="sheet" id="camInfoSheet" hidden role="dialog" aria-modal="true" aria-labelledby="camInfoTitle">
   <div class="panel">
-    <div class="panel-head"><h2 id="camInfoTitle">CAMERA</h2><div class="acts"><button class="pbtn amber" data-close>닫기</button><button class="xbtn" data-close aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button></div></div>
+    <div class="panel-head"><h2 id="camInfoTitle">CAMERA</h2><div class="acts"><button class="pbtn" id="ciFav" aria-pressed="false">☆ 즐겨찾기</button><button class="pbtn amber" data-close>닫기</button><button class="xbtn" data-close aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button></div></div>
     <div class="panel-body caminfo">
       <figure class="ci-shot"><img id="ciShot" alt=""><figcaption class="ci-badge" id="ciBadge"></figcaption></figure>
       <div class="ci-head"><span class="ci-vibe" id="ciVibe"></span><h3 id="ciMood"></h3><p id="ciSpec"></p></div>
@@ -837,8 +870,9 @@ html.ux5-card .cardfoot{display:block;grid-column:1/-1;margin:14px 4px 6px;paddi
 
 <div class="sheet" id="gallerySheet" hidden role="dialog" aria-modal="true" aria-labelledby="galleryTitle">
   <div class="panel">
-    <div class="panel-head"><h2 id="galleryTitle">ALBUM</h2><div class="acts"><button class="pbtn" id="btnGalleryImport">폰 사진 가져오기</button><button class="pbtn amber" data-close>닫기</button><button class="xbtn" data-close aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button></div></div>
+    <div class="panel-head"><h2 id="galleryTitle">ALBUM</h2><div class="acts"><button class="pbtn" id="btnSelect" aria-pressed="false">선택</button><button class="pbtn" id="btnGalleryImport">폰 사진 가져오기</button><button class="pbtn amber" data-close>닫기</button><button class="xbtn" data-close aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button></div></div>
     <div class="grid" id="grid"></div>
+    <div class="selbar" id="selBar"><b id="selCount">사진을 골라 주세요</b><button class="pbtn" id="btnSelSave" hidden>갤러리에 저장</button><button class="pbtn amber" id="btnSelDelete">지우기</button></div>
     <div class="empty" id="galleryEmpty" hidden><span>아직 찍은 사진이 없어요.<br>셔터를 누르거나, 갖고 있는 사진을 그 시절 카메라로 현상해 보세요.</span><button class="pbtn amber" id="btnEmptyImport">폰 사진 가져오기</button></div>
   </div>
 </div>
@@ -846,6 +880,7 @@ html.ux5-card .cardfoot{display:block;grid-column:1/-1;margin:14px 4px 6px;paddi
 <div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="사진 보기">
   <div class="viewer-top"><button class="vclose" id="btnViewerClose" aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg></button><span class="play" id="viewerNo">100-0001</span><span id="viewerDate"></span><button class="vgridbtn" id="btnViewerGrid" aria-label="앨범 전체 보기"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/></svg></button></div>
   <div class="viewer-img" id="viewerStage"><img id="viewerImg" alt="찍은 사진" draggable="false"><button class="vnav prev" id="btnViewerPrev" aria-label="이전 사진">‹</button><button class="vnav next" id="btnViewerNext" aria-label="다음 사진">›</button></div>
+  <div class="viewer-cam" id="viewerCam"><span><span id="viewerCamName"></span> <small id="viewerCamSpec"></small></span><button id="btnUseCam">이 카메라로 찍기</button></div>
   <div class="viewer-note"><span id="viewerNote"></span><button id="btnSaveNow" hidden>갤러리에 저장</button></div>
   <div class="viewer-acts">
     <button class="vbtn" id="btnDelete">삭제</button>
@@ -922,7 +957,7 @@ const DEFAULTS = {
   color: 'orange', align: 'right', infoTheme: 'light', ddayOn: false, anniv: '', caption: '',
   aspect: '4:3', quality: '5M', amount: 100, geo: false, sound: true, haptics: true, flash: false, timer: 0,
   light: 'off', mirrorSelfie: true, autoSave: true, reviewAfter: false, volumeKey: true,
-  facing: 'environment', seq: 0, onboarded: false, osdOn: true, levelOn: true, gridOn: false, hints: 0, swiped: false
+  facing: 'environment', seq: 0, favs: [], recent: [], onboarded: false, osdOn: true, levelOn: true, gridOn: false, hints: 0, swiped: false
 };
 const S = (() => { try { return Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch { return { ...DEFAULTS }; } })();
 if (S.dateMode !== 'now' && S.dateMode !== 'year' && S.dateMode !== 'custom') S.dateMode = 'now';
@@ -1067,6 +1102,7 @@ const KIND_OF = { vga: 'phone', touch2m: 'phone', webcam: 'phone', px128: 'toy',
 const kindOf = c => KIND_OF[c.id] || 'digi';
 const UX2 = id => document.documentElement.classList.contains('ux2-' + id);
 const UX5 = id => document.documentElement.classList.contains('ux5-' + id);
+const UX6 = id => document.documentElement.classList.contains('ux6-' + id);
 if (!CAMERAS.some(c => c.id === S.cam)) S.cam = DEFAULTS.cam;
 const camParams = cam => Object.assign({}, BASE, cam.p);
 const currentCam = () => camById(S.cam);
@@ -2625,7 +2661,6 @@ function syncAlbum() {
     thumbOf = photos[0].id; thumbAt = Math.max(thumbAt, photos[0].created);
   }
   else if (!jobs.length && !busyOther) { btn.style.backgroundImage = ''; btn.classList.remove('has'); }
-  drawOverlay(); // shots-left counter
   if (!$('#gallerySheet').hidden) renderGrid();
 }
 
@@ -2694,6 +2729,7 @@ function openViewer(rec) {
 }
 function syncViewer() {
   const rec = viewing; if (!rec) return;
+  if (!syncViewer.same || syncViewer.same !== rec) viewerZoomReset(); syncViewer.same = rec;
   $('#viewerImg').src = urlOf(rec, 'blob');
   $('#viewerNo').textContent = `100-${pad4(rec.no)}` + (rec.cam ? '  ' + camById(rec.cam).code : '');
   const at = photos.indexOf(rec);
@@ -2702,14 +2738,17 @@ function syncViewer() {
   $('#viewerDate').textContent = (UX5('count') && at >= 0 ? `${at + 1}/${photos.length} · ` : '') + `${d.getFullYear()}.${pad2(d.getMonth() + 1)}.${pad2(d.getDate())} ${timeText(d)}`;
   $('#btnSave').textContent = NATIVE ? '보내기' : '기기에 저장';
   $('#btnRedevelop').disabled = !rec.orig;
+  const rc = rec.cam && camById(rec.cam);
+  $('#viewerCam').hidden = !rc;
+  if (rc) { $('#viewerCamName').textContent = rc.vibe; $('#viewerCamSpec').textContent = `${rc.code} · ${rc.year}`; $('#btnUseCam').hidden = rc.id === S.cam; }
   $('#viewerNote').textContent = NATIVE ? (rec.saved ? '✓ 휴대폰 갤러리에 저장됨' : '아직 앱 안에만 있어요') : '앱 안 앨범에 보관 중';
   $('#btnSaveNow').hidden = !NATIVE || !!rec.saved;
 }
-let viewerQuick = false;
+let viewerQuick = false, viewerZoomReset = () => {};
 function closeViewer(toAlbum) {
   const quick = viewerQuick && toAlbum !== true; viewerQuick = false;
   const v = $('#viewer'), back = v._ret || lastFocus; v._ret = null;
-  v.hidden = true; viewing = null; disarmDelete(); syncVolumeKey(); syncBars(); syncAwake();
+  v.hidden = true; viewing = null; syncViewer.same = null; viewerZoomReset(); disarmDelete(); syncVolumeKey(); syncBars(); syncAwake();
   if (updatePending) setTimeout(maybeApplyUpdate, 300);
   if (back && back.focus && back.isConnected) back.focus();
   if (quick && !$('#gallerySheet').hidden) closeSheet($('#gallerySheet'));
@@ -2755,7 +2794,43 @@ function closeSheet(s) {
   if (back && back.focus && back.isConnected) back.focus();
   if (updatePending) setTimeout(maybeApplyUpdate, 300);
 }
-function openGallery() { renderGrid(); openSheet('#gallerySheet'); }
+let selecting = false, selArm = 0;
+const selSet = new Set();
+function setSelecting(on) {
+  selecting = on; selSet.clear(); clearTimeout(selArm); selArm = 0;
+  $('#gallerySheet').classList.toggle('selecting', on);
+  const b = $('#btnSelect'); b.textContent = on ? '취소' : '선택'; b.setAttribute('aria-pressed', String(on));
+  $$('#grid button').forEach(t => { t.classList.remove('sel'); t.removeAttribute('aria-pressed'); });
+  syncSel();
+}
+function syncSel() {
+  const n = selSet.size, del = $('#btnSelDelete');
+  $('#selCount').textContent = n ? `${n}장 골랐어요` : '사진을 골라 주세요';
+  $('#btnSelSave').hidden = !NATIVE; $('#btnSelSave').disabled = !n || [...selSet].every(id => (photos.find(p => p.id === id) || {}).saved);
+  del.disabled = !n; if (!selArm) del.textContent = '지우기';
+}
+function toggleSel(rec, b) {
+  if (selSet.has(rec.id)) selSet.delete(rec.id); else selSet.add(rec.id);
+  b.classList.toggle('sel', selSet.has(rec.id)); b.setAttribute('aria-pressed', String(selSet.has(rec.id)));
+  clearTimeout(selArm); selArm = 0; haptic('tick'); syncSel();
+}
+async function deleteSelected() {
+  const del = $('#btnSelDelete'), n = selSet.size; if (!n) return;
+  if (!selArm) { del.textContent = `한 번 더 눌러 ${n}장 지우기`; selArm = setTimeout(() => { selArm = 0; syncSel(); }, 3000); haptic('tick'); return; }
+  clearTimeout(selArm); selArm = 0;
+  const gone = photos.filter(p => selSet.has(p.id)); let failed = 0;
+  for (const rec of gone) { try { await DB.del(rec.id); photos = photos.filter(p => p !== rec); releaseUrls(rec); } catch (e) { failed++; logIssue('db', e && `${e.name} ${e.message}`); } }
+  setSelecting(false); syncAlbum();
+  toast(failed ? `${gone.length - failed}장을 지웠어요. ${failed}장은 지우지 못했어요` : gone.some(r => r.saved) ? `${gone.length}장을 앱에서 지웠어요. 휴대폰 갤러리의 사진은 그대로 있어요` : `${gone.length}장을 지웠어요`);
+}
+async function saveSelected() {
+  const recs = photos.filter(p => selSet.has(p.id) && !p.saved); let ok = 0;
+  $('#btnSelSave').disabled = true;
+  for (const rec of recs) if (await saveToGallery(rec, true)) ok++;
+  setSelecting(false);
+  toast(ok === recs.length ? `${ok}장을 휴대폰 갤러리에 저장했어요` : `${ok}장 저장했어요. 나머지는 저장 권한을 확인해 주세요`);
+}
+function openGallery() { if (selecting) setSelecting(false); renderGrid(); openSheet('#gallerySheet'); }
 function renderGrid() {
   const grid = $('#grid'); grid.textContent = '';
   $('#galleryEmpty').hidden = photos.length > 0; grid.hidden = !photos.length;
@@ -2782,7 +2857,13 @@ function renderGrid() {
     b.style.backgroundImage = `url("${urlOf(rec, 'thumb')}")`;
     b.setAttribute('aria-label', `사진 100-${pad4(rec.no)} 보기`);
     const tag = document.createElement('span'); tag.textContent = (rec.cam ? camById(rec.cam).code + ' ' : '') + pad4(rec.no); b.appendChild(tag);
-    b.addEventListener('click', () => openViewer(rec));
+    if (selSet.has(rec.id)) { b.classList.add('sel'); b.setAttribute('aria-pressed', 'true'); }
+    let held = false, holdT = 0;
+    b.addEventListener('click', () => { if (held) { held = false; return; } if (selecting) toggleSel(rec, b); else openViewer(rec); });
+    // ux6-select: press and hold a photo to start picking
+    b.addEventListener('pointerdown', () => { held = false; clearTimeout(holdT); if (UX6('select') && !selecting) holdT = setTimeout(() => { held = true; setSelecting(true); toggleSel(rec, b); }, 450); });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => b.addEventListener(t, () => clearTimeout(holdT)));
+    b.addEventListener('contextmenu', e => { if (UX6('select')) e.preventDefault(); });
     grid.appendChild(b);
   }
   if (photos.length) { const f = document.createElement('p'); f.className = 'cardfoot'; f.textContent = `MEMORY CARD · 사진 ${photos.length}장`; grid.appendChild(f); }
@@ -2907,7 +2988,8 @@ function mixHex(a, b, t) {
 let tagT = 0;
 function selectCam(id) {
   if (S.cam === id) return;
-  S.cam = id; persist(); syncUI(); needsStatic = true; drawOverlay();
+  S.cam = id; S.recent = [id, ...(S.recent || []).filter(x => x !== id)].slice(0, 6);
+  persist(); syncUI(); needsStatic = true; drawOverlay();
   const c = currentCam(), boot = $('#boot'), tag = $('#camTag');
   $('#bootText').textContent = c.model;
   boot.classList.remove('on'); void boot.offsetWidth; boot.classList.add('on');
@@ -2934,19 +3016,33 @@ function buildCamList() {
     b.setAttribute('aria-label', `${c.vibe} — ${c.model}, ${c.year}, ${c.mood}`);
     b.innerHTML = camIcon(c, '-l') + '<b></b><small></small>';
     $('b', b).textContent = c.vibe; $('small', b).textContent = `${c.code} · ${String(c.year).slice(2)}`;
+    let held = false, holdT = 0;
     b.addEventListener('click', () => {
+      if (held) { held = false; return; } // the long press already toggled the star
       haptic('tick');
       if (S.cam !== c.id) { selectCam(c.id); centerCar(true); }
       closeSheet($('#camListSheet'));
     });
+    // ux6-fav: press and hold a camera to star it
+    b.addEventListener('pointerdown', () => { held = false; clearTimeout(holdT); if (UX6('fav')) holdT = setTimeout(() => { held = true; toggleFav(c.id); }, 500); });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => b.addEventListener(t, () => clearTimeout(holdT)));
+    b.addEventListener('contextmenu', e => { if (UX6('fav')) e.preventDefault(); });
     list.appendChild(b);
   }
 }
 let camKind = 'all';
+const inKind = (c, k) => k === 'all' ? true : k === 'fav' ? (S.favs || []).includes(c.id) : k === 'recent' ? (S.recent || []).includes(c.id) : kindOf(c) === k;
+function toggleFav(id) {
+  const on = !(S.favs || []).includes(id);
+  S.favs = on ? [...(S.favs || []), id] : S.favs.filter(x => x !== id);
+  persist(); haptic('tick'); syncCamCats(); syncCamList(); syncFav();
+  toast(on ? `★ ${camById(id).vibe}을(를) 즐겨찾기에 넣었어요` : '즐겨찾기에서 뺐어요', 1400);
+}
+function syncFav() { const on = (S.favs || []).includes(S.cam), b = $('#ciFav'); b.setAttribute('aria-pressed', String(on)); b.textContent = on ? '★ 즐겨찾기' : '☆ 즐겨찾기'; }
 function buildCamCats() {
   const box = $('#camCats');
-  for (const [k, label] of KINDS) {
-    const n = k === 'all' ? CAMERAS.length : CAMERAS.filter(c => kindOf(c) === k).length;
+  for (const [k, label] of [KINDS[0], ['fav', '★'], ['recent', '최근'], ...KINDS.slice(1)]) {
+    const n = CAMERAS.filter(c => inKind(c, k)).length;
     const b = document.createElement('button');
     b.type = 'button'; b.dataset.k = k; b.textContent = label;
     const sm = document.createElement('small'); sm.textContent = n; b.appendChild(sm);
@@ -2957,18 +3053,22 @@ function buildCamCats() {
 function syncCamCats() {
   const on = UX2('cats');
   $$('#camCats button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === camKind)));
-  $$('#camList .camcell').forEach(b => { b.hidden = on && camKind !== 'all' && kindOf(camById(b.dataset.v)) !== camKind; });
+  $$('#camCats button[data-k="fav"] small, #camCats button[data-k="recent"] small').forEach(sm => { sm.textContent = (sm.parentElement.dataset.k === 'fav' ? S.favs : S.recent || []).length; });
+  $$('#camList .camcell').forEach(b => {
+    b.hidden = on && camKind !== 'all' && !inKind(camById(b.dataset.v), camKind);
+    b.style.order = camKind === 'recent' ? (S.recent || []).indexOf(b.dataset.v) : ''; // most recent first
+  });
 }
 function openCamList() {
   $('#camListTitle').textContent = `CAMERA · ${CAMERAS.length}`;
-  if (camKind !== 'all' && kindOf(currentCam()) !== camKind) camKind = 'all'; // never hide the camera in use
+  if (camKind !== 'all' && !inKind(currentCam(), camKind)) camKind = 'all'; // never hide the camera in use
   syncCamCats();
   syncCamList();
   openSheet('#camListSheet');
   const cur = $(`#camList [data-v="${S.cam}"]`);
   if (cur) { cur.scrollIntoView({ block: 'nearest' }); cur.focus(); }
 }
-function syncCamList() { $$('#camList .camcell').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === S.cam))); }
+function syncCamList() { $$('#camList .camcell').forEach(b => { b.setAttribute('aria-checked', String(b.dataset.v === S.cam)); b.classList.toggle('fav', (S.favs || []).includes(b.dataset.v)); }); }
 
 /* ───────── camera sheet: browse, or pick one to re-develop with ───────── */
 let pickResolve = null, thumbJob = 0;
@@ -3019,7 +3119,7 @@ function openCamInfo() {
   const tags = $('#ciTags'); tags.textContent = '';
   const lab = document.createElement('span'); lab.textContent = '이럴 때 좋아요'; tags.appendChild(lab);
   for (const t of SCENES[c.id] || []) { const i = document.createElement('i'); i.textContent = t; tags.appendChild(i); }
-  $('#ciStory').textContent = c.story;
+  $('#ciStory').textContent = c.story; syncFav();
   $('#ciMotif').textContent = '모티프 · ' + c.motif;
   $('#ciShot').removeAttribute('src'); $('#ciShot').alt = `${c.vibe} 카메라로 본 지금 장면`;
   openSheet('#camInfoSheet');
@@ -3235,6 +3335,7 @@ window.geuhaeOnBack = () => {
   if (!$('#onb').hidden) return false;
   const picker = $('#camSheet.over'); if (picker && !picker.hidden) { closeSheet(picker); return true; }
   if (!$('#viewer').hidden) { closeViewer(); return true; }
+  if (selecting && !$('#gallerySheet').hidden) { setSelecting(false); return true; }
   const open = $$('.sheet').filter(s => !s.hidden).pop(); if (open) { closeSheet(open); return true; } // same z-index: later in the DOM paints on top
   if (closePops()) return true;
   if (cdCancel) { cdCancel(); return true; }
@@ -3453,6 +3554,16 @@ function wire() {
   // ux5-quick: the album key opens the newest photo straight away (back returns to the camera, the grid key to the album)
   $('#btnGallery').addEventListener('click', () => { openGallery(); if (UX5('quick') && photos.length) { openViewer(photos[0]); viewerQuick = true; } });
   $('#btnViewerGrid').addEventListener('click', () => closeViewer(true));
+  $('#ciFav').addEventListener('click', () => toggleFav(S.cam));
+  $('#btnSelect').addEventListener('click', () => setSelecting(!selecting));
+  $('#btnSelDelete').addEventListener('click', deleteSelected);
+  $('#btnSelSave').addEventListener('click', saveSelected);
+  // ux6-info: back to the camera, holding the camera that took this photo
+  $('#btnUseCam').addEventListener('click', () => {
+    const id = viewing && viewing.cam; if (!id) return;
+    viewerQuick = true; closeViewer();
+    if (S.cam !== id) { selectCam(id); centerCar(true); }
+  });
   $('#btnViewerPrev').addEventListener('click', () => stepViewer(-1));
   $('#btnViewerNext').addEventListener('click', () => stepViewer(1));
   if (UX5('zoom')) {
@@ -3505,15 +3616,59 @@ function wire() {
   // viewer: swipe between photos, pull down to close, tap image edges to step
   const stage = $('#viewerStage'), img = $('#viewerImg');
   let vx = null, vy = 0, vdx = 0, vdy = 0;
-  stage.addEventListener('pointerdown', e => { vx = e.clientX; vy = e.clientY; vdx = vdy = 0; img.style.transition = 'none'; });
+  // ux6-pinch: two fingers or a double tap zoom in (up to ×4); zoomed, one finger pans
+  const vp = new Map();
+  let vz = { s: 1, x: 0, y: 0 }, pinch0 = null, pan0 = null, tapAt = 0, tapX = 0, tapY = 0;
+  const vzApply = anim => { img.style.transition = anim ? 'transform .2s' : 'none'; img.style.transform = vz.s > 1 ? `translate(${vz.x}px,${vz.y}px) scale(${vz.s})` : ''; };
+  const vzClamp = () => {
+    const r = stage.getBoundingClientRect();
+    const mx = Math.max(0, (img.offsetWidth * vz.s - r.width) / 2), my = Math.max(0, (img.offsetHeight * vz.s - r.height) / 2);
+    vz.x = clamp(vz.x, -mx, mx); vz.y = clamp(vz.y, -my, my);
+  };
+  const centre = () => { const r = stage.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+  const zoomAt = (s, px, py) => { const [cx, cy] = centre(), ux = (px - cx - vz.x) / vz.s, uy = (py - cy - vz.y) / vz.s; vz.s = s; vz.x = px - cx - ux * s; vz.y = py - cy - uy * s; vzClamp(); };
+  viewerZoomReset = () => { vz = { s: 1, x: 0, y: 0 }; vp.clear(); pinch0 = pan0 = null; tapAt = 0; vzApply(false); };
+  const dist = () => { const [a, b] = [...vp.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
+  const mid = () => { const [a, b] = [...vp.values()]; return [(a.x + b.x) / 2, (a.y + b.y) / 2]; };
+  stage.addEventListener('pointerdown', e => {
+    if (e.target.closest('button')) return;
+    vp.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (UX6('pinch') && vp.size === 2) { vx = null; pan0 = null; const [mx, my] = mid(); pinch0 = { d: dist(), s: vz.s, mx, my }; return; }
+    if (UX6('pinch') && vz.s > 1) { pan0 = { px: e.clientX, py: e.clientY, x: vz.x, y: vz.y, moved: false }; vx = null; return; }
+    vx = e.clientX; vy = e.clientY; vdx = vdy = 0; img.style.transition = 'none';
+  });
   stage.addEventListener('pointermove', e => {
+    if (vp.has(e.pointerId)) vp.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch0 && vp.size >= 2) {
+      const [mx, my] = mid(), s = clamp(pinch0.s * dist() / pinch0.d, 1, 4);
+      zoomAt(s, mx, my); vzApply(false); return;
+    }
+    if (pan0) {
+      const dx = e.clientX - pan0.px, dy = e.clientY - pan0.py;
+      if (Math.hypot(dx, dy) > 6) pan0.moved = true;
+      vz.x = pan0.x + dx; vz.y = pan0.y + dy; vzClamp(); vzApply(false); return;
+    }
     if (vx === null) return; vdx = e.clientX - vx; vdy = e.clientY - vy;
     img.style.transform = Math.abs(vdx) > Math.abs(vdy) ? `translateX(${vdx}px)` : `translateY(${Math.max(0, vdy)}px) scale(${1 - Math.max(0, vdy) / 1200})`;
   });
-  const vend = () => {
-    if (vx === null) return; vx = null; img.style.transition = 'transform .18s'; img.style.transform = '';
-    if (Math.abs(vdx) > 60 && Math.abs(vdx) > Math.abs(vdy)) stepViewer(vdx < 0 ? 1 : -1);
-    else if (vdy > 110) closeViewer();
+  const vend = e => {
+    const wasPinch = !!pinch0, wasPan = pan0 && pan0.moved;
+    vp.delete(e.pointerId);
+    if (pinch0 && vp.size < 2) { pinch0 = null; if (vz.s < 1.05) viewerZoomReset(); else { vzClamp(); vzApply(true); } if (vp.size === 1) { const [p] = [...vp.values()]; pan0 = { px: p.x, py: p.y, x: vz.x, y: vz.y, moved: true }; } return; }
+    if (pan0) { pan0 = null; if (wasPan || wasPinch) { tapAt = 0; return; } }
+    const tap = vx === null ? true : Math.abs(vdx) < 8 && Math.abs(vdy) < 8;
+    if (vx !== null) {
+      vx = null; img.style.transition = 'transform .18s'; img.style.transform = vz.s > 1 ? img.style.transform : '';
+      if (Math.abs(vdx) > 60 && Math.abs(vdx) > Math.abs(vdy)) { stepViewer(vdx < 0 ? 1 : -1); return; }
+      if (vdy > 110) { closeViewer(); return; }
+    }
+    if (!UX6('pinch') || !tap || e.type === 'pointercancel') return;
+    const now = performance.now();
+    if (now - tapAt < 320 && Math.hypot(e.clientX - tapX, e.clientY - tapY) < 30) {
+      tapAt = 0;
+      if (vz.s > 1) { vz = { s: 1, x: 0, y: 0 }; vzApply(true); } else { zoomAt(2.5, e.clientX, e.clientY); vzApply(true); }
+      haptic('tick');
+    } else { tapAt = now; tapX = e.clientX; tapY = e.clientY; }
   };
   stage.addEventListener('pointerup', vend); stage.addEventListener('pointercancel', vend);
   document.addEventListener('keydown', e => {
