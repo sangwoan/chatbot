@@ -1,0 +1,35 @@
+{
+  "name": "그해여름",
+  "short_name": "그해여름",
+  "description": "1998–2009년 카메라 21대의 색감으로 찍고, 사진에 날짜와 그 시절 화면 정보를 남기는 감성 카메라",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1d1c1a",
+  "theme_color": "#a3d2de",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

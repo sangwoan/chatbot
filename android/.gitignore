@@ -1,0 +1,6 @@
+build/
+.tools/
+# signing keys never go into this public repository
+keystore/
+*.p12
+*.jks

@@ -1,0 +1,1141 @@
+package com.geuhaeyeoreum.camera;
+
+import android.Manifest;
+import android.app.Activity;
+import android.content.ActivityNotFoundException;
+import android.content.ClipData;
+import android.content.ContentResolver;
+import android.content.ContentValues;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.SigningInfo;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.ColorFilter;
+import android.graphics.Paint;
+import android.graphics.PixelFormat;
+import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
+import android.media.MediaScannerConnection;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
+import android.provider.MediaStore;
+import android.provider.Settings;
+import android.util.Base64;
+import android.util.Log;
+import android.view.HapticFeedbackConstants;
+import android.view.KeyEvent;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
+import android.view.WindowManager;
+import android.webkit.ConsoleMessage;
+import android.webkit.RenderProcessGoneDetail;
+import android.webkit.GeolocationPermissions;
+import android.webkit.JavascriptInterface;
+import android.webkit.PermissionRequest;
+import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.FrameLayout;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayDeque;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.security.PublicKey;
+import java.security.cert.CertificateFactory;
+import org.json.JSONObject;
+
+/**
+ * Hosts the web camera (assets/www) in a full-screen WebView.
+ * The page is served from https://appassets.androidplatform.net/assets/ so it is a secure
+ * context (camera, IndexedDB, localStorage) without needing androidx.webkit.
+ */
+public class MainActivity extends Activity {
+    private static final String TAG = "Geuhae";
+    static final String HOST = "appassets.androidplatform.net";
+    static final String START_URL = "https://" + HOST + "/assets/index.html";
+    /**
+     * Where web updates are published: android/update in the app's public repository, on these branches
+     * (main is the long-term channel). Each branch is read at its exact head commit; the newest valid build wins.
+     */
+    static final String UPDATE_RAW = "https://raw.githubusercontent.com/sangwoan/chatbot/{ref}/android/update/";
+    static final String UPDATE_API = "https://api.github.com/repos/sangwoan/chatbot/commits/";
+    static final String[] UPDATE_BRANCHES = {"main", "claude/retro-camera-app-design-67gfwt"};
+    /** Pages for a newer APK may only be opened on these prefixes. */
+    static final String[] UPDATE_PAGES = {
+            "https://raw.githubusercontent.com/sangwoan/chatbot/",
+            "https://github.com/sangwoan/chatbot/",
+    };
+    /** Checked at every launch, and again on returning to the app once this much time has passed. */
+    private static final long UPDATE_EVERY_MS = 60L * 1000;
+    /** An update that fails to boot this many times in a row is dropped (see noteAttempt). */
+    private static final int UPDATE_MAX_TRIES = 2;
+    static final String ALBUM_DIR = "그해여름";
+
+    private static final int REQ_CAMERA_FOR_PAGE = 1;
+    private static final int REQ_CAMERA_DIRECT = 2;
+    private static final int REQ_STORAGE = 4;
+    private static final int REQ_FILES = 10;
+    private static final int MAX_PICK = 30;
+
+    /** Android drops a second permission request while a dialog is open, so requests wait their turn. */
+    private final ArrayDeque<Object[]> askQueue = new ArrayDeque<>();
+    private boolean asking = false;
+    private long backAskedAt = 0;
+    /** Camera dialog bookkeeping, to tell "don't ask again" apart from a dismissed dialog. */
+    private boolean camRationaleBefore = false;
+    private long camAskedAt = 0;
+    /** One storage dialog at a time (Android 9 and below); the page queues the photos meanwhile. */
+    private boolean storageAsking = false;
+
+    private final Handler ui = new Handler(Looper.getMainLooper());
+    private FrameLayout root;
+    private WebView web;
+    private BarsDrawable bars;
+    private boolean darkIconsTop = true, darkIconsBottom = true;
+
+    private PermissionRequest pendingMedia;
+    private ValueCallback<Uri[]> pendingFiles;
+    /** Host of the page currently loaded; the bridge only acts for our own origin. */
+    private volatile String pageHost = HOST; // seeded: page scripts can call the bridge before onPageStarted arrives
+    /** Set by the page while the live viewfinder is on screen: volume keys fire the shutter. */
+    private volatile boolean volumeShutter = false;
+    /** Web updates (null if the signing key could not be read). */
+    private Updater updater;
+    /** The page called bootOk() after its last load; justApplied: that load is the first of a new update. */
+    private boolean bootOk = false, justApplied = false;
+    /** Activity is in the foreground; the renderer is being torn down after a crash. */
+    private boolean resumed = false, crashing = false;
+    private long lastCheckAt = 0, resultAt = 0;
+    /** The last update result, replayed to a page that was still booting when it arrived. */
+    private String lastState, lastVersion = "", lastApk = "";
+    private final Runnable bootWatch = new Runnable() {
+        @Override
+        public void run() {
+            // an update whose page never finished booting: drop it and go back to the page inside the APK
+            if (bootOk || updater == null || updater.active() == null || web == null) return;
+            Log.w(TAG, "update " + updater.active().version + " did not start; rolling back");
+            updater.markBadActive();
+            clearAttempt();
+            justApplied = false;
+            // a renderer stuck in a loop cannot take a new navigation: end it, and the rebuilt activity loads the APK's page
+            if (Build.VERSION.SDK_INT >= 29) {
+                android.webkit.WebViewRenderProcess p = web.getWebViewRenderProcess();
+                if (p != null && p.terminate()) return;
+            }
+            web.loadUrl(START_URL);
+        }
+    };
+    /** The update's page has stayed up for a while: it is good, forget the failed-start counter. */
+    private final Runnable attemptOk = new Runnable() {
+        @Override
+        public void run() {
+            if (bootOk) clearAttempt();
+        }
+    };
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        int start = 0xFFA3D2DE;
+        bars = new BarsDrawable(start, start);
+        root = new FrameLayout(this);
+        root.setBackground(bars);
+        web = new WebView(this);
+        web.setBackgroundColor(Color.rgb(7, 9, 12));
+        root.addView(web, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        setContentView(root);
+        setupWindow();
+        setupWebView();
+        updater = makeUpdater();
+        justApplied = updater != null && updater.prepare();
+        if (updater != null && updater.active() != null) {
+            SharedPreferences p = prefs();
+            if (p.getInt("otaTryBuild", -1) == updater.active().build && p.getInt("otaTries", 0) >= UPDATE_MAX_TRIES) {
+                Log.w(TAG, "update " + updater.active().version + " keeps failing to start; dropping it");
+                updater.markBadActive();
+                clearAttempt();
+                justApplied = false;
+            }
+        }
+        loadPage(); // onResume, which follows, checks for updates
+    }
+
+    /** Loads the page; one from an update must boot (bootOk) within 20 s, and every attempt is counted until it does. */
+    private void loadPage() {
+        bootOk = false;
+        ui.removeCallbacks(bootWatch);
+        ui.removeCallbacks(attemptOk);
+        if (updater != null && updater.active() != null) {
+            noteAttempt(updater.active().build);
+            ui.postDelayed(bootWatch, 20000);
+        }
+        web.loadUrl(START_URL);
+    }
+
+    private void noteAttempt(int build) {
+        SharedPreferences p = prefs();
+        int tries = p.getInt("otaTryBuild", -1) == build ? p.getInt("otaTries", 0) + 1 : 1;
+        p.edit().putInt("otaTryBuild", build).putInt("otaTries", tries).commit();
+    }
+
+    private void clearAttempt() {
+        prefs().edit().remove("otaTryBuild").remove("otaTries").apply();
+    }
+
+    // ───────── web updates
+    private Updater makeUpdater() {
+        try {
+            PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
+            int bundled = 0;
+            try (InputStream in = getAssets().open("www/bundle.json")) {
+                java.io.ByteArrayOutputStream b = new java.io.ByteArrayOutputStream();
+                byte[] buf = new byte[1024];
+                int n;
+                while ((n = in.read(buf)) > 0) b.write(buf, 0, n);
+                bundled = new JSONObject(b.toString("UTF-8")).getInt("build");
+            }
+            Updater.Channel[] ch = new Updater.Channel[UPDATE_BRANCHES.length];
+            for (int i = 0; i < ch.length; i++) ch[i] = new Updater.Channel(UPDATE_RAW, UPDATE_BRANCHES[i], UPDATE_API + UPDATE_BRANCHES[i]);
+            Updater.Local apkFiles = new Updater.Local() {
+                @Override
+                public byte[] read(String rel, long limit) throws IOException {
+                    try (InputStream in = getAssets().open("www/" + rel)) {
+                        return Updater.readAll(in, limit);
+                    }
+                }
+            };
+            return new Updater(new File(getFilesDir(), "ota"), ch, signerKey(), getPackageName(), pi.versionCode, bundled, apkFiles);
+        } catch (Exception e) {
+            Log.w(TAG, "updates off", e);
+            return null;
+        }
+    }
+
+    /** The public key of the certificate this APK is signed with; updates must be signed by the same key. */
+    @SuppressWarnings("deprecation")
+    private PublicKey signerKey() throws Exception {
+        android.content.pm.Signature[] sigs;
+        if (Build.VERSION.SDK_INT >= 28) {
+            SigningInfo si = getPackageManager().getPackageInfo(getPackageName(), PackageManager.GET_SIGNING_CERTIFICATES).signingInfo;
+            sigs = si.hasMultipleSigners() ? si.getApkContentsSigners() : si.getSigningCertificateHistory();
+            if (!si.hasMultipleSigners()) sigs = new android.content.pm.Signature[]{sigs[sigs.length - 1]}; // newest in the rotation history
+        } else {
+            sigs = getPackageManager().getPackageInfo(getPackageName(), PackageManager.GET_SIGNATURES).signatures;
+        }
+        if (sigs == null || sigs.length != 1) throw new IllegalStateException("expected one signer");
+        return CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(sigs[0].toByteArray())).getPublicKey();
+    }
+
+    private void checkForUpdate(final boolean manual) {
+        if (updater == null) {
+            if (manual) js("window.geuhaeOnUpdate&&window.geuhaeOnUpdate('error','','',true)");
+            return;
+        }
+        long now = SystemClock.elapsedRealtime();
+        if (!manual && lastCheckAt != 0 && now - lastCheckAt < UPDATE_EVERY_MS) return;
+        lastCheckAt = now;
+        updater.check(new Updater.Listener() {
+            @Override
+            public void onResult(final String state, final UpdateBundle b, final String apkUrl, final String error) {
+                if (error != null) Log.w(TAG, "update check: " + error);
+                ui.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if ("error".equals(state)) lastCheckAt = 0; // try again on the next resume
+                        if ("ready".equals(state) || "native".equals(state)) {
+                            lastState = state;
+                            lastVersion = b == null ? "" : b.version;
+                            lastApk = apkUrl == null ? "" : apkUrl;
+                        }
+                        if (!manual && ("none".equals(state) || "error".equals(state))) return;
+                        js("window.geuhaeOnUpdate&&window.geuhaeOnUpdate(" + jsStr(state) + "," + jsStr(b == null ? "" : b.version) + ","
+                                + jsStr(apkUrl == null ? "" : apkUrl) + "," + manual + ")");
+                        // apply straight away unless the page is busy (it then asks again once it is idle)
+                        if ("ready".equals(state)) applyUpdateIfIdle();
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * A staged update is applied as soon as nothing is in progress: the app is in the foreground, no picker,
+     * permission dialog or fresh result is pending, and the page itself says it is idle (no developing shot,
+     * no open sheet). geuhaeCanReload also locks the shutter for a moment, so nothing starts in between.
+     */
+    private boolean shellIdle() {
+        return resumed && !asking && pendingFiles == null && pendingMedia == null && SystemClock.uptimeMillis() - resultAt > 3000;
+    }
+
+    private void applyUpdateIfIdle() {
+        if (updater == null || web == null || !shellIdle() || !updater.stagedNewer()) return;
+        web.evaluateJavascript("(function(){try{return !!(window.geuhaeCanReload&&window.geuhaeCanReload())}catch(e){return false}})()", new ValueCallback<String>() {
+            @Override
+            public void onReceiveValue(String v) {
+                if (!"true".equals(v) || web == null || updater == null || !shellIdle()) return;
+                if (updater.prepare()) {
+                    justApplied = true;
+                    lastState = null;
+                    loadPage();
+                }
+            }
+        });
+    }
+
+    private static String jsStr(String s) {
+        StringBuilder b = new StringBuilder("'");
+        for (char c : s.toCharArray()) {
+            if (c == '\\' || c == '\'') b.append('\\').append(c);
+            else if (c < 0x20 || c == 0x2028 || c == 0x2029 || c == '<') b.append(String.format("\\u%04x", (int) c));
+            else b.append(c);
+        }
+        return b.append('\'').toString();
+    }
+
+    // ───────── window: edge-to-edge with our own insets so system bars show the camera body colour
+    private void setupWindow() {
+        Window w = getWindow();
+        if (Build.VERSION.SDK_INT >= 30) {
+            w.setDecorFitsSystemWindows(false);
+            w.setStatusBarColor(Color.TRANSPARENT);
+            w.setNavigationBarColor(Color.TRANSPARENT);
+            w.setNavigationBarContrastEnforced(false);
+            root.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+                @Override
+                public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
+                    android.graphics.Insets i = insets.getInsets(WindowInsets.Type.systemBars()
+                            | WindowInsets.Type.displayCutout() | WindowInsets.Type.ime());
+                    v.setPadding(i.left, i.top, i.right, i.bottom);
+                    return WindowInsets.CONSUMED;
+                }
+            });
+        }
+        applyBars();
+    }
+
+    private void applyBars() {
+        bars.invalidateSelf();
+        Window w = getWindow();
+        if (Build.VERSION.SDK_INT >= 30) {
+            WindowInsetsController c = w.getInsetsController();
+            if (c != null) {
+                int s = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS;
+                int n = WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
+                c.setSystemBarsAppearance((darkIconsTop ? s : 0) | (darkIconsBottom ? n : 0), s | n);
+            }
+        } else {
+            w.setStatusBarColor(bars.top);
+            // below API 26 the navigation bar cannot have dark icons, so a light body colour would hide them
+            w.setNavigationBarColor(Build.VERSION.SDK_INT >= 26 || !darkIconsBottom ? bars.bottom : Color.BLACK);
+            View d = w.getDecorView();
+            int f = d.getSystemUiVisibility();
+            f = darkIconsTop ? f | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR : f & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            if (Build.VERSION.SDK_INT >= 26) {
+                f = darkIconsBottom ? f | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR : f & ~View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+            }
+            d.setSystemUiVisibility(f);
+        }
+    }
+
+    // ───────── WebView
+    private void setupWebView() {
+        WebSettings s = web.getSettings();
+        s.setJavaScriptEnabled(true);
+        s.setDomStorageEnabled(true);
+        s.setMediaPlaybackRequiresUserGesture(false);
+        s.setAllowFileAccess(false);
+        s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+        s.setSupportMultipleWindows(false);
+        s.setJavaScriptCanOpenWindowsAutomatically(false);
+        s.setCacheMode(WebSettings.LOAD_NO_CACHE);
+        s.setSupportZoom(false);
+        s.setBuiltInZoomControls(false);
+        s.setDisplayZoomControls(false);
+        s.setTextZoom(100);
+        s.setGeolocationEnabled(false); // no location permission: fewer sensitive permissions, nothing for scanners to misread
+        if ((getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+            WebView.setWebContentsDebuggingEnabled(true);
+        }
+        web.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        web.setVerticalScrollBarEnabled(false);
+        web.setHorizontalScrollBarEnabled(false);
+        web.addJavascriptInterface(new Bridge(), "GeuhaeNative");
+        web.setWebViewClient(new AssetClient());
+        web.setWebChromeClient(new Chrome());
+    }
+
+    private static String hostOf(String url) {
+        try {
+            String h = Uri.parse(url).getHost();
+            return h == null ? "" : h;
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private static boolean isOurs(Uri u) {
+        return u != null && "https".equals(u.getScheme()) && HOST.equals(u.getHost());
+    }
+
+    private final class AssetClient extends WebViewClient {
+        @Override
+        public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest req) {
+            Uri u = req.getUrl();
+            if (!isOurs(u)) {
+                String sc = u.getScheme();
+                return "http".equals(sc) || "https".equals(sc) ? notFound() : null;
+            }
+            String path = u.getPath();
+            if (path == null || !path.startsWith("/assets/")) return notFound();
+            String rel = path.substring("/assets/".length());
+            if (rel.isEmpty() || rel.endsWith("/")) rel = rel + "index.html";
+            if (rel.contains("..")) return notFound();
+            try {
+                File ota = updater == null ? null : updater.fileFor(rel);
+                InputStream in = ota != null ? new FileInputStream(ota) : getAssets().open("www/" + rel);
+                String mime = mimeOf(rel);
+                WebResourceResponse r = new WebResourceResponse(mime, mime.startsWith("text/") || mime.endsWith("javascript") || mime.endsWith("json") || mime.endsWith("svg+xml") ? "utf-8" : null, in);
+                Map<String, String> h = new HashMap<>();
+                h.put("Cache-Control", "no-cache");
+                r.setResponseHeaders(h);
+                return r;
+            } catch (IOException e) {
+                return notFound();
+            }
+        }
+
+        @Override
+        public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {
+            Uri u = req.getUrl();
+            if (isOurs(u)) return false;
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW, u));
+            } catch (ActivityNotFoundException ignored) {
+            }
+            return true;
+        }
+
+        @Override
+        public void onPageStarted(WebView view, String url, Bitmap favicon) {
+            pageHost = hostOf(url);
+            bootOk = false;
+        }
+
+        @Override
+        public void onPageFinished(WebView view, String url) {
+            // a page from an update has a few seconds to report a good start, or the update is rolled back
+            if (updater != null && updater.active() != null && !bootOk) {
+                ui.removeCallbacks(bootWatch);
+                ui.postDelayed(bootWatch, 12000);
+            }
+        }
+
+        @Override
+        public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
+            // the renderer crashed or was killed for memory: rebuild instead of letting the app die
+            crashing = true;
+            // a crash counts against an update (noteAttempt); a memory kill in the background does not
+            boolean crashed = Build.VERSION.SDK_INT >= 26 ? detail.didCrash() : resumed;
+            if (!crashed && updater != null && updater.active() != null) clearAttempt();
+            if (web == view) {
+                root.removeView(web);
+                web.destroy();
+                web = null;
+            }
+            recreate();
+            return true;
+        }
+    }
+
+    private static WebResourceResponse notFound() {
+        WebResourceResponse r = new WebResourceResponse("text/plain", "utf-8", new ByteArrayInputStream(new byte[0]));
+        r.setStatusCodeAndReasonPhrase(404, "Not Found");
+        return r;
+    }
+
+    static String mimeOf(String name) {
+        String n = name.toLowerCase(Locale.ROOT);
+        if (n.endsWith(".html")) return "text/html";
+        if (n.endsWith(".js") || n.endsWith(".mjs")) return "application/javascript";
+        if (n.endsWith(".css")) return "text/css";
+        if (n.endsWith(".svg")) return "image/svg+xml";
+        if (n.endsWith(".png")) return "image/png";
+        if (n.endsWith(".jpg") || n.endsWith(".jpeg")) return "image/jpeg";
+        if (n.endsWith(".webp")) return "image/webp";
+        if (n.endsWith(".woff2")) return "font/woff2";
+        if (n.endsWith(".woff")) return "font/woff";
+        if (n.endsWith(".ttf")) return "font/ttf";
+        if (n.endsWith(".json")) return "application/json";
+        if (n.endsWith(".webmanifest")) return "application/manifest+json";
+        if (n.endsWith(".txt")) return "text/plain";
+        return "application/octet-stream";
+    }
+
+    private final class Chrome extends WebChromeClient {
+        @Override
+        public void onPermissionRequest(final PermissionRequest r) {
+            ui.post(new Runnable() {
+                @Override
+                public void run() {
+                    Uri o = r.getOrigin();
+                    boolean video = false;
+                    for (String res : r.getResources()) {
+                        if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(res)) video = true;
+                    }
+                    if (!isOurs(o) || !video) {
+                        r.deny();
+                        return;
+                    }
+                    if (has(Manifest.permission.CAMERA)) {
+                        r.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE});
+                    } else {
+                        if (pendingMedia != null) pendingMedia.deny();
+                        pendingMedia = r;
+                        askCamera(REQ_CAMERA_FOR_PAGE);
+                    }
+                }
+            });
+        }
+
+        @Override
+        public void onPermissionRequestCanceled(PermissionRequest r) {
+            if (pendingMedia == r) pendingMedia = null;
+        }
+
+        @Override
+        public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> cb, FileChooserParams params) {
+            if (pendingFiles != null) pendingFiles.onReceiveValue(null);
+            pendingFiles = cb;
+            boolean multiple = params != null && params.getMode() == FileChooserParams.MODE_OPEN_MULTIPLE;
+            if (Build.VERSION.SDK_INT >= 33) {
+                Intent picker = new Intent(MediaStore.ACTION_PICK_IMAGES);
+                picker.setType("image/*");
+                if (multiple) picker.putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, Math.min(MAX_PICK, MediaStore.getPickImagesMaxLimit()));
+                try {
+                    startActivityForResult(picker, REQ_FILES);
+                    return true;
+                } catch (ActivityNotFoundException ignored) {
+                }
+            }
+            Intent pick = new Intent(Intent.ACTION_GET_CONTENT);
+            pick.addCategory(Intent.CATEGORY_OPENABLE);
+            pick.setType("image/*");
+            if (multiple) pick.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+            try {
+                startActivityForResult(Intent.createChooser(pick, "사진 고르기"), REQ_FILES);
+            } catch (ActivityNotFoundException e) {
+                pendingFiles = null;
+                cb.onReceiveValue(null);
+            }
+            return true;
+        }
+
+        @Override
+        public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback cb) {
+            cb.invoke(origin, false, false); // the app does not hold a location permission
+        }
+
+        @Override
+        public boolean onConsoleMessage(ConsoleMessage m) {
+            Log.d(TAG, m.message() + " (" + m.sourceId() + ":" + m.lineNumber() + ")");
+            return true;
+        }
+    }
+
+    // ───────── permissions & results
+    private boolean has(String perm) {
+        return checkSelfPermission(perm) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private SharedPreferences prefs() {
+        return getSharedPreferences("geuhae", MODE_PRIVATE);
+    }
+
+    private void askCamera(int req) {
+        prefs().edit().putBoolean("askedCamera", true).apply();
+        ask(new String[]{Manifest.permission.CAMERA}, req);
+    }
+
+    private void ask(String[] perms, int req) {
+        askQueue.add(new Object[]{perms, req});
+        if (!asking) askNext();
+    }
+
+    private void askNext() {
+        Object[] next = askQueue.poll();
+        asking = next != null;
+        if (next == null) return;
+        int req = (Integer) next[1];
+        if (req == REQ_CAMERA_FOR_PAGE || req == REQ_CAMERA_DIRECT) {
+            camRationaleBefore = shouldShowRequestPermissionRationale(Manifest.permission.CAMERA);
+            camAskedAt = SystemClock.uptimeMillis();
+        }
+        requestPermissions((String[]) next[0], req);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int req, String[] perms, int[] results) {
+        resultAt = SystemClock.uptimeMillis();
+        ui.post(new Runnable() {
+            @Override
+            public void run() {
+                askNext();
+            }
+        });
+        boolean all = results.length > 0;
+        for (int r : results) {
+            if (r != PackageManager.PERMISSION_GRANTED) all = false;
+        }
+        if (req == REQ_CAMERA_FOR_PAGE || req == REQ_CAMERA_DIRECT) {
+            rememberCameraAnswer(all, results.length > 0);
+            PermissionRequest p = pendingMedia;
+            pendingMedia = null;
+            if (p != null) {
+                if (all) p.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE});
+                else p.deny();
+            }
+            notifyPage("camera", all);
+        } else if (req == REQ_STORAGE) {
+            storageAsking = false;
+            // empty results: the request was cancelled (e.g. relaunched from the launcher), not refused
+            notifyPage(results.length == 0 ? "storage-cancel" : "storage", all);
+        }
+    }
+
+    /**
+     * Only Settings can bring the camera back once the user picked "don't ask again" (or Android 11+ stopped asking after two
+     * refusals). Rationale flips from true to false at that moment, and a dialog that was never shown answers almost at once.
+     * A dismissed or cancelled dialog does neither, so it stays "denied" and the page may ask again.
+     */
+    private void rememberCameraAnswer(boolean granted, boolean answered) {
+        SharedPreferences.Editor e = prefs().edit();
+        if (granted) {
+            e.remove("cameraBlocked");
+        } else if (answered && !shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)
+                && (camRationaleBefore || SystemClock.uptimeMillis() - camAskedAt < 400)) {
+            e.putBoolean("cameraBlocked", true);
+        }
+        e.apply();
+    }
+
+    private void notifyPage(String what, boolean granted) {
+        js("window.geuhaeOnPermission&&window.geuhaeOnPermission('" + what + "'," + granted + ")");
+    }
+
+    private void js(final String code) {
+        ui.post(new Runnable() {
+            @Override
+            public void run() {
+                if (web != null) web.evaluateJavascript(code, null);
+            }
+        });
+    }
+
+    @Override
+    protected void onActivityResult(int req, int res, Intent data) {
+        resultAt = SystemClock.uptimeMillis();
+        if (req != REQ_FILES) {
+            super.onActivityResult(req, res, data);
+            return;
+        }
+        ValueCallback<Uri[]> cb = pendingFiles;
+        pendingFiles = null;
+        if (cb == null) return;
+        Uri[] out = null;
+        if (res == RESULT_OK && data != null) {
+            ClipData clip = data.getClipData();
+            if (clip != null && clip.getItemCount() > 0) {
+                out = new Uri[clip.getItemCount()];
+                for (int i = 0; i < out.length; i++) out[i] = clip.getItemAt(i).getUri();
+            } else if (data.getData() != null) {
+                out = new Uri[]{data.getData()};
+            }
+        }
+        cb.onReceiveValue(out);
+    }
+
+    // ───────── volume keys work as a shutter button while the viewfinder is showing
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (volumeShutter && (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
+            if (event.getRepeatCount() == 0 && web != null) {
+                web.evaluateJavascript("window.geuhaeShutter&&window.geuhaeShutter()", null);
+            }
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (volumeShutter && (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) return true;
+        return super.onKeyUp(keyCode, event);
+    }
+
+    // ───────── back button: the page closes its own sheets first
+    @Override
+    @SuppressWarnings("deprecation")
+    public void onBackPressed() {
+        if (web == null) {
+            super.onBackPressed();
+            return;
+        }
+        long now = System.currentTimeMillis();
+        if (backAskedAt != 0 && now - backAskedAt > 1500) {
+            moveTaskToBack(true);
+            return;
+        }
+        backAskedAt = now;
+        web.evaluateJavascript("(function(){try{return !!(window.geuhaeOnBack&&window.geuhaeOnBack())}catch(e){return false}})()", new ValueCallback<String>() {
+            @Override
+            public void onReceiveValue(String v) {
+                backAskedAt = 0;
+                // keep the WebView alive: photos may still be developing in the page's queue
+                if (!"true".equals(v)) moveTaskToBack(true);
+            }
+        });
+    }
+
+    // ───────── lifecycle: release the camera while in the background
+    @Override
+    protected void onPause() {
+        resumed = false;
+        if (web != null) {
+            web.evaluateJavascript("window.geuhaeOnPause&&window.geuhaeOnPause()", null);
+            web.onPause();
+        }
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        resumed = true;
+        if (web != null) {
+            web.onResume();
+            web.evaluateJavascript("window.geuhaeOnResume&&window.geuhaeOnResume()", null);
+            applyUpdateIfIdle();
+            checkForUpdate(false);
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (web != null) web.resumeTimers();
+        if (!bootOk && updater != null && updater.active() != null) {
+            ui.removeCallbacks(bootWatch);
+            ui.postDelayed(bootWatch, 20000);
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        if (web != null) web.pauseTimers();
+        ui.removeCallbacks(bootWatch); // timers are paused in the background: do not judge an update by that
+        if (bootOk && !crashing) clearAttempt(); // it started fine and the user just left
+        super.onStop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (pendingMedia != null) {
+            pendingMedia.deny();
+            pendingMedia = null;
+        }
+        if (pendingFiles != null) {
+            pendingFiles.onReceiveValue(null);
+            pendingFiles = null;
+        }
+        if (web != null) {
+            root.removeView(web);
+            web.destroy();
+            web = null;
+        }
+        super.onDestroy();
+    }
+
+    // ───────── gallery
+    private static final class NeedPermission extends Exception {
+    }
+
+    private static String safeName(String name) {
+        String n = name == null ? "" : name.replaceAll("[^A-Za-z0-9._-]", "_");
+        if (!n.toLowerCase(Locale.ROOT).endsWith(".jpg")) n = n + ".jpg";
+        return n.length() > 120 ? n.substring(n.length() - 120) : n;
+    }
+
+    private Uri writeToGallery(byte[] data, String name, long takenMs) throws Exception {
+        ContentResolver cr = getContentResolver();
+        if (Build.VERSION.SDK_INT >= 29) {
+            ContentValues v = new ContentValues();
+            v.put(MediaStore.MediaColumns.DISPLAY_NAME, name);
+            v.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg");
+            v.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/" + ALBUM_DIR);
+            if (takenMs > 0) v.put(MediaStore.MediaColumns.DATE_TAKEN, takenMs);
+            v.put(MediaStore.MediaColumns.IS_PENDING, 1);
+            Uri uri = cr.insert(MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), v);
+            if (uri == null) throw new IOException("MediaStore insert failed");
+            try (OutputStream os = cr.openOutputStream(uri)) {
+                if (os == null) throw new IOException("no output stream");
+                os.write(data);
+            } catch (IOException e) {
+                cr.delete(uri, null, null);
+                throw e;
+            }
+            ContentValues done = new ContentValues();
+            done.put(MediaStore.MediaColumns.IS_PENDING, 0);
+            cr.update(uri, done, null, null);
+            return uri;
+        }
+        if (!has(Manifest.permission.WRITE_EXTERNAL_STORAGE)) throw new NeedPermission();
+        File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), ALBUM_DIR);
+        if (!dir.isDirectory() && !dir.mkdirs()) throw new IOException("cannot create " + dir);
+        String base = name.substring(0, name.length() - 4);
+        File f = new File(dir, name);
+        for (int i = 1; !f.createNewFile(); i++) f = new File(dir, base + "_" + i + ".jpg");
+        try (FileOutputStream os = new FileOutputStream(f)) {
+            os.write(data);
+        }
+        ContentValues v = new ContentValues();
+        v.put(MediaStore.MediaColumns.DATA, f.getAbsolutePath());
+        v.put(MediaStore.MediaColumns.DISPLAY_NAME, f.getName());
+        v.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg");
+        if (takenMs > 0) v.put(MediaStore.Images.ImageColumns.DATE_TAKEN, takenMs);
+        Uri uri = null;
+        try {
+            uri = cr.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, v);
+        } catch (Exception e) {
+            Log.w(TAG, "MediaStore insert (legacy) failed", e);
+        }
+        MediaScannerConnection.scanFile(this, new String[]{f.getAbsolutePath()}, new String[]{"image/jpeg"}, null);
+        if (uri == null) throw new IOException("saved but not indexed");
+        return uri;
+    }
+
+    /** JavaScript bridge. Methods run on the WebView's background thread. */
+    private final class Bridge {
+        private boolean trusted() {
+            return HOST.equals(pageHost);
+        }
+
+        /** The page finished booting; an update that loaded this far is good. */
+        @JavascriptInterface
+        public void bootOk() {
+            if (!trusted()) return;
+            ui.post(new Runnable() {
+                @Override
+                public void run() {
+                    bootOk = true;
+                    ui.removeCallbacks(bootWatch);
+                    ui.removeCallbacks(attemptOk);
+                    ui.postDelayed(attemptOk, 8000);
+                    if (justApplied && updater != null && updater.active() != null) {
+                        justApplied = false;
+                        js("window.geuhaeOnUpdate&&window.geuhaeOnUpdate('applied'," + jsStr(updater.active().version) + ",'',false)");
+                    }
+                    // a result that arrived while this page was still booting
+                    if ("native".equals(lastState))
+                        js("window.geuhaeOnUpdate&&window.geuhaeOnUpdate('native'," + jsStr(lastVersion) + "," + jsStr(lastApk) + ",false)");
+                    UpdateBundle waiting = updater == null ? null : updater.stagedUpdate();
+                    if (waiting != null) {
+                        js("window.geuhaeOnUpdate&&window.geuhaeOnUpdate('ready'," + jsStr(waiting.version) + ",'',false)");
+                        applyUpdateIfIdle();
+                    }
+                }
+            });
+        }
+
+        /** {"app": versionName, "code": versionCode, "build": web build in use, "web": its label}. */
+        @JavascriptInterface
+        public String updateInfo() {
+            try {
+                PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
+                JSONObject o = new JSONObject();
+                o.put("app", pi.versionName);
+                o.put("code", pi.versionCode);
+                UpdateBundle a = updater == null ? null : updater.active();
+                o.put("build", updater == null ? 0 : updater.currentBuild());
+                o.put("web", a == null ? "" : a.version);
+                return o.toString();
+            } catch (Exception e) {
+                return "{}";
+            }
+        }
+
+        /** The page became idle with an update waiting. Returns false when nothing is waiting any more. */
+        @JavascriptInterface
+        public boolean applyUpdate() {
+            if (!trusted() || updater == null || !updater.stagedNewer()) return false;
+            ui.post(new Runnable() {
+                @Override
+                public void run() {
+                    applyUpdateIfIdle();
+                }
+            });
+            return true;
+        }
+
+        @JavascriptInterface
+        public void checkUpdate() {
+            if (!trusted()) return;
+            ui.post(new Runnable() {
+                @Override
+                public void run() {
+                    checkForUpdate(true);
+                }
+            });
+        }
+
+        /** Opens the download page of a newer APK in the browser; only the app's own repository is allowed. */
+        @JavascriptInterface
+        public boolean openUpdatePage(String url) {
+            if (!trusted() || url == null) return false;
+            boolean ok = false;
+            for (String p : UPDATE_PAGES) if (url.startsWith(p) && !url.contains("..")) ok = true;
+            if (!ok) return false;
+            final Uri u = Uri.parse(url);
+            ui.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        startActivity(new Intent(Intent.ACTION_VIEW, u));
+                    } catch (ActivityNotFoundException ignored) {
+                    }
+                }
+            });
+            return true;
+        }
+
+        @JavascriptInterface
+        public boolean isNative() {
+            return true;
+        }
+
+        @JavascriptInterface
+        public String version() {
+            try {
+                return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+            } catch (Exception e) {
+                return "";
+            }
+        }
+
+        /** Saves a JPEG into Pictures/그해여름. Returns a content:// uri, "need-permission" or "". */
+        @JavascriptInterface
+        public String saveImage(String base64, String fileName, double takenMs) {
+            if (!trusted() || base64 == null || base64.isEmpty()) return "";
+            try {
+                byte[] bytes = Base64.decode(base64, Base64.DEFAULT);
+                return writeToGallery(bytes, safeName(fileName), (long) takenMs).toString();
+            } catch (NeedPermission e) {
+                ui.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (storageAsking) return;
+                        storageAsking = true;
+                        ask(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQ_STORAGE);
+                    }
+                });
+                return "need-permission";
+            } catch (Throwable e) {
+                Log.w(TAG, "saveImage failed", e);
+                return "";
+            }
+        }
+
+        /** True when saveImage can write without asking (Android 10+, or storage already granted). */
+        @JavascriptInterface
+        public boolean canSaveToGallery() {
+            return Build.VERSION.SDK_INT >= 29 || has(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        }
+
+        @JavascriptInterface
+        public boolean shareImage(String contentUri) {
+            if (!trusted() || contentUri == null || !contentUri.startsWith("content://")) return false;
+            final Uri u = Uri.parse(contentUri);
+            // the user may have deleted it in their gallery app; the page then saves a fresh copy
+            try (Cursor c = getContentResolver().query(u, new String[]{MediaStore.MediaColumns._ID}, null, null, null)) {
+                if (c == null || !c.moveToFirst()) return false;
+            } catch (Exception e) {
+                return false;
+            }
+            ui.post(new Runnable() {
+                @Override
+                public void run() {
+                    Intent send = new Intent(Intent.ACTION_SEND);
+                    send.setType("image/jpeg");
+                    send.putExtra(Intent.EXTRA_STREAM, u);
+                    send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    try {
+                        startActivity(Intent.createChooser(send, "사진 보내기"));
+                    } catch (ActivityNotFoundException ignored) {
+                    }
+                }
+            });
+            return true;
+        }
+
+        @JavascriptInterface
+        @SuppressWarnings("deprecation")
+        public void vibrate(int ms) {
+            Vibrator v = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+            if (v == null || !v.hasVibrator()) return;
+            int d = Math.max(1, Math.min(ms, 300));
+            if (Build.VERSION.SDK_INT >= 26) v.vibrate(VibrationEffect.createOneShot(d, VibrationEffect.DEFAULT_AMPLITUDE));
+            else v.vibrate(d);
+        }
+
+        /** "tick" (dial detents, toggles), "confirm" (shutter), "reject" (refused action). Follows the system haptics setting. */
+        @JavascriptInterface
+        public void haptic(final String kind) {
+            ui.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (web == null) return;
+                    int c;
+                    if ("confirm".equals(kind)) c = Build.VERSION.SDK_INT >= 30 ? HapticFeedbackConstants.CONFIRM : HapticFeedbackConstants.VIRTUAL_KEY;
+                    else if ("reject".equals(kind)) c = Build.VERSION.SDK_INT >= 30 ? HapticFeedbackConstants.REJECT : HapticFeedbackConstants.LONG_PRESS;
+                    else c = Build.VERSION.SDK_INT >= 27 ? HapticFeedbackConstants.TEXT_HANDLE_MOVE : HapticFeedbackConstants.CLOCK_TICK;
+                    web.performHapticFeedback(c);
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void setVolumeShutter(boolean on) {
+            volumeShutter = on && trusted();
+        }
+
+        @JavascriptInterface
+        public void keepScreenOn(final boolean on) {
+            ui.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (on) getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                    else getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                }
+            });
+        }
+
+        /** Colours the status bar (top) and navigation bar (bottom) to match the camera body. */
+        @JavascriptInterface
+        public void setBarColors(String top, String bottom, boolean darkIconsOnTop, boolean darkIconsOnBottom) {
+            final int t, b;
+            try {
+                t = Color.parseColor(top);
+                b = Color.parseColor(bottom);
+            } catch (Exception e) {
+                return;
+            }
+            ui.post(new Runnable() {
+                @Override
+                public void run() {
+                    bars.top = t;
+                    bars.bottom = b;
+                    darkIconsTop = darkIconsOnTop;
+                    darkIconsBottom = darkIconsOnBottom;
+                    applyBars();
+                }
+            });
+        }
+
+        /** "granted", "prompt" (never asked), "denied" (can ask again) or "blocked" (only Settings can fix it). */
+        @JavascriptInterface
+        public String cameraPermission() {
+            if (has(Manifest.permission.CAMERA)) {
+                if (prefs().getBoolean("cameraBlocked", false)) prefs().edit().remove("cameraBlocked").apply();
+                return "granted";
+            }
+            if (shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)) return "denied";
+            if (prefs().getBoolean("cameraBlocked", false)) return "blocked";
+            return prefs().getBoolean("askedCamera", false) ? "denied" : "prompt";
+        }
+
+        @JavascriptInterface
+        public void requestCamera() {
+            ui.post(new Runnable() {
+                @Override
+                public void run() {
+                    askCamera(REQ_CAMERA_DIRECT);
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void openAppSettings() {
+            ui.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", getPackageName(), null)));
+                    } catch (ActivityNotFoundException ignored) {
+                    }
+                }
+            });
+        }
+    }
+
+    /** Paints the area behind the status bar and the navigation bar in two colours. */
+    private static final class BarsDrawable extends Drawable {
+        int top, bottom;
+        private final Paint paint = new Paint();
+
+        BarsDrawable(int top, int bottom) {
+            this.top = top;
+            this.bottom = bottom;
+        }
+
+        @Override
+        public void draw(Canvas c) {
+            Rect r = getBounds();
+            int mid = r.top + r.height() / 2;
+            paint.setColor(top);
+            c.drawRect(r.left, r.top, r.right, mid, paint);
+            paint.setColor(bottom);
+            c.drawRect(r.left, mid, r.right, r.bottom, paint);
+        }
+
+        @Override
+        public void setAlpha(int alpha) {
+        }
+
+        @Override
+        public void setColorFilter(ColorFilter cf) {
+        }
+
+        @Override
+        @SuppressWarnings("deprecation")
+        public int getOpacity() {
+            return PixelFormat.OPAQUE;
+        }
+    }
+}
